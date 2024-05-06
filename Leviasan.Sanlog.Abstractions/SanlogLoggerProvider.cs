@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents a base class for logger provider the can create instances of <see cref="SanlogLogger"/> and can consume external scope information.
+    /// Represents a logger provider the can create instances of <see cref="SanlogLogger"/> and can consume external scope information.
     /// </summary>
     [ProviderAlias(nameof(SanlogLoggerProvider))]
     public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope
@@ -26,7 +27,7 @@ namespace Leviasan.Sanlog
         /// The event writer.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IEventWriter _eventWriter;
+        private readonly ILoggingWriter _eventWriter;
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
@@ -49,7 +50,7 @@ namespace Leviasan.Sanlog
         /// <param name="eventWriter">The event writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(IEventWriter eventWriter, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        public SanlogLoggerProvider(ILoggingWriter eventWriter, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
             : this(eventWriter, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
                 => _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
         /// <summary>
@@ -58,7 +59,7 @@ namespace Leviasan.Sanlog
         /// <param name="eventWriter">The event writer.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(IEventWriter eventWriter, SanlogLoggerOptions options)
+        public SanlogLoggerProvider(ILoggingWriter eventWriter, SanlogLoggerOptions options)
         {
             _eventWriter = eventWriter ?? throw new ArgumentNullException(nameof(eventWriter));
             _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -88,19 +89,21 @@ namespace Leviasan.Sanlog
             }
         }
         /// <inheritdoc/>
-        public ILogger CreateLogger(string categoryName)
-            => _loggers.GetOrAdd(categoryName, category =>
-            {
-                var logger = new SanlogLogger(category, _eventWriter, _options);
-                logger.SetScopeProvider(_externalScopeProvider);
-                return logger;
-            });
+        /// <exception cref="ObjectDisposedException">The logger provider is disposed.</exception>
+        public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
+        {
+            ObjectDisposedException.ThrowIf(_disposedValue, this);
+            var logger = new SanlogLogger(category, _eventWriter, _options);
+            logger.SetScopeProvider(_externalScopeProvider);
+            return logger;
+        });
         /// <summary>
         /// The action to be invoked when <see cref="SanlogLoggerOptions"/> has changed.
         /// </summary>
         /// <param name="options">The changed logger options.</param>
         /// <param name="name">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
+        /// <exception cref="CultureNotFoundException">The <see cref="SanlogLoggerOptions.CultureName"/> specifies a culture that is not supported.</exception>
         private void OnChangeOptions(SanlogLoggerOptions options, string? name)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));

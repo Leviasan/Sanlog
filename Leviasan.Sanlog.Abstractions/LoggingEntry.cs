@@ -19,11 +19,11 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the application identifier.
         /// </summary>
-        public Guid AppicationId { get; init; }
+        public Guid ApplicationId { get; init; }
         /// <summary>
         /// Gets the application information.
         /// </summary>
-        public LoggingApplication? Appication { get; init; }
+        public LoggingApplication? Application { get; init; }
         /// <summary>
         /// Gets the application version in which the event occurred.
         /// </summary>

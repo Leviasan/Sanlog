@@ -1,2 +1,2 @@
 ﻿# Leviasan.Sanlog.Abstractions
-Provides custom logger provider that supports saving log entries from different applications in one storage separated by application identifier.
+Represents the logger for the NET8.0+ apps. Provides a logger that supports saving log entries from different applications in one storage place separated by app identifier.

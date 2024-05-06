@@ -10,14 +10,15 @@
     <IsTrimmable>true</IsTrimmable>
     <IsAotCompatible>true</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RootNamespace>Leviasan.Sanlog</RootNamespace>
     <DebugType>embedded</DebugType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Leviasan</Authors>
-    <Description>Provides custom logger provider that supports saving log entries from different applications in one storage separated by application identifier.</Description>
+    <Description>Represents the logger for the NET8.0+ apps. Provides a logger that supports saving log entries from different applications in one storage place separated by app identifier.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
-    <Version>1.0.0</Version>
+    <PackageTags>log, logging, logger</PackageTags>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

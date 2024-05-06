@@ -11,17 +11,17 @@
     <IsAotCompatible>false</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Leviasan</Authors>
     <Description>Represents a logger provider that uses an EntityFrameworkCore context as storage for saving log entries from different applications in one database scheme separated by application identifier.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
-    <Version>1.0.0</Version>
+    <PackageTags>log, logging, logger</PackageTags>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
   </ItemGroup>
 

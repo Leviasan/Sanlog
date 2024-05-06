@@ -42,14 +42,6 @@ namespace Leviasan.Sanlog
         /// <remarks><see cref="Exception.TargetSite"/> metadata might be incomplete or removed.</remarks>
         public string? TargetSite { get; init; }
         /// <summary>
-        /// Gets a collection of key/value pairs that provide additional user-defined information about the exception.
-        /// </summary>
-        public IReadOnlyDictionary<string, string?>? Data { get; init; }
-        /// <summary>
-        /// Gets a collection of key/value pairs that provide additional exception-defined information.
-        /// </summary>
-        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
-        /// <summary>
         /// Gets the logging entry identifier.
         /// </summary>
         public Guid LogEntryId { get; init; }

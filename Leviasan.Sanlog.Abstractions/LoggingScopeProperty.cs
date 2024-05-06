@@ -14,11 +14,11 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the property key.
         /// </summary>
-        public required string Type { get; init; }
+        public required string Key { get; init; }
         /// <summary>
         /// Gets the property value.
         /// </summary>
-        public string? Message { get; init; }
+        public string? Value { get; init; }
         /// <summary>
         /// Gets the scope identifier.
         /// </summary>

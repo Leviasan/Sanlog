@@ -12,7 +12,10 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         public void Configure(EntityTypeBuilder<LoggingEntry> builder)
         {
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
-            _ = builder.Property(x => x.Version).HasConversion<VersionValueConverter, VersionValueComparer>();
+            _ = builder.Property(x => x.Version).HasConversion<VersionValueConverter, VersionValueComparer>().HasMaxLength(43);
+            _ = builder.Property(x => x.Category).IsRequired(true);
+            _ = builder.Property(x => x.EventName).IsRequired(false);
+            _ = builder.Property(x => x.Message).IsRequired(false).HasMaxLength(int.MaxValue);
             _ = builder.HasIndex(x => x.DateTime);
         }
     }

@@ -13,6 +13,13 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// <summary>
         /// Initializes a new instance of the <see cref="VersionValueConverter"/> class.
         /// </summary>
-        public VersionValueConverter() : base(static (x) => x.ToString(), static (x) => Version.Parse(x)) { }
+        public VersionValueConverter() : base(static (x) => x.ToString(), static (x) => TryParse(x)!) { }
+
+        /// <summary>
+        /// Tries to convert the string representation of a version number to an equivalent <see cref="Version"/> object.
+        /// </summary>
+        /// <param name="x">A string that contains a version number to convert.</param>
+        /// <returns>The <see cref="Version"/> object equivalent of the version number, if the conversion succeeded; otherwise returns <see langword="null"/>.</returns>
+        private static Version? TryParse(string x) => Version.TryParse(x, out var result) ? result : default;
     }
 }

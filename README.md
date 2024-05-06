@@ -1,6 +1,6 @@
 ﻿# Leviasan.Sanlog
-Represents the logger for the .NET applications. Supports saving logs from different applications in one storage separated by application identifier.
+Represents the logger for the NET8.0+ apps.
 
 ## Packages
-- `Leviasan.Sanlog.Abstractions` - Provides custom logger provider that supports saving log entries from different applications in one storage separated by application identifier.
-- `Leviasan.Sanlog.EntityFrameworkCore` - Represents a logger provider that uses an EntityFrameworkCore context as storage for saving log entries from different applications in one database scheme separated by application identifier.
+- `Leviasan.Sanlog.Abstractions` - Provides a logger that supports saving log entries from different applications in one storage place separated by app identifier.
+- `Leviasan.Sanlog.EntityFrameworkCore` - Provides API for using EntityFrameworkCore context as storage for saving log entries from different applications in one database scheme separated by application identifier.

@@ -1,47 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog
 {
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.
     /// </summary>
-    public sealed class SanlogLoggerOptions : LogDefineOptions
+    public sealed class SanlogLoggerOptions
     {
         /// <summary>
         /// Gets or sets the application identifier.
         /// </summary>
         public Guid AppId { get; set; }
         /// <summary>
-        /// Indicates whether need to include external scope data.
+        /// Indicates whether need to include external scope data. By default <see langword="false"/>.
         /// </summary>
         public bool IncludeScopes { get; set; }
         /// <summary>
-        /// The collection of the property names which ignored while writing into <see cref="LoggingEntry.Properties"/> and <see cref="LoggingScope.Properties"/>.
+        /// Gets or sets the culture name.
         /// </summary>
-        public ICollection<string>? IgnorePropertyKeys { get; } = new HashSet<string>(StringComparer.Ordinal);
+        public string? CultureName { get; set; }
         /// <summary>
-        /// Gets or sets the callback function to retrieve the application version.
+        /// Gets or sets the callback function to retrieve the application version. By default the assembly version of the executable process.
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
         /// <summary>
-        /// Gets JSON serializer options.
+        /// Gets the collection of the named item format properties that belong to sensitive data.
         /// </summary>
-        public JsonSerializerOptions JsonSerializerOptions { get; } = new JsonSerializerOptions
-        {
-            TypeInfoResolver = new SanlogJsonTypeInfoResolver(),
-            ReferenceHandler = ReferenceHandler.IgnoreCycles,
-            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        internal HashSet<string> SensitiveDataType { get; } = [];
+
         /// <summary>
-        /// Suppresses throwing an exception during work logger.
+        /// Registers a key of the <see cref="KeyValuePair{TKey, TValue}"/> whose associated value will be redacted before logging.
         /// </summary>
-        public bool SuppressThrowing { get; set; }
+        /// <param name="item">The key of the <see cref="KeyValuePair{TKey, TValue}"/>.</param>
+        /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="item"/> is <see langword="null"/>.</exception>
+        public bool RegisterSensitiveData(string item)
+        {
+            ArgumentNullException.ThrowIfNull(item);
+            return item != FormattedLogValuesFormatter.OriginalFormat && SensitiveDataType.Add(item);
+        }
     }
 }

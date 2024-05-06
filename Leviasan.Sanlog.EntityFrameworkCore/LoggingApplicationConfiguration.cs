@@ -11,8 +11,9 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<LoggingApplication> builder)
         {
-            _ = builder.Property(x => x.Application).HasMaxLength(450);
-            _ = builder.Property(x => x.Environment).HasMaxLength(450);
+            _ = builder.Property(x => x.Id).ValueGeneratedNever();
+            _ = builder.Property(x => x.Application).IsRequired(true).HasMaxLength(450);
+            _ = builder.Property(x => x.Environment).IsRequired(true).HasMaxLength(450);
             _ = builder.HasIndex(x => new { x.Application, x.Environment }).IsUnique();
         }
     }

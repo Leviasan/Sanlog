@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -50,20 +49,6 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// </summary>
         public DbSet<LoggingError> LogErrors => Set<LoggingError>();
 
-        /// <summary>
-        /// Query to get logging entries by the specified scope value.
-        /// </summary>
-        /// <param name="name">The name of the property.</param>
-        /// <param name="value">The value of the property.</param>
-        /// <returns>The collection of logging entries that contains the specified scope value.</returns>
-        public IQueryable<LoggingEntry> FindByScopeValue(string name, string value)
-        {
-            return LogEntries
-                .Where(entry => entry.Scopes!.Any(
-                    scope => scope.Properties!.Any(
-                        property => property.Type == name && property.Message == value)))
-                .OrderByDescending(x => x.DateTime);
-        }
         /// <inheritdoc/>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -76,11 +61,14 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             Debug.Assert(modelBuilder is not null);
-            base.OnModelCreating(modelBuilder);
             _ = modelBuilder.ApplyConfiguration(new LoggingApplicationConfiguration());
-            _ = modelBuilder.ApplyConfiguration(new LoggingLevelConfiguration());
-            _ = modelBuilder.ApplyConfiguration(new LoggingErrorConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingEntryConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new LoggingEntryPropertyConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new LoggingErrorConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new LoggingLevelConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new LoggingScopeConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new LoggingScopePropertyConfiguration());
+            base.OnModelCreating(modelBuilder);
         }
     }
 }
