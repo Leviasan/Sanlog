@@ -11,7 +11,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// <inheritdoc/>
         public void Configure(EntityTypeBuilder<LoggingEntryProperty> builder)
         {
-            _ = builder.Property(x => x.Id).ValueGeneratedOnAdd();
+            _ = builder.Property(x => x.Id).ValueGeneratedNever();
             _ = builder.Property(x => x.Key).IsRequired(true);
             _ = builder.Property(x => x.Value).IsRequired(false).HasMaxLength(int.MaxValue);
         }

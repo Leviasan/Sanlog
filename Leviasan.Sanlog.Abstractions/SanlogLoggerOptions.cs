@@ -19,10 +19,6 @@ namespace Leviasan.Sanlog
         /// </summary>
         public bool IncludeScopes { get; set; }
         /// <summary>
-        /// Gets or sets the culture name.
-        /// </summary>
-        public string? CultureName { get; set; }
-        /// <summary>
         /// Gets or sets the callback function to retrieve the application version. By default the assembly version of the executable process.
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;

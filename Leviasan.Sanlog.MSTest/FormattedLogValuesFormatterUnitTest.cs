@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog.MSTest
     public sealed class FormattedLogValuesFormatterUnitTest
     {
         [TestMethod]
-        public void ConstructorOriginalPropertyList()
+        public void ConstructorPropertyListFormattedLogValues()
         {
             var list = new List<KeyValuePair<string, object?>>
             {
@@ -14,27 +14,62 @@ namespace Leviasan.Sanlog.MSTest
                 { KeyValuePair.Create<string, object?>("Password", "some_password") },
                 { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}.") },
             };
-            var formatter = new FormattedLogValuesFormatter(list, null, null);
+            var formatter = new FormattedLogValuesFormatter(null, list, null);
+            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
             Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
-        public void ConstructorOriginalPropertyListFormatter()
+        public void ConstructorPropertyListFormattedLogValuesNotOrdered()
         {
             var list = new List<KeyValuePair<string, object?>>
             {
-                { KeyValuePair.Create<string, object?>("Login", "some_username") },
+                { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}.") },
                 { KeyValuePair.Create<string, object?>("Password", "some_password") },
+                { KeyValuePair.Create<string, object?>("Login", "some_username") }
             };
-            var formatter = new FormattedLogValuesFormatter(list, () => "Invoked default formatter", null);
+            var formatter = new FormattedLogValuesFormatter(null, list, null);
+            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
+            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
+        }
+        [TestMethod]
+        public void ConstructorPropertyListWithoutOriginalFormat()
+        {
+            var formatter = new FormattedLogValuesFormatter(null, new List<KeyValuePair<string, object?>>(), () => "Invoked default formatter");
             Assert.AreEqual("Invoked default formatter", formatter.ToString());
         }
         [TestMethod]
-        public void ConstructorNamedFormatString()
+        public void ConstructorPropertyListEmptyWithoutFormatter()
         {
-            var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
+            var formatter = new FormattedLogValuesFormatter(null, new List<KeyValuePair<string, object?>>(), null);
+            Assert.AreEqual("[null]", formatter.ToString());
+        }
+        [TestMethod]
+        public void ConstructorNamedFormatStringCurrentCulture()
+        {
+            var value = 123.4D;
+            var dateTime = DateTime.UtcNow;
+            var formatter = new FormattedLogValuesFormatter(null, "DateTime: {DateTime}. Login: {Login}. Password: {Password}. Double: {Double}.", dateTime, "some_username", "some_password", value);
+            Assert.AreEqual($"DateTime: {dateTime.ToString("s", null)}. Login: some_username. Password: some_password. Double: {value.ToString(null, null)}.", formatter.ToString());
             Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
-            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
+            Assert.AreEqual($"DateTime: {dateTime.ToString("s", null)}. Login: some_username. Password: [Redacted]. Double: {value.ToString(null, null)}.", formatter.ToString());
+        }
+        [TestMethod]
+        public void ConstructorNamedFormatStringInvariantCulture()
+        {
+            var dateTime = DateTime.UtcNow;
+            var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "DateTime: {DateTime}. Login: {Login}. Password: {Password}. Double: {Double}.", dateTime, "some_username", "some_password", 123.4D);
+            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
+            Assert.AreEqual($"DateTime: {dateTime.ToString("s", CultureInfo.InvariantCulture)}. Login: some_username. Password: [Redacted]. Double: 123.4.", formatter.ToString());
+        }
+        [TestMethod]
+        public void ConstructorNamedFormatStringSpecifiedCulture()
+        {
+            var dateTime = DateTime.UtcNow;
+            var formatProvider = CultureInfo.GetCultureInfo("uk-ua");
+            var formatter = new FormattedLogValuesFormatter(formatProvider, "DateTime: {DateTime}. Login: {Login}. Password: {Password}. Double: {Double}.", dateTime, "some_username", "some_password", 123.4D);
+            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
+            Assert.AreEqual($"DateTime: {dateTime.ToString("s", formatProvider)}. Login: some_username. Password: [Redacted]. Double: 123,4.", formatter.ToString());
         }
         [TestMethod]
         public void ConstructorNamedFormatStringFormatException()
@@ -42,22 +77,34 @@ namespace Leviasan.Sanlog.MSTest
             _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {{Login}. Password: {Password}.", "some_username", "some_password"));
         }
         [TestMethod]
-        public void IndexerGetValue()
+        public void IndexersGetValue()
         {
             var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
             Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
 
             Assert.AreEqual("some_username", formatter[0].Value);
             Assert.AreEqual("[Redacted]", formatter[1].Value);
-            Assert.AreEqual("Login: {Login}. Password: {Password}.", formatter[2].Value);
-
             Assert.AreEqual("some_username", formatter["Login"]);
             Assert.AreEqual("[Redacted]", formatter["Password"]);
-            Assert.AreEqual("Login: {Login}. Password: {Password}.", formatter[FormattedLogValuesFormatter.OriginalFormat]);
 
-            _ = Assert.ThrowsException<IndexOutOfRangeException>(() => formatter[3]);
+            _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => formatter[3]);
             _ = Assert.ThrowsException<ArgumentNullException>(() => formatter[null!]);
             _ = Assert.ThrowsException<KeyNotFoundException>(() => formatter["InvalidKey"]);
+        }
+        [TestMethod]
+        public void GetData()
+        {
+            var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
+            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
+
+            Assert.AreEqual("[Redacted]", formatter.GetData(1, true).Value);
+            Assert.AreEqual("some_password", formatter.GetData(1, false).Value);
+            Assert.AreEqual("[Redacted]", formatter.GetData("Password", true).Value);
+            Assert.AreEqual("some_password", formatter.GetData("Password", false).Value);
+
+            _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => formatter.GetData(3, true));
+            _ = Assert.ThrowsException<ArgumentNullException>(() => formatter.GetData(null!, true));
+            _ = Assert.ThrowsException<KeyNotFoundException>(() => formatter.GetData("InvalidKey", true));
         }
         [TestMethod]
         public void RegisterSensitiveDataIgnoreOriginalFormat()
@@ -68,23 +115,6 @@ namespace Leviasan.Sanlog.MSTest
             Assert.IsTrue(formatter.IsSensitiveData("Password"));
         }
         [TestMethod]
-        public void FormatProviderInvariantCulture()
-        {
-            var dateTime = DateTime.UtcNow;
-            var formatter = new FormattedLogValuesFormatter(null, "DateTime: {DateTime}. Login: {Login}. Password: {Password}.", dateTime, "some_username", "some_password");
-            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
-            Assert.AreEqual($"DateTime: {dateTime.ToString(CultureInfo.InvariantCulture)}. Login: some_username. Password: [Redacted].", formatter.ToString());
-        }
-        [TestMethod]
-        public void FormatProviderSpecifiedCulture()
-        {
-            var dateTime = DateTime.UtcNow;
-            var formatProvider = new CultureInfo("uk-ua");
-            var formatter = new FormattedLogValuesFormatter(formatProvider, "DateTime: {DateTime}. Login: {Login}. Password: {Password}.", dateTime, "some_username", "some_password");
-            Assert.IsTrue(formatter.RegisterSensitiveData("Password"));
-            Assert.AreEqual($"DateTime: {dateTime.ToString(formatProvider)}. Login: some_username. Password: [Redacted].", formatter.ToString());
-        }
-        [TestMethod]
         public void NullParameterValue()
         {
             var formatter = new FormattedLogValuesFormatter(null, "DateTime: {DateTime}. Login: {Login}. Password: {Password}.", null, "some_username", "some_password");
@@ -92,7 +122,7 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual($"DateTime: (null). Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
-        public void NullParameterEnumerable()
+        public void NullParameterEnumerableElement()
         {
             var formatter = new FormattedLogValuesFormatter(null, "Enumerable: {Enumerable}. Login: {Login}. Password: {Password}.", new object?[3] { 1, null, 2 }, "some_username", "some_password");
             Assert.IsTrue(formatter.RegisterSensitiveData("Password"));

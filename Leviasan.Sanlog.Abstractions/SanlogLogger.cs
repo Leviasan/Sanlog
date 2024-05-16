@@ -35,11 +35,6 @@ namespace Leviasan.Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IExternalScopeProvider? _externalScopeProvider;
-        /// <summary>
-        /// An object that supplies culture-specific formatting information.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private CultureInfo _cultureInfo;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category name for messages produced by the logger, the event writer, and the logger options.
@@ -48,12 +43,11 @@ namespace Leviasan.Sanlog
         /// <param name="eventWriter">The event writer.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> or <paramref name="eventWriter"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        /// <exception cref="CultureNotFoundException">The <see cref="SanlogLoggerOptions.CultureName"/> specifies a culture that is not supported.</exception>
         public SanlogLogger(string categoryName, ILoggingWriter eventWriter, SanlogLoggerOptions options)
         {
             _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
             _eventWriter = eventWriter ?? throw new ArgumentNullException(nameof(eventWriter));
-            SetLoggerOptions(options);
+            _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <inheritdoc/>
@@ -64,10 +58,10 @@ namespace Leviasan.Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
-            ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var keyValueData = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, () => formatter.Invoke(state, exception), _cultureInfo);
+                ArgumentNullException.ThrowIfNull(formatter);
+                var keyValueData = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, state as IReadOnlyList<KeyValuePair<string, object?>>, () => formatter.Invoke(state, exception));
                 keyValueData.RegisterSensitiveData(_options.SensitiveDataType);
 
                 var logEntryId = Guid.NewGuid();
@@ -84,6 +78,7 @@ namespace Leviasan.Sanlog
                     Message = keyValueData.ToString(),
                     Properties = keyValueData.Select(property => new LoggingEntryProperty
                     {
+                        Id = Guid.NewGuid(),
                         Key = property.Key,
                         Value = property.Value,
                         LogEntryId = logEntryId
@@ -93,7 +88,7 @@ namespace Leviasan.Sanlog
                             ? [GetErrorInformation(Guid.NewGuid(), exception, logEntryId, null)]
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : [],
-                    Scopes = GetScopeInformation(_cultureInfo, state, logEntryId, _options, _externalScopeProvider)
+                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _options, _externalScopeProvider)
                 };
                 if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
                 {
@@ -105,6 +100,7 @@ namespace Leviasan.Sanlog
                 }
             }
 
+            // Summary: Gets error information
             [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
                 Justification = "TargetSize property has a remark that Exception.TargetSite metadata might be incomplete or removed")]
             static LoggingError GetErrorInformation(Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
@@ -124,6 +120,7 @@ namespace Leviasan.Sanlog
                     InnerException = exception.InnerException is not null ? [GetErrorInformation(Guid.NewGuid(), exception.InnerException, logEntryId, id)] : []
                 };
             }
+            // Summary: Gets scope information
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
@@ -133,18 +130,22 @@ namespace Leviasan.Sanlog
                     {
                         if (scope is not null)
                         {
-                            var keyValueData = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, () => Convert.ToString(scope, formatProvider), formatProvider);
+                            var keyValueData = new FormattedLogValuesFormatter(formatProvider, scope as IReadOnlyList<KeyValuePair<string, object?>>, () => Convert.ToString(scope, formatProvider));
                             keyValueData.RegisterSensitiveData(options.SensitiveDataType);
 
+                            var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope
                             {
+                                Id = scopeId,
                                 Type = scope.GetType().FullName!,
                                 Message = keyValueData.ToString(),
                                 LogEntryId = logEntryId,
                                 Properties = keyValueData.Select(property => new LoggingScopeProperty
                                 {
+                                    Id = Guid.NewGuid(),
                                     Key = property.Key,
-                                    Value = property.Value
+                                    Value = property.Value,
+                                    ScopeId = scopeId
                                 }).ToList()
                             };
                             scopes.Add(loggingScope);
@@ -161,12 +162,6 @@ namespace Leviasan.Sanlog
         /// </summary>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        /// <exception cref="CultureNotFoundException">The <see cref="SanlogLoggerOptions.CultureName"/> specifies a culture that is not supported.</exception>
-        [MemberNotNull(nameof(_options), nameof(_cultureInfo))]
-        internal void SetLoggerOptions(SanlogLoggerOptions options)
-        {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-            _cultureInfo = _options.CultureName is not null ? CultureInfo.GetCultureInfo(_options.CultureName) : CultureInfo.InvariantCulture;
-        }
+        internal void SetLoggerOptions(SanlogLoggerOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 }

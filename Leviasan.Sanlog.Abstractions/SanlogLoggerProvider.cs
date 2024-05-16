@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -89,6 +88,7 @@ namespace Leviasan.Sanlog
             }
         }
         /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> is <see langword="null"/>.</exception>
         /// <exception cref="ObjectDisposedException">The logger provider is disposed.</exception>
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
         {
@@ -103,7 +103,6 @@ namespace Leviasan.Sanlog
         /// <param name="options">The changed logger options.</param>
         /// <param name="name">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        /// <exception cref="CultureNotFoundException">The <see cref="SanlogLoggerOptions.CultureName"/> specifies a culture that is not supported.</exception>
         private void OnChangeOptions(SanlogLoggerOptions options, string? name)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));

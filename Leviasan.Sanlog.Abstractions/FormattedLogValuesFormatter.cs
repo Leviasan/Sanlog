@@ -57,12 +57,7 @@ namespace Leviasan.Sanlog
         /// The original property values.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<KeyValuePair<string, object?>> _original;
-        /// <summary>
-        /// The cached redacted property values.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly KeyValuePair<string, string>?[] _redacted;
+        private readonly IReadOnlyList<KeyValuePair<string, object?>> _logValues;
         /// <summary>
         /// The name collection of the named item format properties that belong to sensitive data.
         /// </summary>
@@ -82,20 +77,19 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the original property values and name collection of the named item format properties that belong to sensitive data.
         /// </summary>
+        /// <param name="formatProvider">An object that supplies culture-specific formatting information. If the passed value is <see langword="null"/> it's the same as using <see cref="CultureInfo.CurrentCulture"/>.</param>
         /// <param name="original">The original property values.</param>
         /// <param name="formatter">The function to get string representation of the object if <paramref name="original"/> does not contains key <see cref="OriginalFormat"/>.</param>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        public FormattedLogValuesFormatter(IReadOnlyList<KeyValuePair<string, object?>>? original, Func<string?>? formatter, IFormatProvider? formatProvider)
+        public FormattedLogValuesFormatter(IFormatProvider? formatProvider, IReadOnlyList<KeyValuePair<string, object?>>? original, Func<string?>? formatter)
         {
-            _original = original ?? [];
-            _redacted = new KeyValuePair<string, string>?[_original.Count];
+            _formatProvider = formatProvider ?? CultureInfo.CurrentCulture;
+            _logValues = original ?? [];
             _formatter = formatter;
-            _formatProvider = formatProvider ?? CultureInfo.InvariantCulture;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified named format string to parse and an object array that contains zero or more objects to format.
         /// </summary>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
+        /// <param name="formatProvider">An object that supplies culture-specific formatting information. If the passed value is <see langword="null"/> it's the same as using <see cref="CultureInfo.CurrentCulture"/>.</param>
         /// <param name="format">The named format string to parse.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
@@ -105,95 +99,29 @@ namespace Leviasan.Sanlog
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
 
-            ParseNamedFormatAndTrySaveToCache(format, out var _, out var valueNames);
+            TryGetValueOrParseNamedFormat(format, out _, out var valueNames);
             var original = new List<KeyValuePair<string, object?>>();
             for (var index = 0; index < args.Length; ++index)
                 original.Add(new KeyValuePair<string, object?>(valueNames[index], args[index]));
             original.Add(new KeyValuePair<string, object?>(OriginalFormat, format));
 
-            _original = original;
-            _redacted = new KeyValuePair<string, string>?[_original.Count];
-            _formatProvider = formatProvider ?? CultureInfo.InvariantCulture;
+            _logValues = original;
+            _formatProvider = formatProvider ?? CultureInfo.CurrentCulture;
         }
 
         /// <inheritdoc/>
-        /// <exception cref="IndexOutOfRangeException">Index was outside the bounds of the array.</exception>
-        public KeyValuePair<string, string> this[int index]
-        {
-            get
-            {
-                if (_redacted[index] is null)
-                {
-                    var original = _original[index];
-                    _redacted[index] = IsSensitiveData(original.Key)
-                        ? new KeyValuePair<string, string>(original.Key, RedactedValue)
-                        : new KeyValuePair<string, string>(original.Key, FormatArgument(_formatProvider, original.Value));
-                }
-                return _redacted[index].GetValueOrDefault();
-
-                // Summary: Formats the specified value to a string representation.
-                static string FormatArgument(IFormatProvider? formatProvider, object? value) => TryFormatArgumentIfNullOrEnumerable(formatProvider, value, out var stringValue) ? stringValue : Convert.ToString(value ?? NullValue, formatProvider)!;
-                // Summary: Tries to format the specified value as enumerable to a string representation.
-                static bool TryFormatArgumentIfNullOrEnumerable<T>(IFormatProvider? formatProvider, T? value, [NotNullWhen(true)] out string? stringValue)
-                {
-                    if (value is null)
-                    {
-                        stringValue = NullValue;
-                        return true;
-                    }
-                    // If the value implements IDictionary builds a comma-separated string in KeyValuePair->ToString style
-                    if (value is IDictionary dictionary)
-                    {
-                        var first = true;
-                        var stringBuilder = new StringBuilder(256);
-                        foreach (DictionaryEntry entry in dictionary)
-                        {
-                            if (!first) _ = stringBuilder.Append(", ");
-                            _ = stringBuilder.Append(formatProvider, $"[{entry.Key.ToString()}, {Convert.ToString(entry.Value ?? NullValue, formatProvider)}]");
-                            first = false;
-                        }
-                        stringValue = stringBuilder.ToString();
-                        return true;
-                    }
-                    // If the value implements IEnumerable but isn't itself a string, build a comma separated string
-                    if (value is not string and IEnumerable enumerable)
-                    {
-                        var first = true;
-                        var stringBuilder = new StringBuilder(256);
-                        foreach (var e in enumerable)
-                        {
-                            if (!first) _ = stringBuilder.Append(", ");
-                            _ = stringBuilder.Append(Convert.ToString(e ?? NullValue, formatProvider));
-                            first = false;
-                        }
-                        stringValue = stringBuilder.ToString();
-                        return true;
-                    }
-                    stringValue = default;
-                    return false;
-                }
-            }
-        }
+        /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
+        public KeyValuePair<string, string> this[int index] => GetData(index, true);
         /// <summary>
-        /// Gets the element at the specified key in the read-only list.
+        /// Gets the element value at the specified key in the read-only list.
         /// </summary>
         /// <param name="key">The key to find.</param>
-        /// <returns>The element at the specified key in the read-only list.</returns>
+        /// <returns>The element value at the specified key in the read-only list.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="key"/> not found.</exception>
-        public string this[string key]
-        {
-            get
-            {
-                ArgumentNullException.ThrowIfNull(key);
-                for (var index = 0; index < _original.Count; ++index)
-                    if (_original[index].Key == key)
-                        return this[index].Value;
-                throw new KeyNotFoundException();
-            }
-        }
+        public string this[string key] => GetData(key, true).Value;
         /// <inheritdoc/>
-        public int Count => _original.Count;
+        public int Count => _logValues.Count;
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
@@ -202,6 +130,88 @@ namespace Leviasan.Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <summary>
+        /// Gets the key-value pair at the specified index.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <param name="redacted">Indicates whether need redact value after extracting.</param>
+        /// <returns>The key-value pair at the specified index.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
+        public KeyValuePair<string, string> GetData(int index, bool redacted)
+        {
+            return new KeyValuePair<string, string>(_logValues[index].Key, redacted && IsSensitiveData(_logValues[index].Key) ? RedactedValue : FormatArgument(_formatProvider, _logValues[index].Value));
+
+            // Summary: Formats the specified value to a string representation
+            // Param (formatProvider): An object that supplies culture-specific formatting information
+            // Param (value): An object to format
+            // Returns: A string representation of the formatted object
+            static string FormatArgument(IFormatProvider? formatProvider, object? value) => TryFormatArgument(formatProvider, value, out var stringValue) ? stringValue : Convert.ToString(value ?? NullValue, formatProvider)!;
+            // Summary: Tries to format the specified value to a string representation
+            // Param (formatProvider): An object that supplies culture-specific formatting information
+            // Param (value): An object to format
+            // Param out (stringValue): A string representation of the formatted object if the operation is successful; otherwise null
+            // Returns: true if the format operation is successful; otherwise false
+            static bool TryFormatArgument<T>(IFormatProvider? formatProvider, T? value, [NotNullWhen(true)] out string? stringValue)
+            {
+                // If the value is DateTime using a sortable date/time pattern ("s") defined in ISO 8601
+                if (value is DateTime dateTime)
+                {
+                    stringValue = dateTime.ToString("s", formatProvider);
+                    return true;
+                }
+                // If the value is DateTimeOffset using a sortable date/time pattern ("s") defined in ISO 8601
+                else if (value is DateTimeOffset dateTimeOffset)
+                {
+                    stringValue = dateTimeOffset.ToString("s", formatProvider);
+                    return true;
+                }
+                // If the value implements IDictionary builds a comma-separated string in KeyValuePair->ToString style
+                else if (value is IDictionary dictionary)
+                {
+                    var first = true;
+                    var stringBuilder = new StringBuilder(256);
+                    foreach (DictionaryEntry entry in dictionary)
+                    {
+                        if (!first) _ = stringBuilder.Append(", ");
+                        _ = stringBuilder.Append(formatProvider, $"[{Convert.ToString(entry.Key, formatProvider)}, {Convert.ToString(entry.Value ?? NullValue, formatProvider)}]");
+                        first = false;
+                    }
+                    stringValue = stringBuilder.ToString();
+                    return true;
+                }
+                // If the value implements IEnumerable but isn't itself a string, build a comma separated string
+                else if (value is not string and IEnumerable enumerable)
+                {
+                    var first = true;
+                    var stringBuilder = new StringBuilder(256);
+                    foreach (var e in enumerable)
+                    {
+                        if (!first) _ = stringBuilder.Append(", ");
+                        _ = stringBuilder.Append(Convert.ToString(e ?? NullValue, formatProvider));
+                        first = false;
+                    }
+                    stringValue = stringBuilder.ToString();
+                    return true;
+                }
+                stringValue = default;
+                return false;
+            }
+        }
+        /// <summary>
+        /// Gets the key-value pair at the specified key.
+        /// </summary>
+        /// <param name="key">The key to find.</param>
+        /// <param name="redacted">Indicates whether need redact value after extracting.</param>
+        /// <returns>The key-value pair at the specified key.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> not found.</exception>
+        public KeyValuePair<string, string> GetData(string key, bool redacted)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            for (var index = 0; index < _logValues.Count; ++index)
+                if (_logValues[index].Key == key) return GetData(index, redacted);
+            throw new KeyNotFoundException();
+        }
         /// <summary>
         /// Checks whether a value of the assotiated key of the <see cref="KeyValuePair{TKey, TValue}"/> belongs to sensitive data.
         /// </summary>
@@ -223,12 +233,15 @@ namespace Leviasan.Sanlog
         /// Registers name collection of the named item format properties whose associated values will be redacted before logging.
         /// </summary>
         /// <param name="keys">The name collection of the named item format properties that belong to sensitive data.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="keys"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="keys"/> or one of the elements in array is <see langword="null"/>.</exception>
         public void RegisterSensitiveData(IEnumerable<string> keys)
         {
             ArgumentNullException.ThrowIfNull(keys);
-            var enumerable = keys.Where(x => x is not null); // Except null values
-            foreach (var key in enumerable) _ = RegisterSensitiveData(key);
+            foreach (var key in keys)
+            {
+                if (key is null) throw new ArgumentNullException(nameof(keys));
+                _ = RegisterSensitiveData(key);
+            }
         }
         /// <summary>
         /// Returns a string representation of the current instance.
@@ -237,15 +250,26 @@ namespace Leviasan.Sanlog
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
         public override string? ToString()
         {
-            if (_original.SingleOrDefault(x => x.Key == OriginalFormat).Value is string originalFormat)
+            if (_logValues.SingleOrDefault(x => x.Key == OriginalFormat).Value is string originalFormat)
             {
-                ParseNamedFormatAndTrySaveToCache(originalFormat, out var compositeFormat, out _);
-                var stringValue = compositeFormat.MinimumArgumentCount < _original.Count
-                    ? string.Format(_formatProvider, compositeFormat.Format, this.Take(..compositeFormat.MinimumArgumentCount).Select(x => x.Value).ToArray())
+                TryGetValueOrParseNamedFormat(originalFormat, out var compositeFormat, out var valueNames);
+                var stringValue = compositeFormat.MinimumArgumentCount <= _logValues.Count
+                    ? string.Format(_formatProvider, compositeFormat, TakeByValueNamesOrder(valueNames))
                     : compositeFormat.Format;
                 return stringValue;
             }
             return _formatter is not null ? _formatter.Invoke() : NullFormat;
+
+            // Summary: Returns a sequence of redacted values based on an order of value names
+            // Param (valueNames): A sequence of the names in the expression
+            // Returns: A sequence of the redacted values order by value names
+            ReadOnlySpan<object?> TakeByValueNamesOrder(IReadOnlyList<string> valueNames)
+            {
+                var array = new string[valueNames.Count];
+                for (var index = 0; index < array.Length; ++index)
+                    array[index] = this[valueNames[index]];
+                return array;
+            }
         }
         /// <summary>
         /// Parses the specified named format string and tries to save it to the cache.
@@ -254,7 +278,7 @@ namespace Leviasan.Sanlog
         /// <param name="compositeFormat">The parsed composite string.</param>
         /// <param name="valueNames">The value names collection.</param>
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
-        private static void ParseNamedFormatAndTrySaveToCache(string format, out CompositeFormat compositeFormat, out IReadOnlyList<string> valueNames)
+        private static void TryGetValueOrParseNamedFormat(string format, out CompositeFormat compositeFormat, out IReadOnlyList<string> valueNames)
         {
             Debug.Assert(format is not null);
             if (!CachedCompositeFormat.TryGetValue(format, out compositeFormat!))

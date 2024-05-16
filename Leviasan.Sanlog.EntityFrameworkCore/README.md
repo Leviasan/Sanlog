@@ -132,7 +132,6 @@ For apps that use a host, logging configuration is commonly provided by the "Log
     "SanlogLoggerProvider": {
       "AppId": "e6bcc7df-e201-4d0b-02a3-08dbd09ffc89", // [Required] Here need to insert your specific application identifier
       "IncludeScopes": true,
-      "CultureName": "uk-ua", // [Optional] Override default format provider CultureInfo.InvariantCulture
       "LogLevel": { // [Optional] Override default log level configuration
         "Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware": "Information"
       }
