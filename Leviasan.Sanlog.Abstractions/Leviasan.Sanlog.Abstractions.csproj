@@ -9,7 +9,6 @@
     <AnalysisLevel>latest-all</AnalysisLevel>
     <IsTrimmable>true</IsTrimmable>
     <IsAotCompatible>true</IsAotCompatible>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>Leviasan.Sanlog</RootNamespace>
     <DebugType>embedded</DebugType>
     <Authors>Leviasan</Authors>
@@ -18,7 +17,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
     <PackageTags>log, logging, logger</PackageTags>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

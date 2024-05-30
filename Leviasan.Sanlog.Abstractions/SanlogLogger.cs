@@ -61,8 +61,8 @@ namespace Leviasan.Sanlog
             if (IsEnabled(logLevel))
             {
                 ArgumentNullException.ThrowIfNull(formatter);
-                var keyValueData = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, state as IReadOnlyList<KeyValuePair<string, object?>>, () => formatter.Invoke(state, exception));
-                keyValueData.RegisterSensitiveData(_options.SensitiveDataType);
+                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
+                _ = formattedLogValuesFormatter.RegisterSensitiveData([.. _options.SensitiveDataType]);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -75,8 +75,8 @@ namespace Leviasan.Sanlog
                     Category = _categoryName,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = keyValueData.ToString(),
-                    Properties = keyValueData.Select(property => new LoggingEntryProperty
+                    Message = formattedLogValuesFormatter.HasOriginalFormat ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
+                    Properties = formattedLogValuesFormatter.Select(property => new LoggingEntryProperty
                     {
                         Id = Guid.NewGuid(),
                         Key = property.Key,
@@ -100,7 +100,12 @@ namespace Leviasan.Sanlog
                 }
             }
 
-            // Summary: Gets error information
+            // Summary: Gets error information.
+            // Param (id): The identifier of the new object.
+            // Param (exception): The exception to get error information.
+            // Param (logEntryId): The parent logging entry identifier.
+            // Param (parentErrorId): The parent error identifier.
+            // Returns: The error information.
             [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
                 Justification = "TargetSize property has a remark that Exception.TargetSite metadata might be incomplete or removed")]
             static LoggingError GetErrorInformation(Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
@@ -120,7 +125,13 @@ namespace Leviasan.Sanlog
                     InnerException = exception.InnerException is not null ? [GetErrorInformation(Guid.NewGuid(), exception.InnerException, logEntryId, id)] : []
                 };
             }
-            // Summary: Gets scope information
+            // Summary: Gets scope information.
+            // Param (formatProvider): An object that supplies culture-specific formatting information.
+            // Param (state): An object that describes scope.
+            // Param (logEntryId): The parent logging entry identifier.
+            // Param (options): The logger options.
+            // Param (externalScopeProvider): The external storage of the common scope data.
+            // Returns: An array of the scope data.
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
@@ -130,17 +141,17 @@ namespace Leviasan.Sanlog
                     {
                         if (scope is not null)
                         {
-                            var keyValueData = new FormattedLogValuesFormatter(formatProvider, scope as IReadOnlyList<KeyValuePair<string, object?>>, () => Convert.ToString(scope, formatProvider));
-                            keyValueData.RegisterSensitiveData(options.SensitiveDataType);
+                            var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, formatProvider);
+                            formattedLogValuesFormatter.RegisterSensitiveData([.. options.SensitiveDataType]);
 
                             var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope
                             {
                                 Id = scopeId,
                                 Type = scope.GetType().FullName!,
-                                Message = keyValueData.ToString(),
+                                Message = formattedLogValuesFormatter.HasOriginalFormat ? formattedLogValuesFormatter.ToString() : Convert.ToString(scope, formatProvider),
                                 LogEntryId = logEntryId,
-                                Properties = keyValueData.Select(property => new LoggingScopeProperty
+                                Properties = formattedLogValuesFormatter.Select(property => new LoggingScopeProperty
                                 {
                                     Id = Guid.NewGuid(),
                                     Key = property.Key,

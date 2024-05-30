@@ -13,3 +13,9 @@
 - `FormattedLogValuesFormatter` uses `CultureInfo.CurrentCulture` by default if the `formatProvider` is passed to the constructor as null.
 - Added method `FormattedLogValuesFormatter.GetData` to get an original or redacted string representation of the object.
 - Fixed invalid argument value passed to the `string.format` method if the `FormattedLogValuesFormatter.ToString` method invoked twice before and after invoking method `FormattedLogValuesFormatter.RegisterSensitiveData`.
+
+### 1.1.2
+- MSBuild property `GenerateDocumentationFile` is disabled.
+- Fixed behavior while formatting `IDictionary` and `IEnumerable` elements to a string representation in the same format as the other value.
+- `FormattedLogValuesFormatter` for types `DateTime` and `DateTimeOffset` use a round-trip date/time pattern ("O") defined in ISO 8601 to format to a string representation.
+- `FormattedLogValuesFormatter` for type `Ehnum` uses a decimal pattern ("D") to display the enumeration entry as an integer value in the shortest representation possible.
