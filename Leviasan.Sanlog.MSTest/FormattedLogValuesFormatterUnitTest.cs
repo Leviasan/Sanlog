@@ -8,7 +8,7 @@ namespace Leviasan.Sanlog.MSTest
         private static readonly DateTime DateTimeValue = new(2024, 5, 22, 23, 56, 18);
 
         [TestMethod]
-        public void ConstructorPropertyListFormattedLogValues()
+        public void ConstructorFormattedLogValuesOrdered()
         {
             var list = new List<KeyValuePair<string, object?>>
             {
@@ -24,7 +24,7 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual($"DateTime: {DateTimeValue.ToString("O", null)}. Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
-        public void ConstructorPropertyListFormattedLogValuesNotOrdered()
+        public void ConstructorFormattedLogValuesNotOrdered()
         {
             var list = new List<KeyValuePair<string, object?>>
             {
@@ -40,7 +40,7 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual($"DateTime: {DateTimeValue.ToString("O", null)}. Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
-        public void ConstructorPropertyListWithoutOriginalFormat()
+        public void ConstructorWithoutOriginalFormat()
         {
             var formatter = new FormattedLogValuesFormatter(new List<KeyValuePair<string, object?>>(), null);
             Assert.IsFalse(formatter.HasOriginalFormat);
@@ -107,7 +107,7 @@ namespace Leviasan.Sanlog.MSTest
         public void RegisterSensitiveDataIgnoreOriginalFormat()
         {
             var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
-            _ = formatter.RegisterSensitiveData([FormattedLogValuesFormatter.OriginalFormat, "Password"]);
+            Assert.AreEqual(1, formatter.RegisterSensitiveData([FormattedLogValuesFormatter.OriginalFormat, "Password"]));
             Assert.IsFalse(formatter.IsSensitiveData(FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsTrue(formatter.IsSensitiveData("Password"));
         }
