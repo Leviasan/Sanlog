@@ -19,3 +19,5 @@
 - Fixed behavior while formatting `IDictionary` and `IEnumerable` elements to a string representation in the same format as the other value.
 - `FormattedLogValuesFormatter` for types `DateTime` and `DateTimeOffset` use a round-trip date/time pattern ("O") defined in ISO 8601 to format to a string representation.
 - `FormattedLogValuesFormatter` for type `Ehnum` uses a decimal pattern ("D") to display the enumeration entry as an integer value in the shortest representation possible.
+- Renamed method `FormattedLogValuesFormatter.GetData` to `FormattedLogValuesFormatter.GetObjectAsString` to get an original or redacted string representation of the object.
+- Added method `FormattedLogValuesFormatter.GetObject` to get an original raw or redacted value.
