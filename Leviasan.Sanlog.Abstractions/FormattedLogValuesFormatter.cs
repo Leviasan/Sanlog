@@ -130,7 +130,7 @@ namespace Leviasan.Sanlog
             }
             else
             {
-                _originalValues = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, null), element)).ToList();
+                _originalValues = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, _formatProvider), element)).ToList();
             }
         }
 
