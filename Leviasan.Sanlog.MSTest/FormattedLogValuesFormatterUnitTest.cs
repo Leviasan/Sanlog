@@ -72,6 +72,14 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual($"DateTime: {DateTimeValue.ToString("O", formatProvider)}. Login: some_username. Password: [Redacted]. Double: 123,4.", formatter.ToString());
         }
         [TestMethod]
+        public void ConstructorNamedFormatStringEmptyStringWithParameters()
+        {
+            var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "", "some_username");
+            Assert.AreEqual("0", formatter[0].Key);
+            Assert.AreEqual("some_username", formatter[0].Value);
+            Assert.IsFalse(formatter.HasOriginalFormat);
+        }
+        [TestMethod]
         public void ConstructorNamedFormatStringFormatException() => _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {{Login}. Password: {Password}.", "some_username", "some_password"));
         [TestMethod]
         public void IndexersGetValue()
