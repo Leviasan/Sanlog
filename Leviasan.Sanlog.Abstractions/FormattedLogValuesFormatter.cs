@@ -13,10 +13,39 @@ namespace Leviasan.Sanlog
     /// Represents the formatter of the Microsoft.Extensions.Logging.FormattedLogValues class.
     /// </summary>
     /// <remarks>
-    /// Overrides a default format string for <see cref="DateTime"/> to a round-trip date/time pattern defined in ISO 8601 ("O") and for <see cref="Enum"/> to the shortest integer value representation possible ("D").
-    /// Overrides a string representation of the <see cref="IDictionary"/> and <see cref="IEnumerable"/> objects.
+    /// Overrides standard behavior of the format string component:
+    /// <list type="table">
+    ///     <item>
+    ///         <term><see cref="DateTime"/></term>
+    ///         <description>Uses a round-trip date/time pattern "O" defined in ISO 8601 to format to a string representation.</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="DateTimeOffset"/></term>
+    ///         <description>Uses a round-trip date/time pattern "O" defined in ISO 8601 to format to a string representation.</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="Enum"/></term>
+    ///         <description>Uses a decimal pattern "D" to display the enumeration entry as an integer value in the shortest representation possible.</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="float"/></term>
+    ///         <description>Uses the "G9" format specifier to ensure that the original value successfully round-trips (IEEE 754-2008-compliant).</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="double"/></term>
+    ///         <description>Uses the "G17" format specifier to ensure that the original value successfully round-trips (IEEE 754-2008-compliant).</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="IEnumerable"/></term>
+    ///         <description>Formats value as [object, object2, ..., objectN].</description>
+    ///     </item>
+    ///     <item>
+    ///         <term><see cref="IDictionary"/></term>
+    ///         <description>Formats value as [[Key1, Value1], [Key2, Value2]].</description>
+    ///     </item>
+    /// </list>
     /// </remarks>
-    public sealed class FormattedLogValuesFormatter : IReadOnlyList<KeyValuePair<string, string>>
+    public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter, IReadOnlyList<KeyValuePair<string, string>>
     {
         /// <summary>
         /// The message format that represents a null value.
@@ -54,15 +83,17 @@ namespace Leviasan.Sanlog
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
         private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out NamedFormatString? namedFormatString)
         {
-            if (string.IsNullOrEmpty(format))
+            if (!string.IsNullOrEmpty(format))
             {
-                namedFormatString = default;
-                return false;
+                if (!CachedNamedFormatStrings.TryGetValue(format, out namedFormatString))
+                {
+                    namedFormatString = NamedFormatString.Parse(format); // FormatException
+                    return namedFormatString.CompositeFormat.MinimumArgumentCount <= 0 || CachedNamedFormatStrings.Count >= MaxCachedFormatters || CachedNamedFormatStrings.TryAdd(format, namedFormatString);
+                }
+                return true;
             }
-            if (CachedNamedFormatStrings.TryGetValue(format, out namedFormatString)) return true;
-
-            namedFormatString = NamedFormatString.Parse(format); // FormatException
-            return namedFormatString.CompositeFormat.MinimumArgumentCount <= 0 || CachedNamedFormatStrings.Count >= MaxCachedFormatters || CachedNamedFormatStrings.TryAdd(format, namedFormatString);
+            namedFormatString = default;
+            return false;
         }
 
         /// <summary>
@@ -160,6 +191,62 @@ namespace Leviasan.Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <inheritdoc/>
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
+        /// <inheritdoc/>
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            // Override default format string component
+            return string.IsNullOrEmpty(format) && TryFormatArgument(arg, formatProvider, out var stringValue) ? stringValue
+                : arg is IFormattable formattable ? formattable.ToString(format, formatProvider)
+                : Convert.ToString(arg ?? NullValue, formatProvider)!;
+
+            static string FormatArgument(object? value, IFormatProvider? formatProvider)
+            {
+                return TryFormatArgument(value, formatProvider, out var stringValue) ? stringValue
+                    : Convert.ToString(value ?? NullValue, formatProvider)!;
+            }
+            static bool TryFormatArgument(object? value, IFormatProvider? formatProvider, [NotNullWhen(true)] out string? stringValue)
+            {
+                stringValue = value switch
+                {
+                    DateTime dateTime => dateTime.ToString("O", formatProvider),
+                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O", formatProvider),
+                    Enum @enum => @enum.ToString("D"),
+                    float binary32 => binary32.ToString("G9", formatProvider),
+                    double binary64 => binary64.ToString("G17", formatProvider),
+                    IDictionary dictionary => DictionaryToString(dictionary, formatProvider),
+                    string @string => @string, // Position before IEnumerable is important
+                    IEnumerable enumerable => EnumerableToString(enumerable, formatProvider),
+                    _ => null
+                };
+                return !string.IsNullOrEmpty(stringValue);
+            }
+            static string? DictionaryToString(IDictionary dictionary, IFormatProvider? formatProvider)
+            {
+                var first = true;
+                StringBuilder? stringBuilder = null;
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                    stringBuilder = stringBuilder.Append(formatProvider, $"[{FormatArgument(entry.Key, formatProvider)}, {FormatArgument(entry.Value, formatProvider)}]");
+                    first = false;
+                }
+                return stringBuilder?.Append(']').ToString();
+            }
+            static string? EnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider)
+            {
+                var first = true;
+                StringBuilder? stringBuilder = null;
+                foreach (var e in enumerable)
+                {
+                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                    stringBuilder = stringBuilder.Append(FormatArgument(e, formatProvider));
+                    first = false;
+                }
+                return stringBuilder?.Append(']').ToString();
+            }
+        }
         /// <summary>
         /// Gets a key-value pair describing a property name and object.
         /// </summary>
@@ -197,71 +284,8 @@ namespace Leviasan.Sanlog
         public KeyValuePair<string, string> GetObjectAsString(int index, bool redacted)
         {
             var pair = GetObject(index, redacted);
-            var formattedValue = FormatArgument(_formatProvider, pair.Value);
+            var formattedValue = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, formattedValue);
-
-            // Summary: Formats the specified value to a string representation.
-            // Param (formatProvider): An object that supplies culture-specific formatting information.
-            // Param (value): An object to format.
-            // Returns: A string representation of the formatted object.
-            static string FormatArgument(IFormatProvider? formatProvider, object? value)
-                => TryFormatArgument(formatProvider, value, out var stringValue) ? stringValue : Convert.ToString(value ?? NullValue, formatProvider)!;
-            // Summary: Tries to format the specified value to a string representation.
-            // Param (formatProvider): An object that supplies culture-specific formatting information.
-            // Param (value): An object to format.
-            // Param out (stringValue): A string representation of the formatted object if the operation is successful; otherwise null.
-            // Returns: true if the format operation is successful; otherwise false.
-            static bool TryFormatArgument(IFormatProvider? formatProvider, object? value, [NotNullWhen(true)] out string? stringValue)
-            {
-                // If the value is Enum display the enumeration entry as an integer value in the shortest representation possible
-                if (value is Enum enumeration)
-                {
-                    stringValue = enumeration.ToString("D");
-                    return true;
-                }
-                // If the value is DateTime using a round-trip date/time pattern defined in ISO 8601
-                else if (value is DateTime dateTime)
-                {
-                    stringValue = dateTime.ToString("O", formatProvider);
-                    return true;
-                }
-                // If the value is DateTimeOffset using a round-trip date/time pattern defined in ISO 8601
-                else if (value is DateTimeOffset dateTimeOffset)
-                {
-                    stringValue = dateTimeOffset.ToString("O", formatProvider);
-                    return true;
-                }
-                // If the value implements IDictionary builds a comma-separated string in KeyValuePair->ToString style
-                else if (value is IDictionary dictionary)
-                {
-                    var first = true;
-                    var stringBuilder = new StringBuilder(256);
-                    foreach (DictionaryEntry entry in dictionary)
-                    {
-                        if (!first) _ = stringBuilder.Append(", ");
-                        _ = stringBuilder.Append(formatProvider, $"[{FormatArgument(formatProvider, entry.Key)}, {FormatArgument(formatProvider, entry.Value)}]");
-                        first = false;
-                    }
-                    stringValue = stringBuilder.ToString();
-                    return true;
-                }
-                // If the value implements IEnumerable but isn't itself a string, build a comma separated string
-                else if (value is not string and IEnumerable enumerable)
-                {
-                    var first = true;
-                    var stringBuilder = new StringBuilder(256);
-                    foreach (var e in enumerable)
-                    {
-                        if (!first) _ = stringBuilder.Append(", ");
-                        _ = stringBuilder.Append(FormatArgument(formatProvider, e));
-                        first = false;
-                    }
-                    stringValue = stringBuilder.ToString();
-                    return true;
-                }
-                stringValue = default;
-                return false;
-            }
         }
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.

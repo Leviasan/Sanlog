@@ -19,7 +19,7 @@ namespace Leviasan.Sanlog
         private static readonly char[] FormatDelimiters = [',', ':'];
 
         /// <summary>
-        /// Parses the specified named format string to composite format string.
+        /// Parses the specified named format string.
         /// </summary>
         /// <param name="format">The named format string to parse.</param>
         /// <returns>A composite string and information about segments in the expression.</returns>
@@ -34,6 +34,7 @@ namespace Leviasan.Sanlog
             var stringBuilder = new StringBuilder(256);
             var namedFormatStringItems = new List<FormatSegment>();
             CompositeFormat compositeFormat;
+            var naming = SegmentNamingConvention.None;
             while (scanIndex < endIndex)
             {
                 var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
@@ -53,14 +54,20 @@ namespace Leviasan.Sanlog
                     // Format item syntax: {index[,alignment][:formatString]}
                     var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
                     _ = stringBuilder.Append(format.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
+                    // Substring argument name
                     var argName = format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
-                    var argIndex = namedFormatStringItems.FindIndex(x => x.Name.Equals(argName, StringComparison.Ordinal));
+                    // Mixed segment name is not allowed
+                    naming |= EvaluateSegmentNaming(argName);
+                    if (naming == SegmentNamingConvention.Mixed)
+                        throw new FormatException($"Input string was not in a correct format. Failure to parse near offset {openBraceIndex + 1}. Expected an ASCII digit.");
+                    // Evaluate argument index
+                    var argIndex = naming == SegmentNamingConvention.AsciiDigit ? int.Parse(argName, CultureInfo.InvariantCulture) : namedFormatStringItems.FindIndex(x => x.Name.Equals(argName, StringComparison.Ordinal));
                     argIndex = argIndex == -1 ? itemIndex++ : argIndex;
                     _ = stringBuilder.Append(argIndex);
                     var lastpart = format.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
                     _ = stringBuilder.Append(lastpart);
                     scanIndex = closeBraceIndex + 1;
-                    // Extract format item properties
+                    // Extract alignment and format
                     var alignmentIndex = lastpart.IndexOf(',');
                     var formatStringIndex = lastpart.IndexOf(':');
                     var argAlignment = int.TryParse(lastpart[(alignmentIndex + 1)..(formatStringIndex == -1 ? ^1 : formatStringIndex)], out var result) ? result : default;
@@ -132,6 +139,27 @@ namespace Leviasan.Sanlog
                 var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
                 return findIndex == -1 ? endIndex : findIndex;
             }
+            // Summary: Indicates whether all symbols in the specified string are categorized as an ASCII digit.
+            // Param (value): The string to evaluate.
+            // Returns: AsciiDigit if all symbols in the specified string are categorized as an ASCII digit; otherwise, Named.
+            static SegmentNamingConvention EvaluateSegmentNaming(string value)
+            {
+                foreach (var symbol in value)
+                    if (!char.IsAsciiDigit(symbol))
+                        return SegmentNamingConvention.Named;
+                return SegmentNamingConvention.AsciiDigit;
+            }
+        }
+        /// <summary>
+        /// Parses the specified composite format string.
+        /// </summary>
+        /// <param name="compositeFormat">The composite format string to parse.</param>
+        /// <returns>A composite string and information about segments in the expression.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="compositeFormat"/> is <see langword="null"/>.</exception>
+        public static NamedFormatString Parse(CompositeFormat compositeFormat)
+        {
+            ArgumentNullException.ThrowIfNull(compositeFormat);
+            return Parse(compositeFormat.Format);
         }
 
         /// <summary>
@@ -173,7 +201,7 @@ namespace Leviasan.Sanlog
         /// <param name="Index">The index of the segment.</param>
         /// <param name="Alignment">The alignment of the segment.</param>
         /// <param name="FormatString">The format of the segment.</param>
-        [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Internal usage")]
+        [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Used only in NamedCompositeString context")]
         public sealed record class FormatSegment(string Name, int Index, int Alignment, string? FormatString)
         {
             /// <summary>
@@ -192,6 +220,29 @@ namespace Leviasan.Sanlog
                 _ = stringBuilder.Append('}');
                 return string.Format(provider, stringBuilder.ToString(), arg0);
             }
+        }
+        /// <summary>
+        /// Defines segment naming convention.
+        /// </summary>
+        [Flags]
+        private enum SegmentNamingConvention
+        {
+            /// <summary>
+            /// Unknown naming convention.
+            /// </summary>
+            None = 0,
+            /// <summary>
+            /// Using only `ASCII digits` in the naming.
+            /// </summary>
+            AsciiDigit = 1,
+            /// <summary>
+            /// Using only named format in naming.
+            /// </summary>
+            Named = 2,
+            /// <summary>
+            /// Mixed naming convention.
+            /// </summary>
+            Mixed = AsciiDigit | Named
         }
     }
 }
