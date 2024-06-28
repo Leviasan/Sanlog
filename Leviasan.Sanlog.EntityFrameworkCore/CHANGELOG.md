@@ -18,3 +18,6 @@
 
 ### 1.1.3
 - Updated NuGet dependency `Leviasan.Sanlog` from 1.1.2 to 1.1.3.
+
+### 1.2.0
+- Updated NuGet dependency `Leviasan.Sanlog` from 1.1.3 to 1.2.0.

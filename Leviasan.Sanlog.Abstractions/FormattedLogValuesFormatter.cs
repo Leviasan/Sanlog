@@ -3,14 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents the formatter of the Microsoft.Extensions.Logging.FormattedLogValues class.
+    /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
     /// <remarks>
     /// Overrides standard behavior of the format string component:
@@ -75,11 +74,11 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly Dictionary<string, NamedFormatString> CachedNamedFormatStrings = [];
         /// <summary>
-        /// Tries to get a named format string from the cache or parses and tries to add to cache it.
+        /// Tries to get a named format string from the cache or parses and tries to add to cache one.
         /// </summary>
         /// <param name="format">The key of the element to get or add.</param>
         /// <param name="namedFormatString">When this method returns, it contains a parsed named format string or the <see langword="null"/> if the operation failed.</param>
-        /// <returns><see langword="true"/> if operation is successful; otherwise <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
         private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out NamedFormatString? namedFormatString)
         {
@@ -97,15 +96,10 @@ namespace Leviasan.Sanlog
         }
 
         /// <summary>
-        /// The hash set of the sensitive segment's names.
+        /// The raw values.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly HashSet<string> _sensitiveData = [];
-        /// <summary>
-        /// The original values.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<KeyValuePair<string, object?>> _originalValues;
+        private readonly IReadOnlyList<KeyValuePair<string, object?>> _dictionary;
         /// <summary>
         /// An object that supplies culture-specific formatting information.
         /// </summary>
@@ -116,26 +110,30 @@ namespace Leviasan.Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly NamedFormatString? _namedFormatString;
+        /// <summary>
+        /// The list of the sensitive data.
+        /// </summary>
+        /// [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Dictionary<Type, HashSet<string>> _sensitiveDataType = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with an array of original values and an object that supplies culture-specific formatting information.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with an array of raw values and an object that supplies culture-specific formatting information.
         /// </summary>
-        /// <param name="original">An array of original values.</param>
+        /// <param name="dictionary">An array of raw values.</param>
         /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
-        /// <exception cref="InvalidOperationException">More than one <see cref="OriginalFormat"/> key was found at <paramref name="original"/> array.</exception>
-        public FormattedLogValuesFormatter(IReadOnlyList<KeyValuePair<string, object?>>? original, IFormatProvider? formatProvider)
+        /// <exception cref="InvalidOperationException">More than one <see cref="OriginalFormat"/> key was found at <paramref name="dictionary"/> array.</exception>
+        public FormattedLogValuesFormatter(IReadOnlyList<KeyValuePair<string, object?>>? dictionary, IFormatProvider? formatProvider)
         {
-            _originalValues = original ?? [];
-            _formatProvider = formatProvider ?? CultureInfo.CurrentCulture;
-            _ = TryGetOrAdd(_originalValues.SingleOrDefault(x => x.Key == OriginalFormat).Value as string, out _namedFormatString); // InvalidOperationException + FormatException
+            _dictionary = dictionary ?? [];
+            _formatProvider = formatProvider;
+            _ = TryGetOrAdd(_dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string, out _namedFormatString); // FormatException + InvalidOperationException
         }
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified named format string to parse and an object array that contains zero or more objects to format.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified format string to parse and an object array that contains zero or more objects to format.
         /// </summary>
-        /// <param name="cache">An object that supplies culture-specific formatting information.</param>
         /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        /// <param name="format">The named format string to parse.</param>
+        /// <param name="format">The format string to parse.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
@@ -144,7 +142,7 @@ namespace Leviasan.Sanlog
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
 
-            _formatProvider = formatProvider ?? CultureInfo.CurrentCulture;
+            _formatProvider = formatProvider;
             if (TryGetOrAdd(format, out _namedFormatString)) // FormatException
             {
                 var original = new List<KeyValuePair<string, object?>>();
@@ -157,11 +155,11 @@ namespace Leviasan.Sanlog
                     original.Add(KeyValuePair.Create(_namedFormatString.Segments[segmentId].Name, args[index]));
                 }
                 original.Add(KeyValuePair.Create<string, object?>(OriginalFormat, format));
-                _originalValues = original;
+                _dictionary = original;
             }
             else
             {
-                _originalValues = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, _formatProvider), element)).ToList();
+                _dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, _formatProvider), element)).ToList();
             }
         }
 
@@ -169,20 +167,109 @@ namespace Leviasan.Sanlog
         /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
         public KeyValuePair<string, string> this[int index] => GetObjectAsString(index, true);
         /// <summary>
-        /// Gets the string representation of the element value at the specified key.
+        /// Gets the element at the specified name in the read-only list.
         /// </summary>
         /// <param name="name">The property name of the element to get.</param>
-        /// <returns>The element value at the specified key in the read-only list.</returns>
+        /// <returns>The element at the specified name in the read-only list.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="name"/> not found.</exception>
+        /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
         public KeyValuePair<string, string> this[string name] => GetObjectAsString(name, true);
         /// <inheritdoc/>
-        public int Count => _originalValues.Count;
+        public int Count => _dictionary.Count;
         /// <summary>
-        /// Indicates whether <see cref="OriginalFormat"/> is registered.
+        /// Indicates whether <see cref="OriginalFormat"/> key is registered.
         /// </summary>
-        public bool HasOriginalFormat => _originalValues.Any(x => x.Key == OriginalFormat);
+        public bool HasOriginalFormat => _dictionary.Any(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal));
 
+        /// <inheritdoc/>
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            const string EmptyArray = "[]";
+            if (Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, out var stringValue))
+            {
+                return stringValue;
+            }
+            return arg switch
+            {
+                IFormattable formattable => formattable.ToString(format, formatProvider),
+                _ => FormatFallback(arg, formatProvider)
+            };
+
+            // Summary: Tries to convert the value of a specified object to an equivalent string representation using overridden string format and culture-specific formatting information.
+            // Param (value): An object to format.
+            // Param (formatProvider): An object that supplies format information about the current instance.
+            // Param (stringValue): When this method returns, it contains a string representation of the specified value or null if the operation failed.
+            // Returns: true if the operation is successful; otherwise false.
+            static bool TryCustomFormat(object? value, IFormatProvider? formatProvider, [NotNullWhen(true)] out string? stringValue)
+            {
+                stringValue = value switch
+                {
+                    DateTime dateTime => dateTime.ToString("O", formatProvider),
+                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O", formatProvider),
+                    Enum @enum => @enum.ToString("D"),
+                    float binary32 => binary32.ToString("G9", formatProvider),
+                    double binary64 => binary64.ToString("G17", formatProvider),
+                    _ => null
+                };
+                return !string.IsNullOrEmpty(stringValue);
+            }
+            // Summary: Converts the value of a specified object to a string representation using custom format and culture-specific formatting information.
+            // Param (value): An object to format.
+            // Param (formatProvider): An object that supplies format information about the current instance.
+            // Returns: A string representation of the specified value.
+            static string FormatFallback(object? value, IFormatProvider? formatProvider)
+            {
+                return value switch
+                {
+                    // IDictionary implements IEnumerable so must be process before
+                    IDictionary dictionary => IDictionaryToString(dictionary, formatProvider),
+                    string @string => @string, // string implements IEnumerable so must be process before
+                    IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider),
+                    _ => null
+                } ?? Convert.ToString(value ?? NullValue, formatProvider) ?? string.Empty;
+
+                // Summary: Converts the value of a specified object to a string representation using custom format and culture-specific formatting information.
+                // Param (value): An object to format.
+                // Param (formatProvider): An object that supplies format information about the current instance.
+                // Returns: A string representation of the specified value.
+                static string ObjectToString(object? value, IFormatProvider? formatProvider)
+                {
+                    return TryCustomFormat(value, formatProvider, out var stringValue) ? stringValue : FormatFallback(value, formatProvider);
+                }
+                // Summary: Converts IDictionary object to a string representation using custom format and culture-specific formatting information.
+                // Param (dictionary): An object to format.
+                // Param (formatProvider): An object that supplies format information about the current instance.
+                // Returns: A string representation of the specified value.
+                static string IDictionaryToString(IDictionary dictionary, IFormatProvider? formatProvider)
+                {
+                    var first = true;
+                    StringBuilder? stringBuilder = null;
+                    foreach (DictionaryEntry entry in dictionary)
+                    {
+                        stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                        stringBuilder = stringBuilder.Append(formatProvider, $"[{ObjectToString(entry.Key, formatProvider)}, {ObjectToString(entry.Value, formatProvider)}]");
+                        first = false;
+                    }
+                    return stringBuilder?.Append(']').ToString() ?? EmptyArray;
+                }
+                // Summary: Converts IEnumerable object to a string representation using custom format and culture-specific formatting information.
+                // Param (enumerable): An object to format.
+                // Param (formatProvider): An object that supplies format information about the current instance.
+                // Returns: A string representation of the specified value.
+                static string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider)
+                {
+                    var first = true;
+                    StringBuilder? stringBuilder = null;
+                    foreach (var value in enumerable)
+                    {
+                        stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                        stringBuilder = stringBuilder.Append(ObjectToString(value, formatProvider));
+                        first = false;
+                    }
+                    return stringBuilder?.Append(']').ToString() ?? EmptyArray;
+                }
+            }
+        }
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
         {
@@ -192,169 +279,235 @@ namespace Leviasan.Sanlog
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <inheritdoc/>
-        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
-        /// <inheritdoc/>
-        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        public object? GetFormat(Type? formatType)
         {
-            // Override default format string component
-            return string.IsNullOrEmpty(format) && TryFormatArgument(arg, formatProvider, out var stringValue) ? stringValue
-                : arg is IFormattable formattable ? formattable.ToString(format, formatProvider)
-                : Convert.ToString(arg ?? NullValue, formatProvider)!;
-
-            static string FormatArgument(object? value, IFormatProvider? formatProvider)
-            {
-                return TryFormatArgument(value, formatProvider, out var stringValue) ? stringValue
-                    : Convert.ToString(value ?? NullValue, formatProvider)!;
-            }
-            static bool TryFormatArgument(object? value, IFormatProvider? formatProvider, [NotNullWhen(true)] out string? stringValue)
-            {
-                stringValue = value switch
-                {
-                    DateTime dateTime => dateTime.ToString("O", formatProvider),
-                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O", formatProvider),
-                    Enum @enum => @enum.ToString("D"),
-                    float binary32 => binary32.ToString("G9", formatProvider),
-                    double binary64 => binary64.ToString("G17", formatProvider),
-                    IDictionary dictionary => DictionaryToString(dictionary, formatProvider),
-                    string @string => @string, // Position before IEnumerable is important
-                    IEnumerable enumerable => EnumerableToString(enumerable, formatProvider),
-                    _ => null
-                };
-                return !string.IsNullOrEmpty(stringValue);
-            }
-            static string? DictionaryToString(IDictionary dictionary, IFormatProvider? formatProvider)
-            {
-                var first = true;
-                StringBuilder? stringBuilder = null;
-                foreach (DictionaryEntry entry in dictionary)
-                {
-                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
-                    stringBuilder = stringBuilder.Append(formatProvider, $"[{FormatArgument(entry.Key, formatProvider)}, {FormatArgument(entry.Value, formatProvider)}]");
-                    first = false;
-                }
-                return stringBuilder?.Append(']').ToString();
-            }
-            static string? EnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider)
-            {
-                var first = true;
-                StringBuilder? stringBuilder = null;
-                foreach (var e in enumerable)
-                {
-                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
-                    stringBuilder = stringBuilder.Append(FormatArgument(e, formatProvider));
-                    first = false;
-                }
-                return stringBuilder?.Append(']').ToString();
-            }
+            return formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
         }
         /// <summary>
-        /// Gets a key-value pair describing a property name and object.
+        /// Gets a key-value pair describing a property name and object considering hiding sensitive data.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
-        /// <param name="redacted">Indicates whether need redact value.</param>
+        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
         /// <returns>The key-value pair describing a property name and object.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
-            var key = _originalValues[index].Key;
-            return KeyValuePair.Create(key, redacted && IsSensitiveData(key) ? RedactedValue : _originalValues[index].Value);
+            var key = _dictionary[index].Key;
+            var value = ProcessSensitiveObject(key, _dictionary[index].Value, redacted);
+            return KeyValuePair.Create(key, value);
+
+            // Summary: Hiding sensitive data of a specified object.
+            // Param (key): The key of the object.
+            // Param (value): The object to format.
+            // Param (redacted): Indicates whether need to hide sensitive data.
+            // Returns: An object considering hiding sensitive data.
+            object? ProcessSensitiveObject(string key, object? value, bool redacted)
+            {
+                return redacted && IsSensitiveData(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
+
+                // Summary: Hiding sensitive data of a specified object.
+                // Param (value): The object to format.
+                // Param (redacted): Indicates whether need to hide sensitive data.
+                // Param (formatter): The current instance of the formatter.
+                // Returns: An object considering hiding sensitive data.
+                static object? SensitiveObject(object? value, bool redacted, FormattedLogValuesFormatter formatter)
+                {
+                    return value switch
+                    {
+                        // IDictionary implements IEnumerable so must be process before
+                        IDictionary dictionary => SensitiveDictionary(dictionary, redacted, formatter),
+                        string @string => @string, // string implements IEnumerable so must be process before
+                        IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted, formatter),
+                        _ => value
+                    };
+
+                    // Summary: Hiding sensitive data of a specified IDictionary object.
+                    // Param (dictionary): An object to format.
+                    // Param (redacted): Indicates whether need to hide sensitive data.
+                    // Param (formatter): The current instance of the formatter.
+                    // Returns: An IDictionary object considering hiding sensitive data.
+                    static IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted, FormattedLogValuesFormatter formatter)
+                    {
+                        var newdict = new Dictionary<object, object?>(dictionary.Count);
+                        foreach (DictionaryEntry entry in dictionary)
+                        {
+                            var key = formatter.Format(null, entry.Key, formatter);
+                            var newvalue = redacted && formatter.IsSensitiveData(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
+                            newdict.Add(entry.Key, newvalue);
+                        }
+                        return newdict;
+                    }
+                    // Summary: Hiding sensitive data of a specified IEnumerable object.
+                    // Param (dictionary): An object to format.
+                    // Param (redacted): Indicates whether need to hide sensitive data.
+                    // Param (formatter): The current instance of the formatter.
+                    // Returns: An IEnumerable object considering hiding sensitive data.
+                    static IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted, FormattedLogValuesFormatter formatter)
+                    {
+                        var newlist = new List<object?>();
+                        foreach (var entry in enumerable)
+                            newlist.Add(SensitiveObject(entry, redacted, formatter));
+                        return newlist;
+                    }
+                }
+            }
         }
         /// <summary>
-        /// Gets a key-value pair describing a property name and object.
+        /// Gets a key-value pair describing a property name and object considering hiding sensitive data.
         /// </summary>
         /// <param name="name">The property name to find.</param>
-        /// <param name="redacted">Indicates whether need redact value.</param>
+        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
         /// <returns>The key-value pair describing a property name and object.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
         public KeyValuePair<string, object?> GetObject(string name, bool redacted)
         {
             ArgumentNullException.ThrowIfNull(name);
-            for (var index = 0; index < _originalValues.Count; ++index)
-                if (_originalValues[index].Key == name) return GetObject(index, redacted);
+            for (var index = 0; index < _dictionary.Count; ++index)
+                if (_dictionary[index].Key.Equals(name, StringComparison.Ordinal)) return GetObject(index, redacted);
             throw new KeyNotFoundException();
         }
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
-        /// <param name="redacted">Indicates whether need redact value.</param>
+        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
         /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
         public KeyValuePair<string, string> GetObjectAsString(int index, bool redacted)
         {
             var pair = GetObject(index, redacted);
-            var formattedValue = Format(null, pair.Value, this);
-            return KeyValuePair.Create(pair.Key, formattedValue);
+            var stringRepresentation = Format(null, pair.Value, this);
+            return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>
         /// <param name="name">The property name to find.</param>
-        /// <param name="redacted">Indicates whether need redact value.</param>
+        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
         /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
         public KeyValuePair<string, string> GetObjectAsString(string name, bool redacted)
         {
-            ArgumentNullException.ThrowIfNull(name);
-            for (var index = 0; index < _originalValues.Count; ++index)
-                if (_originalValues[index].Key == name) return GetObjectAsString(index, redacted);
-            throw new KeyNotFoundException();
+            var pair = GetObject(name, redacted);
+            var stringRepresentation = Format(null, pair.Value, this);
+            return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
         /// <summary>
-        /// Checks whether a segment name belongs to sensitive data.
+        /// Checks whether the property of the specified type belongs to sensitive data.
         /// </summary>
-        /// <param name="name">The name of the segment to check.</param>
-        /// <returns><see langword="true"/> if the segment name belongs to sensitive data; otherwise <see langword="false"/>.</returns>
-        public bool IsSensitiveData(string name) => _sensitiveData.Contains(name);
+        /// <remarks>
+        /// Table of the supported types:
+        /// <list type="table">
+        ///     <item>
+        ///         <term><see cref="string"/></term>
+        ///         <description>The property name of the composite format string.</description>
+        ///     </item>
+        ///     <item>
+        ///         <term><see cref="DictionaryEntry"/></term>
+        ///          <description>The string representation of the dictionary entry key.</description>
+        ///     </item>
+        /// </list>
+        /// </remarks>
+        /// <param name="type">The sensetive key type.</param>
+        /// <param name="property">The property whose value is belongs to sensitive data.</param>
+        /// <returns><see cref="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
+        public bool IsSensitiveData(Type type, string property)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(property);
+            return _sensitiveDataType.TryGetValue(type, out var hashset) && hashset.Contains(property);
+        }
         /// <summary>
-        /// Registers a segment name whose associated value will be redacted before logging.
+        /// Registers property whose value belongs to sensitive data.
         /// </summary>
-        /// <param name="name">The name of the segment that belongs to sensitive data.</param>
+        /// <remarks>
+        /// Table of the supported types:
+        /// <list type="table">
+        ///     <item>
+        ///         <term><see cref="string"/></term>
+        ///         <description>The property name of the composite format string.</description>
+        ///     </item>
+        ///     <item>
+        ///         <term><see cref="DictionaryEntry"/></term>
+        ///          <description>The string representation of the dictionary entry key.</description>
+        ///     </item>
+        /// </list>
+        /// </remarks>
+        /// <param name="type">The sensetive key type.</param>
+        /// <param name="property">The property whose value is belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
-        public bool RegisterSensitiveData(string name)
+        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
+        public bool RegisterSensitiveData(Type type, string property)
         {
-            ArgumentNullException.ThrowIfNull(name);
-            return name != OriginalFormat && _sensitiveData.Add(name);
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(property);
+            return _sensitiveDataType.TryGetValue(type, out var hashset) ? hashset.Add(property) : _sensitiveDataType.TryAdd(type, [property]);
         }
         /// <summary>
-        /// Registers segment names whose associated value will be redacted before logging.
+        /// Registers an array of properties whose values belong to sensitive data.
         /// </summary>
-        /// <param name="names">The names of the segment that belongs to sensitive data.</param>
+        /// <remarks>
+        /// Table of the supported types:
+        /// <list type="table">
+        ///     <item>
+        ///         <term><see cref="string"/></term>
+        ///         <description>The property name of the composite format string.</description>
+        ///     </item>
+        ///     <item>
+        ///         <term><see cref="DictionaryEntry"/></term>
+        ///          <description>The string representation of the dictionary entry key.</description>
+        ///     </item>
+        /// </list>
+        /// </remarks>
+        /// <param name="type">The sensetive key type.</param>
+        /// <param name="args">An array of properties whose value belongs to sensitive data.<param>
         /// <returns>The count of the added element.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="names"/> or at least one element in the specified array is <see langword="null"/>.</exception>
-        public int RegisterSensitiveData(params string[] names)
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
+        public int RegisterSensitiveData(Type type, params string[] args)
         {
-            ArgumentNullException.ThrowIfNull(names);
-            if (!Array.TrueForAll(names, x => x is not null))
-                throw new ArgumentNullException(nameof(names), "At least one element in the specified array was null.");
+            ArgumentNullException.ThrowIfNull(args);
+            if (!Array.TrueForAll(args, x => x is not null))
+                throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
 
             var count = 0;
-            foreach (var name in names)
-                count += Convert.ToInt32(RegisterSensitiveData(name));
+            foreach (var name in args)
+                count += Convert.ToInt32(RegisterSensitiveData(type, name));
             return count;
         }
-        /// <inheritdoc/>
+        /// <summary>
+        /// Registers an array of properties whose values belong to sensitive data.
+        /// </summary>
+        /// <param name="args">The configuration of the sensitive formatter.</param>
+        /// <returns>The count of the added element.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
+        public int RegisterSensitiveData(IEnumerable<KeyValuePair<Type, HashSet<string>>> args)
+        {
+            ArgumentNullException.ThrowIfNull(args);
+            if (!Array.TrueForAll([.. args], x => x.Key is not null || Array.TrueForAll([.. x.Value], x => x is not null)))
+                throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
+
+            var count = 0;
+            foreach (var arg in args)
+                count += RegisterSensitiveData(arg.Key, [.. arg.Value]);
+            return count;
+        }
+        /// <inheritdo1c/>
         public override string ToString()
         {
             return _namedFormatString is not null
-                ? _namedFormatString.Format(_formatProvider, TakeBySegmentOrder(_namedFormatString.Segments))
+                ? _namedFormatString.Format(this, TakeBySegmentOrder(_namedFormatString.Segments))
                 : NullFormat;
 
-            // Summary: Returns a sequence of redacted values based on an order of segment names.
-            // Param (segments): A sequence of the segments in the named format string.
-            // Returns: A sequence of the redacted values order by segment names.
             object?[] TakeBySegmentOrder(IReadOnlyList<NamedFormatString.FormatSegment> segments)
             {
                 var dictionary = new Dictionary<string, object?>();
                 foreach (var segment in segments)
                 {
                     if (dictionary.ContainsKey(segment.Name)) continue;
-                    dictionary[segment.Name] = segments.Where(x => x.Name == segment.Name).All(x => string.IsNullOrEmpty(x.FormatString))
-                        ? GetObjectAsString(segment.Name, true).Value
-                        : GetObject(segment.Name, true).Value;
+                    dictionary[segment.Name] = GetObject(segment.Name, true).Value;
                 }
                 return [.. dictionary.Values];
             }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
@@ -8,7 +9,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.
     /// </summary>
-    public sealed class SanlogLoggerOptions
+    public sealed class SanlogLoggerOptions : IEnumerable<KeyValuePair<Type, HashSet<string>>>
     {
         /// <summary>
         /// Gets or sets the application identifier.
@@ -23,21 +24,40 @@ namespace Leviasan.Sanlog
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
         /// <summary>
-        /// Gets the collection of the named item format properties that belong to sensitive data.
+        /// The list of the sensitive data.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal HashSet<string> SensitiveDataType { get; } = [];
+        private Dictionary<Type, HashSet<string>> SensitiveDataType { get; } = [];
 
+        /// <inheritdoc/>
+        public IEnumerator<KeyValuePair<Type, HashSet<string>>> GetEnumerator() => SensitiveDataType.GetEnumerator();
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <summary>
-        /// Registers a key of the <see cref="KeyValuePair{TKey, TValue}"/> whose associated value will be redacted before logging.
+        /// Registers property whose value belongs to sensitive data.
         /// </summary>
-        /// <param name="item">The key of the <see cref="KeyValuePair{TKey, TValue}"/>.</param>
+        /// <remarks>
+        /// Table of the supported types:
+        /// <list type="table">
+        ///     <item>
+        ///         <term><see cref="string"/></term>
+        ///         <description>The property name of the composite format string.</description>
+        ///     </item>
+        ///     <item>
+        ///         <term><see cref="DictionaryEntry"/></term>
+        ///          <description>The string representation of the dictionary entry key.</description>
+        ///     </item>
+        /// </list>
+        /// </remarks>
+        /// <param name="type">The sensetive key type.</param>
+        /// <param name="property">The property whose value is belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="item"/> is <see langword="null"/>.</exception>
-        public bool RegisterSensitiveData(string item)
+        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
+        public bool RegisterSensitiveData(Type type, string property)
         {
-            ArgumentNullException.ThrowIfNull(item);
-            return item != FormattedLogValuesFormatter.OriginalFormat && SensitiveDataType.Add(item);
+            ArgumentNullException.ThrowIfNull(type);
+            ArgumentNullException.ThrowIfNull(property);
+            return SensitiveDataType.TryGetValue(type, out var hashset) ? hashset.Add(property) : SensitiveDataType.TryAdd(type, [property]);
         }
     }
 }

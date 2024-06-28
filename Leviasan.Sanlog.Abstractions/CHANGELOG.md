@@ -27,3 +27,7 @@
 - `FormattedLogValuesFormatter` formats `IDictionary` objects as: [[Key1, Value1], [Key2, Value2]].
 - `FormattedLogValuesFormatter` for type `Single` uses the "G9" format specifier to ensure that the original `Single` value successfully round-trips (IEEE 754-2008-compliant).
 - `FormattedLogValuesFormatter` for type `Double` uses the "G17" format specifier to ensure that the original `Double` value successfully round-trips (IEEE 754-2008-compliant).
+
+### 1.2.0
+- `FormattedLogValuesFormatter` implements `IFormatProvider` and `ICustomFormatter`.
+- `FormattedLogValuesFormatter` and `SanlogLoggerOptions` provide new API `RegisterSensitiveData(Type, string)` to register property whose value belongs to sensitive data. Using `string` redacts the property of the composite format string and `DictionaryEntry` redacts the dictionary entry value.
