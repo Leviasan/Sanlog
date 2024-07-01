@@ -103,11 +103,13 @@ namespace Leviasan.Sanlog.MSTest
         public void InvalidInputStringFormatException()
         {
             var formatException = Assert.ThrowsException<FormatException>(() => NamedFormatString.Parse("{1} {InvalidName} {2}"));
-            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 5. Expected an ASCII digit.", formatException.Message);
+            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 5.", formatException.Message);
             formatException = Assert.ThrowsException<FormatException>(() => NamedFormatString.Parse("{InvalidName} {0} {2}"));
-            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 15. Expected an ASCII digit.", formatException.Message);
+            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 15.", formatException.Message);
             formatException = Assert.ThrowsException<FormatException>(() => NamedFormatString.Parse("{1} {0} {InvalidName}"));
-            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 9. Expected an ASCII digit.", formatException.Message);
+            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 9.", formatException.Message);
+            formatException = Assert.ThrowsException<FormatException>(() => NamedFormatString.Parse("{1} {0} {2S}"));
+            Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 9.", formatException.Message);
         }
         [TestMethod]
         public void AlignmentComponent()
@@ -120,6 +122,12 @@ namespace Leviasan.Sanlog.MSTest
         {
             var namedFormatString = NamedFormatString.Parse("{{{0:D}}}");
             Assert.AreEqual("{6324}", namedFormatString.Format(CultureInfo.InvariantCulture, 6324));
+        }
+        [TestMethod]
+        public void MixedNamingConvention()
+        {
+            var namedFormatString = NamedFormatString.Parse("{A1} {0A} {CC} {A1,5:X2}");
+            Assert.AreEqual("15 1 2    0F", namedFormatString.Format(CultureInfo.InvariantCulture, 15, 1, 2));
         }
     }
 }

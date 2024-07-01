@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Linq;
 using System.Text;
 
 namespace Leviasan.Sanlog
@@ -34,7 +35,7 @@ namespace Leviasan.Sanlog
             var stringBuilder = new StringBuilder(256);
             var namedFormatStringItems = new List<FormatSegment>();
             CompositeFormat compositeFormat;
-            var naming = SegmentNamingConvention.None;
+            var conventions = new List<SegmentNamingConvention>();
             while (scanIndex < endIndex)
             {
                 var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
@@ -57,9 +58,10 @@ namespace Leviasan.Sanlog
                     // Substring argument name
                     var argName = format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
                     // Mixed segment name is not allowed
-                    naming |= EvaluateSegmentNaming(argName);
-                    if (naming == SegmentNamingConvention.Mixed)
-                        throw new FormatException($"Input string was not in a correct format. Failure to parse near offset {openBraceIndex + 1}. Expected an ASCII digit.");
+                    var naming = EvaluateSegmentNaming(argName);
+                    conventions.Add(naming);
+                    if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
+                        throw new FormatException($"Input string was not in a correct format. Failure to parse near offset {openBraceIndex + 1}.");
                     // Evaluate argument index
                     var argIndex = naming == SegmentNamingConvention.AsciiDigit ? int.Parse(argName, CultureInfo.InvariantCulture) : namedFormatStringItems.FindIndex(x => x.Name.Equals(argName, StringComparison.Ordinal));
                     argIndex = argIndex == -1 ? itemIndex++ : argIndex;
@@ -139,15 +141,15 @@ namespace Leviasan.Sanlog
                 var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
                 return findIndex == -1 ? endIndex : findIndex;
             }
-            // Summary: Indicates whether all symbols in the specified string are categorized as an ASCII digit.
-            // Param (value): The string to evaluate.
-            // Returns: AsciiDigit if all symbols in the specified string are categorized as an ASCII digit; otherwise, Named.
+            // Summary: Evaluates a segment naming convention.
+            // Param (value): The string value to evaluate.
+            // Returns: AsciiDigit if all symbols in the specified string are categorized as an ASCII digit; OtherSymbols if any symbols in the specified string are not categorized as an ASCII digit; otherwise Undefined.
             static SegmentNamingConvention EvaluateSegmentNaming(string value)
             {
+                var naming = SegmentNamingConvention.Undefined;
                 foreach (var symbol in value)
-                    if (!char.IsAsciiDigit(symbol))
-                        return SegmentNamingConvention.Named;
-                return SegmentNamingConvention.AsciiDigit;
+                    naming |= char.IsAsciiDigit(symbol) ? SegmentNamingConvention.AsciiDigit : SegmentNamingConvention.OtherSymbols;
+                return naming;
             }
         }
         /// <summary>
@@ -228,21 +230,21 @@ namespace Leviasan.Sanlog
         private enum SegmentNamingConvention
         {
             /// <summary>
-            /// Unknown naming convention.
+            /// Unknown convention.
             /// </summary>
-            None = 0,
+            Undefined = 0,
             /// <summary>
-            /// Using only `ASCII digits` in the naming.
+            /// Using ASCII digits.
             /// </summary>
             AsciiDigit = 1,
             /// <summary>
-            /// Using only named format in naming.
+            /// Using symbols.
             /// </summary>
-            Named = 2,
+            OtherSymbols = 2,
             /// <summary>
             /// Mixed naming convention.
             /// </summary>
-            Mixed = AsciiDigit | Named
+            Mixed = AsciiDigit | OtherSymbols
         }
     }
 }
