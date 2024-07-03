@@ -70,29 +70,29 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private const int MaxCachedFormatters = 1024; // Microsoft.Extensions.Logging.FormattedLogValues.MaxCachedFormatters
         /// <summary>
-        /// The cache of the named format strings.
+        /// The cache of the log message formatters.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<string, NamedFormatString> CachedNamedFormatStrings = [];
+        private static readonly Dictionary<string, LogMessageFormatter> CachedLogMessageFormatters = [];
         /// <summary>
         /// Tries to get a named format string from the cache or parses and tries to add to cache one.
         /// </summary>
         /// <param name="format">The key of the element to get or add.</param>
-        /// <param name="namedFormatString">When this method returns, it contains a parsed named format string or the <see langword="null"/> if the operation failed.</param>
+        /// <param name="messageFormatter">When this method returns, it contains a log message formatter or the <see langword="null"/> if the operation failed.</param>
         /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
         /// <exception cref="FormatException">A format item in format is invalid.</exception>
-        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out NamedFormatString? namedFormatString)
+        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out LogMessageFormatter? messageFormatter)
         {
             if (!string.IsNullOrEmpty(format))
             {
-                if (!CachedNamedFormatStrings.TryGetValue(format, out namedFormatString))
+                if (!CachedLogMessageFormatters.TryGetValue(format, out messageFormatter))
                 {
-                    namedFormatString = NamedFormatString.Parse(format); // FormatException
-                    return namedFormatString.CompositeFormat.MinimumArgumentCount <= 0 || CachedNamedFormatStrings.Count >= MaxCachedFormatters || CachedNamedFormatStrings.TryAdd(format, namedFormatString);
+                    messageFormatter = LogMessageFormatter.Parse(format); // FormatException
+                    return messageFormatter.CompositeFormat.MinimumArgumentCount <= 0 || CachedLogMessageFormatters.Count >= MaxCachedFormatters || CachedLogMessageFormatters.TryAdd(format, messageFormatter);
                 }
                 return true;
             }
-            namedFormatString = default;
+            messageFormatter = default;
             return false;
         }
 
@@ -107,10 +107,10 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IFormatProvider? _formatProvider;
         /// <summary>
-        /// The parsed named format string.
+        /// The log message formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly NamedFormatString? _namedFormatString;
+        private readonly LogMessageFormatter? _messageFormatter;
         /// <summary>
         /// The list of the sensitive data.
         /// </summary>
@@ -128,7 +128,7 @@ namespace Leviasan.Sanlog
         {
             _dictionary = dictionary ?? [];
             _formatProvider = formatProvider;
-            _ = TryGetOrAdd(_dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string, out _namedFormatString); // FormatException + InvalidOperationException
+            _ = TryGetOrAdd(_dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string, out _messageFormatter); // FormatException + InvalidOperationException
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified format string to parse and an object array that contains zero or more objects to format.
@@ -144,16 +144,16 @@ namespace Leviasan.Sanlog
             ArgumentNullException.ThrowIfNull(args);
 
             _formatProvider = formatProvider;
-            if (TryGetOrAdd(format, out _namedFormatString)) // FormatException
+            if (TryGetOrAdd(format, out _messageFormatter)) // FormatException
             {
                 var original = new List<KeyValuePair<string, object?>>();
                 for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
                 {
-                    while (segmentId < _namedFormatString.Segments.Count && original.Any(x => x.Key == _namedFormatString.Segments[segmentId].Name))
+                    while (segmentId < _messageFormatter.Segments.Count && original.Any(x => x.Key == _messageFormatter.Segments[segmentId].Name))
                     {
                         ++segmentId;
                     }
-                    original.Add(KeyValuePair.Create(_namedFormatString.Segments[segmentId].Name, args[index]));
+                    original.Add(KeyValuePair.Create(_messageFormatter.Segments[segmentId].Name, args[index]));
                 }
                 original.Add(KeyValuePair.Create<string, object?>(OriginalFormat, format));
                 _dictionary = original;
@@ -498,11 +498,11 @@ namespace Leviasan.Sanlog
         /// <inheritdo1c/>
         public override string ToString()
         {
-            return _namedFormatString is not null
-                ? _namedFormatString.Format(this, TakeBySegmentOrder(_namedFormatString.Segments))
+            return _messageFormatter is not null
+                ? _messageFormatter.Format(this, TakeBySegmentOrder(_messageFormatter.Segments))
                 : NullFormat;
 
-            object?[] TakeBySegmentOrder(IReadOnlyList<NamedFormatString.FormatSegment> segments)
+            object?[] TakeBySegmentOrder(IReadOnlyList<LogMessageFormatter.FormatSegment> segments)
             {
                 var dictionary = new Dictionary<string, object?>();
                 foreach (var segment in segments)
@@ -517,7 +517,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Represents a parsed named format string.
         /// </summary>
-        internal sealed class NamedFormatString
+        internal sealed class LogMessageFormatter
         {
             /// <summary>
             /// The delimiters used by composite string.
@@ -532,7 +532,7 @@ namespace Leviasan.Sanlog
             /// <returns>A composite string and information about segments in the expression.</returns>
             /// <exception cref="ArgumentNullException">The <paramref name="format"/> is <see langword="null"/>.</exception>
             /// <exception cref="FormatException">A format item in format is invalid.</exception>
-            public static NamedFormatString Parse(string format)
+            public static LogMessageFormatter Parse(string format)
             {
                 ArgumentNullException.ThrowIfNull(format);
                 var itemIndex = 0;
@@ -548,7 +548,7 @@ namespace Leviasan.Sanlog
                     if (scanIndex == 0 && openBraceIndex == endIndex)
                     {
                         compositeFormat = CompositeFormat.Parse(format); // FormatException
-                        return new NamedFormatString(compositeFormat, [.. namedFormatStringItems]);
+                        return new LogMessageFormatter(compositeFormat, [.. namedFormatStringItems]);
                     }
                     var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
                     if (closeBraceIndex == endIndex)
@@ -585,7 +585,7 @@ namespace Leviasan.Sanlog
                     }
                 }
                 compositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
-                return new NamedFormatString(compositeFormat, [.. namedFormatStringItems]);
+                return new LogMessageFormatter(compositeFormat, [.. namedFormatStringItems]);
 
                 // Summary: Reports the zero-based index of the first occurrence in string instance of brace in a specified array of Unicode characters.
                 // The search starts at a specified character position and examines a specified number of character positions.
@@ -660,11 +660,11 @@ namespace Leviasan.Sanlog
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="NamedFormatString"/> class with the specified parsed composite format string and information about its segments.
+            /// Initializes a new instance of the <see cref="LogMessageFormatter"/> class with the specified parsed composite format string and information about its segments.
             /// </summary>
             /// <param name="compositeFormat">The parsed composite format string.</param>
             /// <param name="segments">The parsed segments that make up the composite format string.</param>
-            private NamedFormatString(CompositeFormat compositeFormat, FormatSegment[] segments)
+            private LogMessageFormatter(CompositeFormat compositeFormat, FormatSegment[] segments)
             {
                 Debug.Assert(compositeFormat is not null);
                 Debug.Assert(segments is not null);

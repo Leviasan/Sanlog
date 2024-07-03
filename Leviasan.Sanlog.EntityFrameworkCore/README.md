@@ -127,7 +127,8 @@ For apps that use a host, logging configuration is commonly provided by the "Log
   "Logging": {
     "LogLevel": {
       "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
     },
     "SanlogLoggerProvider": {
       "AppId": "e6bcc7df-e201-4d0b-02a3-08dbd09ffc89", // [Required] Here need to insert your specific application identifier

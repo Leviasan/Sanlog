@@ -4,7 +4,7 @@ using System.Text;
 namespace Leviasan.Sanlog.MSTest
 {
     [TestClass]
-    public sealed class NamedFormatStringUnitTest
+    public sealed class LogMessageFormatterUnitTest
     {
         private static readonly DateTime DateTimeValue = new(2024, 5, 22, 23, 56, 18);
         private static readonly StringComparison StringComparisonValue = StringComparison.Ordinal;
@@ -12,7 +12,7 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void ParseOneItemZeroAlignmentNullFormat()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("DateTime: {DateTime}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("DateTime: {DateTime}");
 
             Assert.AreEqual(0, namedFormatString.Segments[0].Index);
             Assert.AreEqual("DateTime", namedFormatString.Segments[0].Name);
@@ -26,7 +26,7 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void ParseOneItemZeroAlignmentSpecifiedFormat()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("DateTime: {DateTime:Y}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("DateTime: {DateTime:Y}");
 
             Assert.AreEqual(0, namedFormatString.Segments[0].Index);
             Assert.AreEqual("DateTime", namedFormatString.Segments[0].Name);
@@ -40,7 +40,7 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void ParseOneItemNegativeAlignmentSpecifiedFormat()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("DateTime: {DateTime,-22:Y}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("DateTime: {DateTime,-22:Y}");
 
             Assert.AreEqual(0, namedFormatString.Segments[0].Index);
             Assert.AreEqual("DateTime", namedFormatString.Segments[0].Name);
@@ -54,7 +54,7 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void ParseThreeItemsTwoEqualsDifferentFormats()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("Year month: {DateTime:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {DateTime:s}.");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("Year month: {DateTime:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {DateTime:s}.");
 
             Assert.AreEqual(0, namedFormatString.Segments[0].Index);
             Assert.AreEqual("DateTime", namedFormatString.Segments[0].Name);
@@ -80,17 +80,17 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void IndexComponentSingle()
         {
-            var format = FormattedLogValuesFormatter.NamedFormatString.Parse("0x{0:X} {0:E} {0:N}");
+            var format = FormattedLogValuesFormatter.LogMessageFormatter.Parse("0x{0:X} {0:E} {0:N}");
             Assert.AreEqual("0x7FFFFFFFFFFFFFFF 9.223372E+018 9,223,372,036,854,775,807.00", format.Format(CultureInfo.InvariantCulture, long.MaxValue));
             
-            format = FormattedLogValuesFormatter.NamedFormatString.Parse("{DateTime:dddd MMMM}");
+            format = FormattedLogValuesFormatter.LogMessageFormatter.Parse("{DateTime:dddd MMMM}");
             Assert.AreEqual(DateTime.Now.ToString("dddd MMMM", CultureInfo.InvariantCulture), format.Format(CultureInfo.InvariantCulture, DateTime.Now));
         }
         [TestMethod]
         public void IndexComponentNotOrdered()
         {
             var format = "{1} {0} {2}";
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse(format);
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse(format);
             Assert.AreEqual("1", namedFormatString.Segments[0].Name);
             Assert.AreEqual("0", namedFormatString.Segments[1].Name);
             Assert.AreEqual("2", namedFormatString.Segments[2].Name);
@@ -102,31 +102,31 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void InvalidInputStringFormatException()
         {
-            var formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.NamedFormatString.Parse("{1} {InvalidName} {2}"));
+            var formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.LogMessageFormatter.Parse("{1} {InvalidName} {2}"));
             Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 5.", formatException.Message);
-            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.NamedFormatString.Parse("{InvalidName} {0} {2}"));
+            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.LogMessageFormatter.Parse("{InvalidName} {0} {2}"));
             Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 15.", formatException.Message);
-            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.NamedFormatString.Parse("{1} {0} {InvalidName}"));
+            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.LogMessageFormatter.Parse("{1} {0} {InvalidName}"));
             Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 9.", formatException.Message);
-            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.NamedFormatString.Parse("{1} {0} {2S}"));
+            formatException = Assert.ThrowsException<FormatException>(() => FormattedLogValuesFormatter.LogMessageFormatter.Parse("{1} {0} {2S}"));
             Assert.AreEqual("Input string was not in a correct format. Failure to parse near offset 9.", formatException.Message);
         }
         [TestMethod]
         public void AlignmentComponent()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("{0,-20} {1,5:N1}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("{0,-20} {1,5:N1}");
             Assert.AreEqual("Adam                  40.0", namedFormatString.Format(CultureInfo.InvariantCulture, "Adam", 40));
         }
         [TestMethod]
         public void EscapingBraces()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("{{{0:D}}}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("{{{0:D}}}");
             Assert.AreEqual("{6324}", namedFormatString.Format(CultureInfo.InvariantCulture, 6324));
         }
         [TestMethod]
         public void MixedNamingConvention()
         {
-            var namedFormatString = FormattedLogValuesFormatter.NamedFormatString.Parse("{A1} {0A} {CC} {A1,5:X2}");
+            var namedFormatString = FormattedLogValuesFormatter.LogMessageFormatter.Parse("{A1} {0A} {CC} {A1,5:X2}");
             Assert.AreEqual("15 1 2    0F", namedFormatString.Format(CultureInfo.InvariantCulture, 15, 1, 2));
         }
     }
