@@ -31,3 +31,4 @@
 ### 1.2.0
 - `FormattedLogValuesFormatter` implements `IFormatProvider` and `ICustomFormatter`.
 - `FormattedLogValuesFormatter` and `SanlogLoggerOptions` provide new API `RegisterSensitiveData(Type, string)` to register property whose value belongs to sensitive data. Using `string` redacts the property of the composite format string and `DictionaryEntry` redacts the dictionary entry value.
+- `NamedFormatString` is an internal API.
