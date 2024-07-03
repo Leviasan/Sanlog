@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents information about the application.
     /// </summary>
-    public sealed class LoggingApplication
+    public sealed record class LoggingApplication
     {
         /// <summary>
         /// Gets the object identifier.

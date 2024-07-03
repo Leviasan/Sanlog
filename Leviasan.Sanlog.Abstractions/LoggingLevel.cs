@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents the logging level.
     /// </summary>
-    public sealed class LoggingLevel
+    public sealed record class LoggingLevel
     {
         /// <summary>
         /// Gets the object identifier.

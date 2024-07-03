@@ -5,7 +5,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents the message property of the logging entry.
     /// </summary>
-    public sealed class LoggingEntryProperty
+    public sealed record class LoggingEntryProperty
     {
         /// <summary>
         /// Gets the object identifier.

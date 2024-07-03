@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Holds the information for a single log entry.
     /// </summary>
-    public sealed class LoggingEntry
+    public sealed record class LoggingEntry
     {
         /// <summary>
         /// Gets the object identifier.

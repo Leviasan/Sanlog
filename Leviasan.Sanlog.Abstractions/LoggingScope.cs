@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents the external scope data.
     /// </summary>
-    public sealed class LoggingScope
+    public sealed record class LoggingScope
     {
         /// <summary>
         /// Gets the object identifier.

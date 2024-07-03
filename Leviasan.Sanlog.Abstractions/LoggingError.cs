@@ -6,7 +6,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents the information about runtime error.
     /// </summary>
-    public sealed class LoggingError
+    public sealed record class LoggingError
     {
         /// <summary>
         /// Gets the object identifier.
