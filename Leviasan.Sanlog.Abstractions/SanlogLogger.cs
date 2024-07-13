@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog
@@ -21,10 +19,10 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _categoryName;
         /// <summary>
-        /// The event writer.
+        /// The writer to the storage.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly ILoggingWriter _eventWriter;
+        private readonly SanlogBaseWriter _writer;
         /// <summary>
         /// The logger options.
         /// </summary>
@@ -37,16 +35,16 @@ namespace Leviasan.Sanlog
         private IExternalScopeProvider? _externalScopeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category name for messages produced by the logger, the event writer, and the logger options.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category name for messages produced by the logger, the channel writer, and the logger options.
         /// </summary>
         /// <param name="categoryName">The category name for messages produced by the logger.</param>
-        /// <param name="eventWriter">The event writer.</param>
+        /// <param name="writer">The writer to the storage.</param>
         /// <param name="options">The logger options.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> or <paramref name="eventWriter"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public SanlogLogger(string categoryName, ILoggingWriter eventWriter, SanlogLoggerOptions options)
+        /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> or <paramref name="writer"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
+        public SanlogLogger(string categoryName, SanlogBaseWriter writer, SanlogLoggerOptions options)
         {
             _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
-            _eventWriter = eventWriter ?? throw new ArgumentNullException(nameof(eventWriter));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
@@ -90,14 +88,7 @@ namespace Leviasan.Sanlog
                         : [],
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _options, _externalScopeProvider)
                 };
-                if (SynchronizationContext.Current == null && TaskScheduler.Current == TaskScheduler.Default)
-                {
-                    _eventWriter.Write(loggingEntry);
-                }
-                else
-                {
-                    _ = Task.Run(() => _eventWriter.Write(loggingEntry));
-                }
+                _ = _writer.Enqueue(loggingEntry);
             }
 
             // Summary: Gets error information.

@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Leviasan.Sanlog.EntityFrameworkCore
@@ -18,7 +19,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// The queue of logs for writing to the storage.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly UnboundedSingleConsumerQueue _channel;
+        private readonly UnboundedSingleConsumerChannel _channel;
         /// <summary>
         /// The factory for creating <see cref="SanlogDbContext"/> instances.
         /// </summary>
@@ -31,7 +32,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// <param name="channel">The queue of logs for writing to the storage.</param>
         /// <param name="contextFactory">The factory for creating <see cref="SanlogDbContext"/> instances.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="channel"/> or <paramref name="contextFactory"/> is <see langword="null"/>.</exception>
-        public HostedSanlogDbContextWriter(UnboundedSingleConsumerQueue channel, IDbContextFactory<SanlogDbContext> contextFactory)
+        public HostedSanlogDbContextWriter([FromKeyedServices(nameof(HostedSanlogDbContextWriter))] UnboundedSingleConsumerChannel channel, IDbContextFactory<SanlogDbContext> contextFactory)
         {
             _channel = channel ?? throw new ArgumentNullException(nameof(channel));
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
@@ -40,6 +41,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            // TODO: Write exception
             while (!stoppingToken.IsCancellationRequested)
             {
                 var loggingEntry = await _channel.Reader.ReadAsync(stoppingToken).ConfigureAwait(false);

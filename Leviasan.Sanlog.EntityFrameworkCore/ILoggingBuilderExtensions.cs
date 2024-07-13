@@ -58,11 +58,11 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             // Add configuration
             builder.AddConfiguration();
             // Register clipboard between loggers and storage
-            _ = builder.Services.AddSingleton<UnboundedSingleConsumerQueue>();
+            _ = builder.Services.AddKeyedSingleton<UnboundedSingleConsumerChannel>(nameof(HostedSanlogDbContextWriter));
             // Register logger provider
             builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>(
                 serviceProvider => new SanlogLoggerProvider(
-                    eventWriter: serviceProvider.GetRequiredService<UnboundedSingleConsumerQueue>(),
+                    eventWriter: serviceProvider.GetRequiredKeyedService<UnboundedSingleConsumerChannel>(nameof(HostedSanlogDbContextWriter)),
                     optionsMonitor: serviceProvider.GetRequiredService<IOptionsMonitor<SanlogLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services);
             // Register SanlogDbContext factory

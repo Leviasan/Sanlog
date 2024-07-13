@@ -23,10 +23,10 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
-        /// The event writer.
+        /// The writer to the storage.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly ILoggingWriter _eventWriter;
+        private readonly SanlogBaseWriter _writer;
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
@@ -44,23 +44,23 @@ namespace Leviasan.Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified logger options and event writer.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified logger options and channel writer.
         /// </summary>
-        /// <param name="eventWriter">The event writer.</param>
+        /// <param name="writer">The writer to the storage.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(ILoggingWriter eventWriter, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
-            : this(eventWriter, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
+        public SanlogLoggerProvider(SanlogBaseWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+            : this(writer, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
                 => _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified logger options and event writer.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified logger options and channel writer.
         /// </summary>
-        /// <param name="eventWriter">The event writer.</param>
+        /// <param name="writer">The writer to the storage.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(ILoggingWriter eventWriter, SanlogLoggerOptions options)
+        public SanlogLoggerProvider(SanlogBaseWriter writer, SanlogLoggerOptions options)
         {
-            _eventWriter = eventWriter ?? throw new ArgumentNullException(nameof(eventWriter));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
         }
@@ -93,7 +93,7 @@ namespace Leviasan.Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _eventWriter, _options);
+            var logger = new SanlogLogger(category, _writer, _options);
             logger.SetScopeProvider(_externalScopeProvider);
             return logger;
         });
