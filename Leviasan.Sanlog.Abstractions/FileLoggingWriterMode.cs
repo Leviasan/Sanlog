@@ -3,7 +3,7 @@
     /// <summary>
     /// Specifies the behavior to use when writing to a log file that is already full.
     /// </summary>
-    public enum FileLoggingFullMode
+    public enum FileLoggingWriterMode
     {
         /// <summary>
         /// Drops the item being written.

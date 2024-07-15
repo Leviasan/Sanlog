@@ -26,7 +26,7 @@ namespace Leviasan.Sanlog
         /// The writer to the storage.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly StorageWriter _writer;
+        private readonly LoggingWriter _writer;
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
@@ -49,7 +49,7 @@ namespace Leviasan.Sanlog
         /// <param name="writer">The writer to the storage. The callee is responsible for disposing of the writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(StorageWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        public SanlogLoggerProvider(LoggingWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
             : this(writer, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
                 => _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
         /// <summary>
@@ -58,7 +58,7 @@ namespace Leviasan.Sanlog
         /// <param name="writer">The writer to the storage. The callee is responsible for disposing of the writer.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(StorageWriter writer, SanlogLoggerOptions options)
+        public SanlogLoggerProvider(LoggingWriter writer, SanlogLoggerOptions options)
         {
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _options = options ?? throw new ArgumentNullException(nameof(options));

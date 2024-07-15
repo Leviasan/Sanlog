@@ -9,7 +9,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents a writer that can write a logging entry to storage. This class is abstract.
     /// </summary>
-    public abstract class StorageWriter : IDisposable, IAsyncDisposable
+    public abstract class LoggingWriter : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -22,7 +22,7 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly CancellationTokenSource _cancellationTokenSource;
         /// <summary>
-        /// The task is completed when no more data to write to storage from the completed channel.
+        /// The task is completed when no more data to write to storage from the completed channel or when the write operation is canceled.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Task _completion;
@@ -33,9 +33,9 @@ namespace Leviasan.Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="StorageWriter"/> class.
+        /// Initializes a new instance of the <see cref="LoggingWriter"/> class.
         /// </summary>
-        protected StorageWriter()
+        protected LoggingWriter()
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _channel = Channel.CreateUnbounded<LoggingEntry>(new UnboundedChannelOptions
@@ -44,6 +44,7 @@ namespace Leviasan.Sanlog
             });
             _completion = Task.Run(async () =>
             {
+                Debug.WriteLine($"IsCancellationRequested: {_cancellationTokenSource.Token.IsCancellationRequested}. IsCompleted: {_channel.Reader.Completion.IsCompleted}.");
                 while (!_cancellationTokenSource.Token.IsCancellationRequested && !_channel.Reader.Completion.IsCompleted)
                 {
                     var loggingEntry = await _channel.Reader.ReadAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
@@ -93,7 +94,7 @@ namespace Leviasan.Sanlog
             _channel.Writer.Complete(null);
             await _channel.Reader.Completion.ConfigureAwait(false);
             await _cancellationTokenSource.CancelAsync().ConfigureAwait(false);
-            await _completion.ConfigureAwait(false);
+            await _completion.ConfigureAwait(false); // TODO: System.Threading.Channels.ChannelClosedException: The channel has been closed.
             _cancellationTokenSource.Dispose();
             _completion.Dispose();
         }
@@ -107,11 +108,11 @@ namespace Leviasan.Sanlog
             return _channel.Writer.TryWrite(item);
         }
         /// <summary>
-        /// 
+        /// Writes the specified logging entry to the storage.
         /// </summary>
-        /// <param name="loggingEntry"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
+        /// <param name="loggingEntry">The logging entry.</param>
+        /// <param name="cancellationToken">A cancellation token used to cancel the write operation.</param>
+        /// <returns>A task that represents the asynchronous write operation.</returns>
         protected abstract Task WriteToStorageAsync(LoggingEntry loggingEntry, CancellationToken cancellationToken);
     }
 }
