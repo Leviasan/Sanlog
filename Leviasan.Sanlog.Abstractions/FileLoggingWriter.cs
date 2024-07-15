@@ -14,7 +14,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Provides a mechanism for writing log entries to the file storage.
     /// </summary>
-    internal sealed partial class FileLoggingWriter : SanlogStorageWriter
+    internal sealed partial class FileLoggingWriter : StorageWriter
     {
         [GeneratedRegex("^(?<prefix>.*)(?<datetime>\\d{8})_(?<number>-?\\d{1,}).log$")]
         private static partial Regex RegexLogFileName();
