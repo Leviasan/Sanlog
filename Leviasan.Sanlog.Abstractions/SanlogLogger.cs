@@ -22,7 +22,7 @@ namespace Leviasan.Sanlog
         /// The writer to the storage.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogBaseWriter _writer;
+        private readonly StorageWriter _writer;
         /// <summary>
         /// The logger options.
         /// </summary>
@@ -38,10 +38,10 @@ namespace Leviasan.Sanlog
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category name for messages produced by the logger, the channel writer, and the logger options.
         /// </summary>
         /// <param name="categoryName">The category name for messages produced by the logger.</param>
-        /// <param name="writer">The writer to the storage.</param>
+        /// <param name="writer">The writer to the storage. The caller is responsible for disposing of the writer.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> or <paramref name="writer"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public SanlogLogger(string categoryName, SanlogBaseWriter writer, SanlogLoggerOptions options)
+        public SanlogLogger(string categoryName, StorageWriter writer, SanlogLoggerOptions options)
         {
             _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));

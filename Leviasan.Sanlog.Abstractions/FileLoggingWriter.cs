@@ -14,7 +14,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Provides a mechanism for writing log entries to the file storage.
     /// </summary>
-    internal sealed partial class FileLoggingWriter : SanlogBaseWriter
+    internal sealed partial class FileLoggingWriter : SanlogStorageWriter
     {
         [GeneratedRegex("^(?<prefix>.*)(?<datetime>\\d{8})_(?<number>-?\\d{1,}).log$")]
         private static partial Regex RegexLogFileName();
@@ -63,7 +63,7 @@ namespace Leviasan.Sanlog
         /// <exception cref="PathTooLongException">The specified <paramref name="directory"/> exceed the system-defined maximum length.</exception>
         /// <exception cref="SecurityException">The caller does not have the required permission.</exception>
         /// <exception cref="UnauthorizedAccessException">The caller does not have the required permission.</exception>
-        public FileLoggingWriter(string directory = "./", string? filePrefix = "diagnostics-",int fileSizeLimit = 10485760, int fileCountLimit = 2, FileLoggingFullMode strategy = FileLoggingFullMode.DropWrite)
+        public FileLoggingWriter(string directory = "./", string? filePrefix = "diagnostics-", int fileSizeLimit = 10485760, int fileCountLimit = 2, FileLoggingFullMode strategy = FileLoggingFullMode.DropWrite)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(directory);
             if (!Directory.Exists(directory)) Directory.CreateDirectory(directory);
@@ -150,7 +150,7 @@ namespace Leviasan.Sanlog
             if (!TryGetFileInfo(out var fileInfo)) return;
             using var fileStream = new FileStream(fileInfo.FullName, FileMode.Append, FileAccess.Write, FileShare.Read);
             using var textWriter = new StreamWriter(fileStream, Encoding.Unicode);
-            await textWriter.WriteLineAsync(new StringBuilder(loggingEntry.ToString()), cancellationToken).ConfigureAwait(false);
+            await textWriter.WriteLineAsync(loggingEntry.ToString().AsMemory(), cancellationToken).ConfigureAwait(false);
         }
     }
 }
