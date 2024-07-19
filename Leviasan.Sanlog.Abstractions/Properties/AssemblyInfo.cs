@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 // Setting ComVisible to false makes the types in this assembly not visible to COM components.
@@ -6,5 +5,3 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 // The following GUID is for the ID of the typelib if this project is exposed to COM.
 [assembly: Guid("fde70942-e542-49f0-a4fd-c61263054149")]
-// Internal types are visible for unit testing.
-[assembly: InternalsVisibleTo("Leviasan.Sanlog.MSTest")]

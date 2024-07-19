@@ -1,9 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog.MSTest
 {
     [TestClass]
-    public sealed class FileLoggingWriterUnitTest
+    public sealed class FileLoggerWriterUnitTest
     {
         private readonly string FilePath = "./";
         private static readonly Action<ILogger, string, string, Exception?> UserLogged = LoggerMessage.Define<string, string>(LogLevel.Information, default, "User {UserName} logged in from {MachineName}.");
@@ -19,7 +20,7 @@ namespace Leviasan.Sanlog.MSTest
         public async Task FileCountLimitDropWrite()
         {
             string? searchPattern = null;
-            await using (var writer = new FileLoggingWriter(FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggingWriterMode.DropWrite))
+            await using (var writer = new FileLoggerWriter(directory: FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropWrite, encoding: Encoding.Unicode, allowSynchronousContinuations: false))
             {
                 var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
                 UserLoggedInvoke(logger, null, 3);
@@ -34,34 +35,35 @@ namespace Leviasan.Sanlog.MSTest
         public void FileCountLimitDropNewest()
         {
             string? searchPattern = null;
-            using (var writer = new FileLoggingWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggingWriterMode.DropNewest))
+            using (var writer = new FileLoggerWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropNewest, encoding: Encoding.UTF8, allowSynchronousContinuations: false))
             {
                 var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
-                UserLoggedInvoke(logger, null, 3);
+                UserLoggedInvoke(logger, null, 50);
                 searchPattern = writer.SearchPattern;
             }
             var files = Directory.GetFiles(FilePath, searchPattern, SearchOption.TopDirectoryOnly);
             Assert.AreEqual(2, files.Length);
             Assert.AreEqual($"{FilePath}DropNewest{DateTime.Now:yyyyMMdd}_0.log", files[0]);
-            Assert.AreEqual($"{FilePath}DropNewest{DateTime.Now:yyyyMMdd}_2.log", files[1]);
+            Assert.AreEqual($"{FilePath}DropNewest{DateTime.Now:yyyyMMdd}_24.log", files[1]);
         }
         [TestMethod]
         public void FileCountLimitDropOldest()
         {
-            var writer = new FileLoggingWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggingWriterMode.DropOldest);
+            var writer = new FileLoggerWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropOldest, encoding: Encoding.UTF8, allowSynchronousContinuations: false);
             var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
             try
             {
-                UserLoggedInvoke(logger, null, 5);
+                UserLoggedInvoke(logger, null, 50);
             }
             finally
             {
+                //await Task.Delay(2000);
                 writer.Dispose();
             }
             var files = Directory.GetFiles(FilePath, writer.SearchPattern, SearchOption.TopDirectoryOnly);
             Assert.AreEqual(2, files.Length);
-            Assert.AreEqual($"{FilePath}DropOldest{DateTime.Now:yyyyMMdd}_3.log", files[0]);
-            Assert.AreEqual($"{FilePath}DropOldest{DateTime.Now:yyyyMMdd}_4.log", files[1]);
+            Assert.AreEqual($"{FilePath}DropOldest{DateTime.Now:yyyyMMdd}_10.log", files[0]);
+            Assert.AreEqual($"{FilePath}DropOldest{DateTime.Now:yyyyMMdd}_9.log", files[1]);
         }
         private static void UserLoggedInvoke(ILogger logger, Exception? exception, int count)
         {

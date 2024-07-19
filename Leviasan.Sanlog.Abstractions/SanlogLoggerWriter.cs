@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -7,9 +8,9 @@ using System.Threading.Tasks;
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents a writer that can write a logging entry to storage. This class is abstract.
+    /// Provides a mechanism for writing log entries to storage. This class is abstract.
     /// </summary>
-    public abstract class LoggingWriter : IDisposable, IAsyncDisposable
+    public abstract class SanlogLoggerWriter : IDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -17,12 +18,12 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Channel<LoggingEntry> _channel;
         /// <summary>
-        /// The cancellation token source of the reading operation.
+        /// The source of the cancellation token of the reading operation.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly CancellationTokenSource _cancellationTokenSource;
         /// <summary>
-        /// The task is completed when no more data to write to storage from the completed channel or when the write operation is canceled.
+        /// The task is completed when there is no data to write from the completed channel.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Task _completion;
@@ -33,24 +34,30 @@ namespace Leviasan.Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoggingWriter"/> class.
+        /// Initializes a new instance of the <see cref="SanlogLoggerWriter"/> class with the specified synchronous or asynchronous state of the channel.
         /// </summary>
-        protected LoggingWriter()
+        /// <param name="allowSynchronousContinuations"><see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations;
+        /// <see langword="false"/> if all continuations should be invoked asynchronously.</param>
+        protected SanlogLoggerWriter(bool allowSynchronousContinuations)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _channel = Channel.CreateUnbounded<LoggingEntry>(new UnboundedChannelOptions
             {
-                SingleReader = true
+                SingleReader = true,
+                SingleWriter = false,
+                AllowSynchronousContinuations = allowSynchronousContinuations
             });
             _completion = Task.Run(async () =>
             {
-                Debug.WriteLine($"IsCancellationRequested: {_cancellationTokenSource.Token.IsCancellationRequested}. IsCompleted: {_channel.Reader.Completion.IsCompleted}.");
-                while (!_cancellationTokenSource.Token.IsCancellationRequested && !_channel.Reader.Completion.IsCompleted)
+                while (!_cancellationTokenSource.IsCancellationRequested && await _channel.Reader.WaitToReadAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
                 {
-                    var loggingEntry = await _channel.Reader.ReadAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                    await WriteToStorageAsync(loggingEntry, CancellationToken.None).ConfigureAwait(false);
+                    while (_channel.Reader.TryRead(out var loggingEntry))
+                    {
+                        await WriteToStorageAsync(loggingEntry).ConfigureAwait(false);
+                    }
                 }
-            }, CancellationToken.None);
+            },
+            CancellationToken.None);
         }
 
         /// <inheritdoc/>
@@ -80,6 +87,7 @@ namespace Leviasan.Sanlog
             }
         }
         /// <inheritdoc/>
+        [SuppressMessage("Usage", "CA1816:Dispose methods should call SuppressFinalize", Justification = "https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-disposeasync")]
         public async ValueTask DisposeAsync()
         {
             await DisposeAsyncCore().ConfigureAwait(false);
@@ -89,12 +97,12 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
         /// </summary>
-        protected async virtual ValueTask DisposeAsyncCore()
+        protected virtual async ValueTask DisposeAsyncCore()
         {
             _channel.Writer.Complete(null);
             await _channel.Reader.Completion.ConfigureAwait(false);
             await _cancellationTokenSource.CancelAsync().ConfigureAwait(false);
-            await _completion.ConfigureAwait(false); // TODO: System.Threading.Channels.ChannelClosedException: The channel has been closed.
+            await _completion.ConfigureAwait(false);
             _cancellationTokenSource.Dispose();
             _completion.Dispose();
         }
@@ -103,16 +111,12 @@ namespace Leviasan.Sanlog
         /// </summary>
         /// <param name="item">The item to write.</param>
         /// <returns><see langword="true"/> if the item was written; otherwise, <see langword="false"/>.</returns>
-        public bool Enqueue(LoggingEntry item)
-        {
-            return _channel.Writer.TryWrite(item);
-        }
+        public bool Enqueue(LoggingEntry item) => _channel.Writer.TryWrite(item);
         /// <summary>
         /// Writes the specified logging entry to the storage.
         /// </summary>
         /// <param name="loggingEntry">The logging entry.</param>
-        /// <param name="cancellationToken">A cancellation token used to cancel the write operation.</param>
         /// <returns>A task that represents the asynchronous write operation.</returns>
-        protected abstract Task WriteToStorageAsync(LoggingEntry loggingEntry, CancellationToken cancellationToken);
+        protected abstract Task WriteToStorageAsync(LoggingEntry loggingEntry);
     }
 }

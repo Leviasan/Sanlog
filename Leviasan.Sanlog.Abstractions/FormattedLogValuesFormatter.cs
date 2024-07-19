@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -68,36 +67,37 @@ namespace Leviasan.Sanlog
         /// Max cached collection size.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private const int MaxCachedFormatters = 1024; // Microsoft.Extensions.Logging.FormattedLogValues.MaxCachedFormatters
+        private const int MaxCachedTemplates = 1024; // Microsoft.Extensions.Logging.FormattedLogValues.MaxCachedFormatters
         /// <summary>
-        /// The cache of the log message formatters.
+        /// The cache of the message templates.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<string, LogMessageFormatter> CachedLogMessageFormatters = [];
+        private static readonly Dictionary<string, MessageTemplate> CachedMessageTemplates = [];
+
         /// <summary>
-        /// Tries to get a named format string from the cache or parses and tries to add to cache one.
+        /// Tries to get a message template from the cache or parses and tries to add to cache one.
         /// </summary>
-        /// <param name="format">The key of the element to get or add.</param>
-        /// <param name="messageFormatter">When this method returns, it contains a log message formatter or the <see langword="null"/> if the operation failed.</param>
+        /// <param name="format">The original message template value.</param>
+        /// <param name="messageTemplate">When this method returns, it contains a message template or the <see langword="null"/> if the operation failed.</param>
         /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="FormatException">A format item in format is invalid.</exception>
-        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out LogMessageFormatter? messageFormatter)
+        /// <exception cref="FormatException">A format item in template is invalid.</exception>
+        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out MessageTemplate? messageTemplate)
         {
             if (!string.IsNullOrEmpty(format))
             {
-                if (!CachedLogMessageFormatters.TryGetValue(format, out messageFormatter))
+                if (!CachedMessageTemplates.TryGetValue(format, out messageTemplate))
                 {
-                    messageFormatter = LogMessageFormatter.Parse(format); // FormatException
-                    return messageFormatter.CompositeFormat.MinimumArgumentCount <= 0 || CachedLogMessageFormatters.Count >= MaxCachedFormatters || CachedLogMessageFormatters.TryAdd(format, messageFormatter);
+                    messageTemplate = MessageTemplate.Parse(format, null); // FormatException
+                    return messageTemplate.MinimumArgumentCount <= 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate);
                 }
                 return true;
             }
-            messageFormatter = default;
+            messageTemplate = default;
             return false;
         }
 
         /// <summary>
-        /// The raw values.
+        /// The dictionary of raw values.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IReadOnlyList<KeyValuePair<string, object?>> _dictionary;
@@ -107,53 +107,54 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IFormatProvider? _formatProvider;
         /// <summary>
-        /// The log message formatter.
+        /// The message template.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly LogMessageFormatter? _messageFormatter;
+        private readonly MessageTemplate? _messageTemplate;
         /// <summary>
-        /// The list of the sensitive data.
+        /// The dictionary of the sensitive data.
         /// </summary>
-        /// [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Dictionary<Type, HashSet<string>> _sensitiveDataType = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with an array of raw values and an object that supplies culture-specific formatting information.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified dictionary of raw values and an object that supplies culture-specific formatting information.
         /// </summary>
-        /// <param name="dictionary">An array of raw values.</param>
+        /// <param name="dictionary">A dictionary of raw values.</param>
         /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        /// <exception cref="FormatException">A format item in format is invalid.</exception>
+        /// <exception cref="FormatException">A format item in template is invalid.</exception>
         /// <exception cref="InvalidOperationException">More than one <see cref="OriginalFormat"/> key was found at <paramref name="dictionary"/> array.</exception>
         public FormattedLogValuesFormatter(IReadOnlyList<KeyValuePair<string, object?>>? dictionary, IFormatProvider? formatProvider)
         {
             _dictionary = dictionary ?? [];
             _formatProvider = formatProvider;
-            _ = TryGetOrAdd(_dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string, out _messageFormatter); // FormatException + InvalidOperationException
+            _messageTemplate = TryGetOrAdd( // FormatException
+                format: _dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string,  // InvalidOperationException
+                messageTemplate: out var messageTemplate) ? messageTemplate : null; 
         }
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified format string to parse and an object array that contains zero or more objects to format.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object that supplies culture-specific formatting information, a message template, and an object array that contains zero or more objects to format.
         /// </summary>
         /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        /// <param name="format">The format string to parse.</param>
+        /// <param name="format">A message template.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in format is invalid.</exception>
+        /// <exception cref="FormatException">A format item in template is invalid.</exception>
         public FormattedLogValuesFormatter(IFormatProvider? formatProvider, string format, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
 
-            _formatProvider = formatProvider;
-            if (TryGetOrAdd(format, out _messageFormatter)) // FormatException
+            if (TryGetOrAdd(format, out _messageTemplate)) // FormatException
             {
                 var original = new List<KeyValuePair<string, object?>>();
                 for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
                 {
-                    while (segmentId < _messageFormatter.Segments.Count && original.Any(x => x.Key == _messageFormatter.Segments[segmentId].Name))
+                    while (segmentId < _messageTemplate.Count && original.Any(x => x.Key == _messageTemplate[segmentId].Name))
                     {
                         ++segmentId;
                     }
-                    original.Add(KeyValuePair.Create(_messageFormatter.Segments[segmentId].Name, args[index]));
+                    original.Add(KeyValuePair.Create(_messageTemplate[segmentId].Name, args[index]));
                 }
                 original.Add(KeyValuePair.Create<string, object?>(OriginalFormat, format));
                 _dictionary = original;
@@ -162,6 +163,7 @@ namespace Leviasan.Sanlog
             {
                 _dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, _formatProvider), element)).ToList();
             }
+            _formatProvider = formatProvider;
         }
 
         /// <inheritdoc/>
@@ -229,7 +231,7 @@ namespace Leviasan.Sanlog
                     _ => null
                 } ?? Convert.ToString(value ?? NullValue, formatProvider) ?? string.Empty;
 
-                // Summary: Converts the value of a specified object to a string representation using custom format and culture-specific formatting information.
+                // Summary: Converts the value of a specified object to a string representation using overridden and custom formats and culture-specific formatting information.
                 // Param (value): An object to format.
                 // Param (formatProvider): An object that supplies format information about the current instance.
                 // Returns: A string representation of the specified value.
@@ -237,7 +239,7 @@ namespace Leviasan.Sanlog
                 {
                     return TryCustomFormat(value, formatProvider, out var stringValue) ? stringValue : FormatFallback(value, formatProvider);
                 }
-                // Summary: Converts IDictionary object to a string representation using custom format and culture-specific formatting information.
+                // Summary: Converts IDictionary object to a string representation using overridden and custom formats and culture-specific formatting information.
                 // Param (dictionary): An object to format.
                 // Param (formatProvider): An object that supplies format information about the current instance.
                 // Returns: A string representation of the specified value.
@@ -253,7 +255,7 @@ namespace Leviasan.Sanlog
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
-                // Summary: Converts IEnumerable object to a string representation using custom format and culture-specific formatting information.
+                // Summary: Converts IEnumerable object to a string representation using overridden and custom formats and culture-specific formatting information.
                 // Param (enumerable): An object to format.
                 // Param (formatProvider): An object that supplies format information about the current instance.
                 // Returns: A string representation of the specified value.
@@ -280,10 +282,7 @@ namespace Leviasan.Sanlog
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <inheritdoc/>
-        public object? GetFormat(Type? formatType)
-        {
-            return formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
-        }
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
         /// <summary>
         /// Gets a key-value pair describing a property name and object considering hiding sensitive data.
         /// </summary>
@@ -402,18 +401,18 @@ namespace Leviasan.Sanlog
         /// Table of the supported types:
         /// <list type="table">
         ///     <item>
-        ///         <term><see cref="string"/></term>
-        ///         <description>The property name of the composite format string.</description>
+        ///         <term><see cref="MessageTemplate"/></term>
+        ///         <description>The property name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
-        ///          <description>The string representation of the dictionary entry key.</description>
+        ///         <description>The string representation of the dictionary entry key.</description>
         ///     </item>
         /// </list>
         /// </remarks>
         /// <param name="type">The sensetive key type.</param>
         /// <param name="property">The property whose value is belongs to sensitive data.</param>
-        /// <returns><see cref="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
         public bool IsSensitiveData(Type type, string property)
         {
@@ -422,18 +421,18 @@ namespace Leviasan.Sanlog
             return _sensitiveDataType.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Registers property whose value belongs to sensitive data.
+        /// Registers a property whose value belongs to sensitive data.
         /// </summary>
         /// <remarks>
         /// Table of the supported types:
         /// <list type="table">
         ///     <item>
-        ///         <term><see cref="string"/></term>
-        ///         <description>The property name of the composite format string.</description>
+        ///         <term><see cref="MessageTemplate"/></term>
+        ///         <description>The property name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
-        ///          <description>The string representation of the dictionary entry key.</description>
+        ///         <description>The string representation of the dictionary entry key.</description>
         ///     </item>
         /// </list>
         /// </remarks>
@@ -454,19 +453,19 @@ namespace Leviasan.Sanlog
         /// Table of the supported types:
         /// <list type="table">
         ///     <item>
-        ///         <term><see cref="string"/></term>
-        ///         <description>The property name of the composite format string.</description>
+        ///         <term><see cref="MessageTemplate"/></term>
+        ///         <description>The property name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
-        ///          <description>The string representation of the dictionary entry key.</description>
+        ///         <description>The string representation of the dictionary entry key.</description>
         ///     </item>
         /// </list>
         /// </remarks>
         /// <param name="type">The sensetive key type.</param>
-        /// <param name="args">An array of properties whose value belongs to sensitive data.<param>
+        /// <param name="args">An array of properties whose value belongs to sensitive data.</param>
         /// <returns>The count of the added element.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/></exception>
         public int RegisterSensitiveData(Type type, params string[] args)
         {
             ArgumentNullException.ThrowIfNull(args);
@@ -481,6 +480,19 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Registers an array of properties whose values belong to sensitive data.
         /// </summary>
+        /// <remarks>
+        /// Table of the supported types:
+        /// <list type="table">
+        ///     <item>
+        ///         <term><see cref="MessageTemplate"/></term>
+        ///         <description>The property name of the message template.</description>
+        ///     </item>
+        ///     <item>
+        ///         <term><see cref="DictionaryEntry"/></term>
+        ///         <description>The string representation of the dictionary entry key.</description>
+        ///     </item>
+        /// </list>
+        /// </remarks>
         /// <param name="args">The configuration of the sensitive formatter.</param>
         /// <returns>The count of the added element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
@@ -498,247 +510,17 @@ namespace Leviasan.Sanlog
         /// <inheritdo1c/>
         public override string ToString()
         {
-            return _messageFormatter is not null
-                ? _messageFormatter.Format(this, TakeBySegmentOrder(_messageFormatter.Segments))
-                : NullFormat;
+            return _messageTemplate is not null ? _messageTemplate.Format(this, TakeBySegmentOrder(_messageTemplate)) : NullFormat;
 
-            object?[] TakeBySegmentOrder(IReadOnlyList<LogMessageFormatter.FormatSegment> segments)
+            object?[] TakeBySegmentOrder(MessageTemplate messageTemplate)
             {
                 var dictionary = new Dictionary<string, object?>();
-                foreach (var segment in segments)
+                foreach (var segment in messageTemplate)
                 {
                     if (dictionary.ContainsKey(segment.Name)) continue;
                     dictionary[segment.Name] = GetObject(segment.Name, true).Value;
                 }
                 return [.. dictionary.Values];
-            }
-        }
-
-        /// <summary>
-        /// Represents a parsed named format string.
-        /// </summary>
-        internal sealed class LogMessageFormatter
-        {
-            /// <summary>
-            /// The delimiters used by composite string.
-            /// </summary>
-            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private static readonly char[] FormatDelimiters = [',', ':'];
-
-            /// <summary>
-            /// Parses the specified named format string.
-            /// </summary>
-            /// <param name="format">The named format string to parse.</param>
-            /// <returns>A composite string and information about segments in the expression.</returns>
-            /// <exception cref="ArgumentNullException">The <paramref name="format"/> is <see langword="null"/>.</exception>
-            /// <exception cref="FormatException">A format item in format is invalid.</exception>
-            public static LogMessageFormatter Parse(string format)
-            {
-                ArgumentNullException.ThrowIfNull(format);
-                var itemIndex = 0;
-                var scanIndex = 0;
-                var endIndex = format.Length;
-                var stringBuilder = new StringBuilder(256);
-                var namedFormatStringItems = new List<FormatSegment>();
-                CompositeFormat compositeFormat;
-                var conventions = new List<SegmentNamingConvention>();
-                while (scanIndex < endIndex)
-                {
-                    var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
-                    if (scanIndex == 0 && openBraceIndex == endIndex)
-                    {
-                        compositeFormat = CompositeFormat.Parse(format); // FormatException
-                        return new LogMessageFormatter(compositeFormat, [.. namedFormatStringItems]);
-                    }
-                    var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
-                    if (closeBraceIndex == endIndex)
-                    {
-                        _ = stringBuilder.Append(format.AsSpan(scanIndex, endIndex - scanIndex));
-                        scanIndex = endIndex;
-                    }
-                    else
-                    {
-                        // Format item syntax: {index[,alignment][:formatString]}
-                        var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
-                        _ = stringBuilder.Append(format.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
-                        // Substring argument name
-                        var argName = format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
-                        // Mixed segment name is not allowed
-                        var naming = EvaluateSegmentNaming(argName);
-                        conventions.Add(naming);
-                        if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
-                            throw new FormatException($"Input string was not in a correct format. Failure to parse near offset {openBraceIndex + 1}.");
-                        // Evaluate argument index
-                        var argIndex = naming == SegmentNamingConvention.AsciiDigit ? int.Parse(argName, CultureInfo.InvariantCulture) : namedFormatStringItems.FindIndex(x => x.Name.Equals(argName, StringComparison.Ordinal));
-                        argIndex = argIndex == -1 ? itemIndex++ : argIndex;
-                        _ = stringBuilder.Append(argIndex);
-                        var lastpart = format.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
-                        _ = stringBuilder.Append(lastpart);
-                        scanIndex = closeBraceIndex + 1;
-                        // Extract alignment and format
-                        var alignmentIndex = lastpart.IndexOf(',');
-                        var formatStringIndex = lastpart.IndexOf(':');
-                        var argAlignment = int.TryParse(lastpart[(alignmentIndex + 1)..(formatStringIndex == -1 ? ^1 : formatStringIndex)], out var result) ? result : default;
-                        var argFormat = formatStringIndex == -1 ? null : lastpart[(formatStringIndex + 1)..^1].ToString();
-                        // Register a format item
-                        namedFormatStringItems.Add(new FormatSegment(argName, argIndex, argAlignment, argFormat));
-                    }
-                }
-                compositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
-                return new LogMessageFormatter(compositeFormat, [.. namedFormatStringItems]);
-
-                // Summary: Reports the zero-based index of the first occurrence in string instance of brace in a specified array of Unicode characters.
-                // The search starts at a specified character position and examines a specified number of character positions.
-                // Param (format): The named format string to parse.
-                // Param (brace): The symbol to search.
-                // Param (startIndex): The search starting position.
-                // Param (endIndex): The search finish position.
-                // Returns: The zero-based index position of value if that character is found, or endIndex if it is not.
-                static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
-                {
-                    // Example: {{prefix{{{Argument}}}suffix}}.
-                    var braceIndex = endIndex;
-                    var scanIndex = startIndex;
-                    var braceOccurrenceCount = 0;
-                    while (scanIndex < endIndex)
-                    {
-                        if (braceOccurrenceCount > 0 && format[scanIndex] != brace)
-                        {
-                            if (braceOccurrenceCount % 2 == 0)
-                            {
-                                // Even number of '{' or '}' found. Proceed search with next occurrence of '{' or '}'
-                                braceOccurrenceCount = 0;
-                                braceIndex = endIndex;
-                            }
-                            else
-                            {
-                                // An unescaped '{' or '}' found
-                                break;
-                            }
-                        }
-                        else if (format[scanIndex] == brace)
-                        {
-                            if (brace == '}')
-                            {
-                                if (braceOccurrenceCount == 0)
-                                    // For '}' pick the first occurrence
-                                    braceIndex = scanIndex;
-                            }
-                            else
-                            {
-                                // For '{' pick the last occurrence
-                                braceIndex = scanIndex;
-                            }
-                            braceOccurrenceCount++;
-                        }
-                        scanIndex++;
-                    }
-                    return braceIndex;
-                }
-                // Summary: Reports the zero-based index of the first occurrence in string instance of any character in a specified array of Unicode characters.
-                // The search starts at a specified character position and examines a specified number of character positions.
-                // Param (format): The named format string to parse.
-                // Param (chars): A Unicode character array containing one or more characters to seek.
-                // Param (startIndex): The search starting position.
-                // Param (endIndex): The search finish position.
-                // Returns: The zero-based index position of the first occurrence in this instance where any character in anyOf was found; endIndex if no character in anyOf was found.
-                static int FindIndexOfAny(string format, char[] chars, int startIndex, int endIndex)
-                {
-                    var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
-                    return findIndex == -1 ? endIndex : findIndex;
-                }
-                // Summary: Evaluates a segment naming convention.
-                // Param (value): The string value to evaluate.
-                // Returns: AsciiDigit if all symbols in the specified string are categorized as an ASCII digit; OtherSymbols if any symbols in the specified string are not categorized as an ASCII digit; otherwise Undefined.
-                static SegmentNamingConvention EvaluateSegmentNaming(string value)
-                {
-                    var naming = SegmentNamingConvention.Undefined;
-                    foreach (var symbol in value)
-                        naming |= char.IsAsciiDigit(symbol) ? SegmentNamingConvention.AsciiDigit : SegmentNamingConvention.OtherSymbols;
-                    return naming;
-                }
-            }
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="LogMessageFormatter"/> class with the specified parsed composite format string and information about its segments.
-            /// </summary>
-            /// <param name="compositeFormat">The parsed composite format string.</param>
-            /// <param name="segments">The parsed segments that make up the composite format string.</param>
-            private LogMessageFormatter(CompositeFormat compositeFormat, FormatSegment[] segments)
-            {
-                Debug.Assert(compositeFormat is not null);
-                Debug.Assert(segments is not null);
-                CompositeFormat = compositeFormat;
-                Segments = segments;
-            }
-
-            /// <summary>
-            /// Gets the parsed composite format string.
-            /// </summary>
-            public CompositeFormat CompositeFormat { get; }
-            /// <summary>
-            /// Gets the parsed segments that make up the composite format string.
-            /// </summary>
-            public IReadOnlyList<FormatSegment> Segments { get; }
-
-            /// <summary>
-            /// Replaces the format item or items in the current instance with the string representation of the corresponding objects in the specified format.
-            /// </summary>
-            /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-            /// <param name="args">An array of objects to format.</param>
-            /// <returns>The formatted string.</returns>
-            /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
-            /// <exception cref="FormatException">The index of a format item is greater than or equal to the number of supplied arguments.</exception>
-            public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, CompositeFormat, args);
-
-            /// <summary>
-            /// Represents a segment that makes up the composite format string.
-            /// </summary>
-            /// <param name="Name">The name of the segment.</param>
-            /// <param name="Index">The index of the segment.</param>
-            /// <param name="Alignment">The alignment of the segment.</param>
-            /// <param name="FormatString">The format of the segment.</param>
-            public sealed record class FormatSegment(string Name, int Index, int Alignment, string? FormatString)
-            {
-                /// <summary>
-                /// Replaces the format item with a string representation of the specified object using alignment and format string of the current instance.
-                /// </summary>
-                /// <param name="provider">An object that supplies culture-specific formatting information.</param>
-                /// <param name="arg0">The object to format.</param>
-                /// <returns>A formatted string representation of the specified object.</returns>   
-                public string Format(IFormatProvider? provider, object? arg0)
-                {
-                    var stringBuilder = new StringBuilder(256).Append("{0");
-                    if (Alignment != 0)
-                        _ = stringBuilder.Append(CultureInfo.InvariantCulture, $",{Alignment}");
-                    if (!string.IsNullOrEmpty(FormatString))
-                        _ = stringBuilder.Append(CultureInfo.InvariantCulture, $":{FormatString}");
-                    _ = stringBuilder.Append('}');
-                    return string.Format(provider, stringBuilder.ToString(), arg0);
-                }
-            }
-            /// <summary>
-            /// Defines segment naming convention.
-            /// </summary>
-            [Flags]
-            private enum SegmentNamingConvention
-            {
-                /// <summary>
-                /// Unknown convention.
-                /// </summary>
-                Undefined = 0,
-                /// <summary>
-                /// Using ASCII digits.
-                /// </summary>
-                AsciiDigit = 1,
-                /// <summary>
-                /// Using symbols.
-                /// </summary>
-                OtherSymbols = 2,
-                /// <summary>
-                /// Mixed naming convention.
-                /// </summary>
-                Mixed = AsciiDigit | OtherSymbols
             }
         }
     }

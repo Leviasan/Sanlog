@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 
 namespace Leviasan.Sanlog
@@ -9,7 +8,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.
     /// </summary>
-    public sealed class SanlogLoggerOptions : IEnumerable<KeyValuePair<Type, HashSet<string>>>
+    public sealed class SanlogLoggerOptions
     {
         /// <summary>
         /// Gets or sets the application identifier.
@@ -26,13 +25,8 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// The list of the sensitive data.
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private Dictionary<Type, HashSet<string>> SensitiveDataType { get; } = [];
+        public Dictionary<Type, HashSet<string>> SensitiveData { get; } = [];
 
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<Type, HashSet<string>>> GetEnumerator() => SensitiveDataType.GetEnumerator();
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <summary>
         /// Registers property whose value belongs to sensitive data.
         /// </summary>
@@ -40,12 +34,12 @@ namespace Leviasan.Sanlog
         /// Table of the supported types:
         /// <list type="table">
         ///     <item>
-        ///         <term><see cref="string"/></term>
-        ///         <description>The property name of the composite format string.</description>
+        ///         <term><see cref="MessageTemplate"/></term>
+        ///         <description>The property name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
-        ///          <description>The string representation of the dictionary entry key.</description>
+        ///         <description>The string representation of the dictionary entry key.</description>
         ///     </item>
         /// </list>
         /// </remarks>
@@ -57,7 +51,7 @@ namespace Leviasan.Sanlog
         {
             ArgumentNullException.ThrowIfNull(type);
             ArgumentNullException.ThrowIfNull(property);
-            return SensitiveDataType.TryGetValue(type, out var hashset) ? hashset.Add(property) : SensitiveDataType.TryAdd(type, [property]);
+            return SensitiveData.TryGetValue(type, out var hashset) ? hashset.Add(property) : SensitiveData.TryAdd(type, [property]);
         }
     }
 }

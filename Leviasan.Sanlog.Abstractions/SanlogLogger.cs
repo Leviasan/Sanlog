@@ -14,15 +14,15 @@ namespace Leviasan.Sanlog
     public sealed class SanlogLogger : ILogger, ISupportExternalScope
     {
         /// <summary>
-        /// The category name for messages produced by the logger.
+        /// The category for messages produced by the logger.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _categoryName;
         /// <summary>
-        /// The writer to the storage.
+        /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly LoggingWriter _writer;
+        private readonly SanlogLoggerWriter _writer;
         /// <summary>
         /// The logger options.
         /// </summary>
@@ -35,13 +35,13 @@ namespace Leviasan.Sanlog
         private IExternalScopeProvider? _externalScopeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category name for messages produced by the logger, the channel writer, and the logger options.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the logger options.
         /// </summary>
-        /// <param name="categoryName">The category name for messages produced by the logger.</param>
-        /// <param name="writer">The writer to the storage. The caller is responsible for disposing of the writer.</param>
+        /// <param name="categoryName">The category for messages produced by the logger.</param>
+        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="options">The logger options.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> or <paramref name="writer"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public SanlogLogger(string categoryName, LoggingWriter writer, SanlogLoggerOptions options)
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        public SanlogLogger(string categoryName, SanlogLoggerWriter writer, SanlogLoggerOptions options)
         {
             _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));
@@ -60,7 +60,7 @@ namespace Leviasan.Sanlog
             {
                 ArgumentNullException.ThrowIfNull(formatter);
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
-                _ = formattedLogValuesFormatter.RegisterSensitiveData(_options);
+                _ = formattedLogValuesFormatter.RegisterSensitiveData(_options.SensitiveData);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -97,8 +97,7 @@ namespace Leviasan.Sanlog
             // Param (logEntryId): The parent logging entry identifier.
             // Param (parentErrorId): The parent error identifier.
             // Returns: The error information.
-            [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
-                Justification = "TargetSize property has a remark that Exception.TargetSite metadata might be incomplete or removed")]
+            [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "TargetSite metadata might be incomplete or removed")]
             static LoggingError GetErrorInformation(Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
             {
                 return new LoggingError
@@ -128,12 +127,12 @@ namespace Leviasan.Sanlog
                 var scopes = new List<LoggingScope>();
                 if (options.IncludeScopes && externalScopeProvider is not null)
                 {
-                    externalScopeProvider.ForEachScope((scope, _) =>
+                    externalScopeProvider.ForEachScope((scope, __) =>
                     {
                         if (scope is not null)
                         {
                             var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, formatProvider);
-                            formattedLogValuesFormatter.RegisterSensitiveData(options);
+                            _ = formattedLogValuesFormatter.RegisterSensitiveData(options.SensitiveData);
 
                             var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope

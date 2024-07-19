@@ -7,8 +7,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    <IsTrimmable>false</IsTrimmable>
-    <IsAotCompatible>false</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RootNamespace>Leviasan.Sanlog</RootNamespace>
     <DebugType>embedded</DebugType>
     <Authors>Leviasan</Authors>
@@ -22,7 +23,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
