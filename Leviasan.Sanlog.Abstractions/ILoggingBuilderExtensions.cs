@@ -18,6 +18,7 @@ namespace Leviasan.Sanlog
         /// Adds Sanlog logging services with file storage.
         /// </summary>
         /// <param name="builder">The logging builder.</param>
+        /// <param name="loggingConfigure">The configure options for logging.</param>
         /// <param name="directory">The path to the log directory. The default is the current application directory.</param>
         /// <param name="filePrefix">The prefix of the file name used to store the logging information. The current date in the format YYYYMMDD is added after the specified value. The default is "diagnostics-".</param>
         /// <param name="fileSizeLimit">The maximum log size in bytes. Once the log is full behavior depends on <paramref name="strategy"/>. The default is 10MB.</param>
@@ -29,7 +30,7 @@ namespace Leviasan.Sanlog
         /// <returns>The logging builder.</returns>
         [RequiresDynamicCode("Binding TOptions to configuration values may require generating dynamic code at runtime.")]
         [RequiresUnreferencedCode("TOptions's dependent types may have their members trimmed. Ensure all required members are preserved.")]
-        public static ILoggingBuilder AddSanlogLogger(this ILoggingBuilder builder, string directory = "./", string? filePrefix = "diagnostics-", int fileSizeLimit = 10485760, int fileCountLimit = 2,
+        public static ILoggingBuilder AddSanlogLogger(this ILoggingBuilder builder, Action<SanlogLoggerOptions>? loggingConfigure = default, string directory = "./", string? filePrefix = "diagnostics-", int fileSizeLimit = 10485760, int fileCountLimit = 2,
             FileLoggerWriterMode strategy = FileLoggerWriterMode.DropWrite, Encoding? encoding = null, bool allowSynchronousContinuations = false)
         {
             ArgumentNullException.ThrowIfNull(builder);
@@ -43,6 +44,8 @@ namespace Leviasan.Sanlog
                     writer: serviceProvider.GetRequiredService<FileLoggerWriter>(),
                     optionsMonitor: serviceProvider.GetRequiredService<IOptionsMonitor<SanlogLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services); // IL3026 + IL3050
+            // Configure logging options
+            if (loggingConfigure is not null) _ = builder.Services.Configure(loggingConfigure);
             return builder;
         }
     }
