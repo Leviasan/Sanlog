@@ -130,7 +130,7 @@ namespace Leviasan.Sanlog
             _formatProvider = formatProvider;
             _messageTemplate = TryGetOrAdd( // FormatException
                 format: _dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string,  // InvalidOperationException
-                messageTemplate: out var messageTemplate) ? messageTemplate : null; 
+                messageTemplate: out var messageTemplate) ? messageTemplate : null;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object that supplies culture-specific formatting information, a message template, and an object array that contains zero or more objects to format.
@@ -188,11 +188,7 @@ namespace Leviasan.Sanlog
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyArray = "[]";
-            if (Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, out var stringValue))
-            {
-                return stringValue;
-            }
-            return arg switch
+            return Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, out var stringValue) ? stringValue : arg switch
             {
                 IFormattable formattable => formattable.ToString(format, formatProvider),
                 _ => FormatFallback(arg, formatProvider)
@@ -235,10 +231,7 @@ namespace Leviasan.Sanlog
                 // Param (value): An object to format.
                 // Param (formatProvider): An object that supplies format information about the current instance.
                 // Returns: A string representation of the specified value.
-                static string ObjectToString(object? value, IFormatProvider? formatProvider)
-                {
-                    return TryCustomFormat(value, formatProvider, out var stringValue) ? stringValue : FormatFallback(value, formatProvider);
-                }
+                static string ObjectToString(object? value, IFormatProvider? formatProvider) => TryCustomFormat(value, formatProvider, out var stringValue) ? stringValue : FormatFallback(value, formatProvider);
                 // Summary: Converts IDictionary object to a string representation using overridden and custom formats and culture-specific formatting information.
                 // Param (dictionary): An object to format.
                 // Param (formatProvider): An object that supplies format information about the current instance.

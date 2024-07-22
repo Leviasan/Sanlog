@@ -79,12 +79,12 @@ namespace Leviasan.Sanlog
             Encoding? encoding = null, bool allowSynchronousContinuations = false) : base(allowSynchronousContinuations)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(directory);
-            if (!Directory.Exists(directory)) Directory.CreateDirectory(directory); // DirectoryNotFoundException + IOException + NotSupportedException + PathTooLongException + UnauthorizedAccessException
             ArgumentOutOfRangeException.ThrowIfLessThan(fileSizeLimit, 0);
             ArgumentOutOfRangeException.ThrowIfLessThan(fileCountLimit, 0);
             if (!Enum.IsDefined(strategy)) throw new ArgumentOutOfRangeException(nameof(strategy), strategy, null);
 
-            _directory = new DirectoryInfo(directory); // SecurityException + PathTooLongException
+            _directory = Directory.Exists(directory) ? new DirectoryInfo(directory) // SecurityException + PathTooLongException
+                : Directory.CreateDirectory(directory); // DirectoryNotFoundException + IOException + NotSupportedException + PathTooLongException + UnauthorizedAccessException
             _filePrefix = filePrefix;
             _fileSizeLimit = fileSizeLimit;
             _fileCountLimit = fileCountLimit;
