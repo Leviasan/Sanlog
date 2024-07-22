@@ -108,9 +108,9 @@ namespace Leviasan.Sanlog
             _streamWriter?.Dispose();
         }
         /// <inheritdoc/>
-        protected override async ValueTask DisposeAsyncCore()
+        public override async ValueTask DisposeAsync()
         {
-            await base.DisposeAsyncCore().ConfigureAwait(false);
+            await base.DisposeAsync().ConfigureAwait(false);
             if (_streamWriter is not null)
                 await _streamWriter.DisposeAsync().ConfigureAwait(false);
         }

@@ -88,16 +88,7 @@ namespace Leviasan.Sanlog
         }
         /// <inheritdoc/>
         [SuppressMessage("Usage", "CA1816:Dispose methods should call SuppressFinalize", Justification = "https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-disposeasync")]
-        public async ValueTask DisposeAsync()
-        {
-            await DisposeAsyncCore().ConfigureAwait(false);
-            Dispose(false);
-            GC.SuppressFinalize(this);
-        }
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
-        /// </summary>
-        protected virtual async ValueTask DisposeAsyncCore()
+        public virtual async ValueTask DisposeAsync()
         {
             _channel.Writer.Complete(null);
             await _channel.Reader.Completion.ConfigureAwait(false);
@@ -105,6 +96,8 @@ namespace Leviasan.Sanlog
             await _completion.ConfigureAwait(false);
             _cancellationTokenSource.Dispose();
             _completion.Dispose();
+            Dispose(false);
+            GC.SuppressFinalize(this);
         }
         /// <summary>
         /// Attempts to write the specified item to the channel.
