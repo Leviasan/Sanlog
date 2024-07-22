@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Security;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -117,7 +118,14 @@ namespace Leviasan.Sanlog
         protected override async Task WriteToStorageAsync(LoggingEntry loggingEntry)
         {
             if (InitStreamWriter(ref _streamWriter))
-                await _streamWriter.WriteLineAsync(loggingEntry.ToString()).ConfigureAwait(false);
+            {
+                using var memoryStream = new MemoryStream();
+                await JsonSerializer.SerializeAsync(memoryStream, loggingEntry, SourceGenerationContext.Default.LoggingEntry).ConfigureAwait(false);
+                using var streamReader = new StreamReader(memoryStream);
+                memoryStream.Position = 0;
+                var json = await streamReader.ReadToEndAsync().ConfigureAwait(false);
+                await _streamWriter.WriteLineAsync(json).ConfigureAwait(false);
+            }
         }
         /// <summary>
         /// Prepares a <see cref="StreamWriter"/> instance for writing data.
@@ -140,7 +148,7 @@ namespace Leviasan.Sanlog
             if (files.Length == 0)
             {
                 if (files.Length >= _fileCountLimit) return false;
-                streamWriter = CreateInstance(BuildFileFullName(_directory.FullName, _filePrefix, files.Length), _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
+                streamWriter = CreateStreamWriter(BuildFileFullName(_directory.FullName, _filePrefix, files.Length), _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
             }
             else if (files[^1].Length >= _fileSizeLimit)
             {
@@ -162,11 +170,11 @@ namespace Leviasan.Sanlog
                 var match = RegexLogFileName().Match(files[^1].Name);
                 var number = int.Parse(match.Groups["number"].Value, CultureInfo.InvariantCulture); // FormatException + OverflowException
                 if (int.IsNegative(number) || number == int.MaxValue) return false;
-                streamWriter = CreateInstance(BuildFileFullName(_directory.FullName, _filePrefix, ++number), _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
+                streamWriter = CreateStreamWriter(BuildFileFullName(_directory.FullName, _filePrefix, ++number), _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
             }
             else
             {
-                streamWriter = CreateInstance(files[^1].FullName, _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
+                streamWriter = CreateStreamWriter(files[^1].FullName, _encoding); // UnauthorizedAccessException + DirectoryNotFoundException + IOException + PathTooLongException + SecurityException
             }
             return true;
 
@@ -185,7 +193,7 @@ namespace Leviasan.Sanlog
             // Exception (IOException): The path includes an incorrect or invalid syntax for file name, directory name, or volume label syntax.
             // Exception (PathTooLongException): The path, file name, or both exceed the system-defined maximum length.
             // Exception (SecurityException): The caller does not have the required permission.
-            static StreamWriter CreateInstance(string filename, Encoding encoding) => new(filename, true, encoding) { AutoFlush = true };
+            static StreamWriter CreateStreamWriter(string filename, Encoding encoding) => new(filename, true, encoding) { AutoFlush = true };
         }
     }
 }
