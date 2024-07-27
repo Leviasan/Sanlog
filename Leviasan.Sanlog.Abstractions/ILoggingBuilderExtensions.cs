@@ -18,7 +18,7 @@ namespace Leviasan.Sanlog
         /// Adds Sanlog logging services with file storage.
         /// </summary>
         /// <param name="builder">The logging builder.</param>
-        /// <param name="loggingConfigure">The configure options for logging.</param>
+        /// <param name="loggingConfigure">The configure of the <see cref="SanlogLogger"/>.</param>
         /// <param name="directory">The path to the log directory. The default is the current application directory.</param>
         /// <param name="filePrefix">The prefix of the file name used to store the logging information. The current date in the format YYYYMMDD is added after the specified value. The default is "diagnostics-".</param>
         /// <param name="fileSizeLimit">The maximum log size in bytes. Once the log is full behavior depends on <paramref name="strategy"/>. The default is 10MB.</param>
