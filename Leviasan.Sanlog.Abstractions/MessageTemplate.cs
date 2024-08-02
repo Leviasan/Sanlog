@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 
@@ -11,7 +9,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents a message template.
     /// </summary>
-    public sealed class MessageTemplate : IReadOnlyList<MessageTemplate.Segment>
+    public sealed class MessageTemplate
     {
         /// <summary>
         /// The delimiters used by composite string.
@@ -20,77 +18,51 @@ namespace Leviasan.Sanlog
         private static readonly char[] FormatDelimiters = [',', ':'];
 
         /// <summary>
-        /// Parses the specified string as a message template.
+        /// Initializes a new instance of the <see cref="MessageTemplate"/> class from the specified message template.
         /// </summary>
         /// <param name="value">The message template to parse.</param>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        /// <returns>A message template as a composite string and information about its segments.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="value"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public static MessageTemplate Parse(string value, IFormatProvider? formatProvider)
+        public MessageTemplate(string value)
         {
             ArgumentNullException.ThrowIfNull(value);
-            try
+
+            var scanIndex = 0;
+            var endIndex = value.Length;
+            var stringBuilder = new StringBuilder(256);
+            var namedFormatStringItems = new List<string>();
+            var conventions = new List<SegmentNamingConvention>();
+            while (scanIndex < endIndex)
             {
-                var itemIndex = 0;
-                var scanIndex = 0;
-                var endIndex = value.Length;
-                var stringBuilder = new StringBuilder(256);
-                var namedFormatStringItems = new List<Segment>();
-                CompositeFormat compositeFormat;
-                var conventions = new List<SegmentNamingConvention>();
-                while (scanIndex < endIndex)
+                var openBraceIndex = FindBraceIndex(value, '{', scanIndex, endIndex);
+                if (scanIndex == 0 && openBraceIndex == endIndex)
                 {
-                    var openBraceIndex = FindBraceIndex(value, '{', scanIndex, endIndex);
-                    if (scanIndex == 0 && openBraceIndex == endIndex)
-                    {
-                        compositeFormat = CompositeFormat.Parse(value); // FormatException
-                        return new MessageTemplate(compositeFormat, [.. namedFormatStringItems]);
-                    }
-                    var closeBraceIndex = FindBraceIndex(value, '}', openBraceIndex, endIndex);
-                    if (closeBraceIndex == endIndex)
-                    {
-                        _ = stringBuilder.Append(value.AsSpan(scanIndex, endIndex - scanIndex));
-                        scanIndex = endIndex;
-                    }
-                    else
-                    {
-                        // Format item syntax: {index[,alignment][:formatString]}
-                        var formatDelimiterIndex = FindIndexOfAny(value, FormatDelimiters, openBraceIndex, closeBraceIndex);
-                        _ = stringBuilder.Append(value.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
-                        // Evaluate argument name
-                        var name = value.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
-                        // Mixed argument name is not supported
-                        conventions.Add(EvaluateSegmentNaming(name));
-                        if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
-                            throw new FormatException(string.Format(formatProvider, "The input string was not in the correct format. Fail to parse near offset {0}. The mixed argument names are not supported.", openBraceIndex + 1));
-                        // Evaluate argument index
-                        var index = conventions[^1] == SegmentNamingConvention.AsciiDigit ? int.Parse(name, formatProvider)
-                            : namedFormatStringItems.FindIndex(x => x.Name.Equals(name, StringComparison.Ordinal)); // OverflowException
-                        if (index < -1)
-                            throw new OverflowException("An argument index represents a number less than 0 or greater than 2147483647.");
-                        index = index == -1 ? itemIndex++ : index;
-                        _ = stringBuilder.Append(index);
-                        // Evaluate argument alignment
-                        var lastpart = value.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
-                        _ = stringBuilder.Append(lastpart);
-                        scanIndex = closeBraceIndex + 1;
-                        var alignmentIndex = lastpart.IndexOf(',');
-                        var formatStringIndex = lastpart.IndexOf(':');
-                        var alignment = alignmentIndex == -1 ? default
-                            : int.Parse(lastpart[(alignmentIndex + 1)..(formatStringIndex == -1 ? ^1 : formatStringIndex)], formatProvider); // OverflowException
-                        var format = formatStringIndex == -1 ? null : lastpart[(formatStringIndex + 1)..^1].ToString();
-                        // Add the next format item
-                        namedFormatStringItems.Add(new Segment(name, index, alignment, format));
-                    }
+                    stringBuilder.Append(value);
+                    break;
                 }
-                compositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
-                return new MessageTemplate(compositeFormat, [.. namedFormatStringItems]);
+                var closeBraceIndex = FindBraceIndex(value, '}', openBraceIndex, endIndex);
+                if (closeBraceIndex == endIndex)
+                {
+                    _ = stringBuilder.Append(value.AsSpan(scanIndex, endIndex - scanIndex));
+                    scanIndex = endIndex;
+                }
+                else
+                {
+                    // Format item syntax: {index[,alignment][:formatString]}
+                    var formatDelimiterIndex = FindIndexOfAny(value, FormatDelimiters, openBraceIndex, closeBraceIndex);
+                    _ = stringBuilder.Append(value.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
+                    // Evaluate argument name
+                    var name = value.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
+                    // Mixed argument name is not supported
+                    conventions.Add(EvaluateSegmentNaming(name));
+                    if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
+                        throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. The mixed argument names are not supported.", openBraceIndex + 1));
+                    // Add the next format item
+                    namedFormatStringItems.Add(name);
+                }
             }
-            catch (OverflowException overflow)
-            {
-                throw new FormatException(null, overflow);
-            }
+            CompositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
+            Segments = [.. namedFormatStringItems];
 
             // Summary: Reports the zero-based index of the first occurrence in string instance of brace in a specified array of Unicode characters.
             // The search starts at a specified character position and examines a specified number of character positions.
@@ -165,37 +137,13 @@ namespace Leviasan.Sanlog
         }
 
         /// <summary>
-        /// The composite format string.
+        /// Gets the composite format string.
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly CompositeFormat _compositeFormat;
+        public CompositeFormat CompositeFormat { get; }
         /// <summary>
-        /// The segments that make up the composite format string.
+        /// Gets the segments that make up the composite format string.
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Segment[] _segments;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageTemplate"/> class with the specified parsed composite format string and information about its segments.
-        /// </summary>
-        /// <param name="compositeFormat">The parsed composite format string.</param>
-        /// <param name="segments">The segments that make up the composite format string.</param>
-        private MessageTemplate(CompositeFormat compositeFormat, Segment[] segments)
-        {
-            Debug.Assert(compositeFormat is not null);
-            Debug.Assert(segments is not null);
-            _compositeFormat = compositeFormat;
-            _segments = segments;
-        }
-
-        /// <inheritdoc/>
-        public Segment this[int index] => _segments[index];
-        /// <inheritdoc/>
-        public int Count => _segments.Length;
-        /// <summary>
-        /// Gets the minimum number of arguments that must be passed to a formatting operation using this instance.
-        /// </summary>
-        public int MinimumArgumentCount => _compositeFormat.MinimumArgumentCount;
+        public IReadOnlyList<string> Segments { get; }
 
         /// <summary>
         /// Replaces a format item or items in the current instance with the string representation of the corresponding objects in the specified format.
@@ -205,32 +153,10 @@ namespace Leviasan.Sanlog
         /// <returns>A formatted string.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">The index of a format item is greater than or equal to the number of supplied arguments.</exception>
-        public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, _compositeFormat, args);
+        public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, CompositeFormat, args);
         /// <inheritdoc/>
-        public IEnumerator<Segment> GetEnumerator() => ((IEnumerable<Segment>)_segments).GetEnumerator();
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => _segments.GetEnumerator();
-        /// <inheritdoc/>
-        public override string ToString() => _compositeFormat.Format;
+        public override string ToString() => CompositeFormat.Format;
 
-        /// <summary>
-        /// Represents a segment that makes up the composite format string.
-        /// </summary>
-        /// <param name="Name">The name of the segment.</param>
-        /// <param name="Index">The index of the segment.</param>
-        /// <param name="Alignment">The alignment of the segment.</param>
-        /// <param name="FormatString">The format of the segment.</param>
-        [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Internal usage")]
-        public sealed record class Segment(string Name, int Index, int Alignment, string? FormatString)
-        {
-            /// <summary>
-            /// Replaces the item in the current instance with the string representation of the corresponding object in the specified format.
-            /// </summary>
-            /// <param name="provider">An object that supplies culture-specific formatting information.</param>
-            /// <param name="arg0">The object to format.</param>
-            /// <returns>A formatted string representation of the specified object.</returns>
-            public string Format(IFormatProvider? provider, object? arg0) => string.Format(provider, $"{{0,{Alignment}:{FormatString}}}", arg0);
-        }
         /// <summary>
         /// Defines segment naming convention.
         /// </summary>

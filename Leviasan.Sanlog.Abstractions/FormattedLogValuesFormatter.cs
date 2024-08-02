@@ -9,7 +9,7 @@ using System.Text;
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
+    /// Represents the formatter that supports custom formatting of <see cref="IReadOnlyList{T}"/> Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
     /// <remarks>
     /// Overrides standard behavior of the format string component:
@@ -87,8 +87,8 @@ namespace Leviasan.Sanlog
             {
                 if (!CachedMessageTemplates.TryGetValue(format, out messageTemplate))
                 {
-                    messageTemplate = MessageTemplate.Parse(format, null); // FormatException
-                    return messageTemplate.MinimumArgumentCount <= 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate);
+                    messageTemplate = new MessageTemplate(format); // FormatException
+                    return messageTemplate.CompositeFormat.MinimumArgumentCount <= 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate);
                 }
                 return true;
             }
@@ -150,11 +150,11 @@ namespace Leviasan.Sanlog
                 var original = new List<KeyValuePair<string, object?>>();
                 for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
                 {
-                    while (segmentId < _messageTemplate.Count && original.Any(x => x.Key == _messageTemplate[segmentId].Name))
+                    while (segmentId < _messageTemplate.Segments.Count && original.Any(x => x.Key == _messageTemplate.Segments[segmentId]))
                     {
                         ++segmentId;
                     }
-                    original.Add(KeyValuePair.Create(_messageTemplate[segmentId].Name, args[index]));
+                    original.Add(KeyValuePair.Create(_messageTemplate.Segments[segmentId], args[index]));
                 }
                 original.Add(KeyValuePair.Create<string, object?>(OriginalFormat, format));
                 _dictionary = original;
@@ -508,10 +508,10 @@ namespace Leviasan.Sanlog
             object?[] TakeBySegmentOrder(MessageTemplate messageTemplate)
             {
                 var dictionary = new Dictionary<string, object?>();
-                foreach (var segment in messageTemplate)
+                foreach (var segment in messageTemplate.Segments)
                 {
-                    if (dictionary.ContainsKey(segment.Name)) continue;
-                    dictionary[segment.Name] = GetObject(segment.Name, true).Value;
+                    if (dictionary.ContainsKey(segment)) continue;
+                    dictionary[segment] = GetObject(segment, true).Value;
                 }
                 return [.. dictionary.Values];
             }
