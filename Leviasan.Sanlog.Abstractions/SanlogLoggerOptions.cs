@@ -2,13 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog
 {
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.
     /// </summary>
-    public sealed class SanlogLoggerOptions
+    public sealed class SanlogLoggerOptions : LogDefineOptions
     {
         /// <summary>
         /// Gets or sets the application identifier.
