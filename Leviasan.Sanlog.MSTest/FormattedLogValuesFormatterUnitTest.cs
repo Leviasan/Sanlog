@@ -83,9 +83,14 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual("some_username", formatter[0].Value);
         }
         [TestMethod]
-        public void CtorNamedFormatException()
+        public void CtorNamedInvalidFormat()
         {
             _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {{Login}. Password: {Password}.", "some_username", "some_password"));
+        }
+        [TestMethod]
+        public void CtorNamedNegativeIndex()
+        {
+            _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {2147483648}. Password: {0}.", "some_username", "some_password"));
         }
         [TestMethod]
         public void GetObjectAsString()

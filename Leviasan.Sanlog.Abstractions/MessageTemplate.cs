@@ -27,6 +27,7 @@ namespace Leviasan.Sanlog
         {
             ArgumentNullException.ThrowIfNull(value);
 
+            var next = 0;
             var scanIndex = 0;
             var endIndex = value.Length;
             var stringBuilder = new StringBuilder(256);
@@ -57,6 +58,18 @@ namespace Leviasan.Sanlog
                     conventions.Add(EvaluateSegmentNaming(name));
                     if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
                         throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. The mixed argument names are not supported.", openBraceIndex + 1));
+                    // Evaluate argument index
+                    var index = conventions[^1] == SegmentNamingConvention.AsciiDigit
+                        ? int.TryParse(name, null, out var result) && int.IsPositive(result) || result == -1
+                            ? result
+                            : throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. Invalid argument index.", openBraceIndex + 1))
+                        : namedFormatStringItems.FindIndex(x => x.Equals(name, StringComparison.Ordinal));
+                    index = index == -1 ? next++ : index;
+                    _ = stringBuilder.Append(index);
+                    // Append lastpart
+                    var lastpart = value.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
+                    _ = stringBuilder.Append(lastpart);
+                    scanIndex = closeBraceIndex + 1;
                     // Add the next format item
                     namedFormatStringItems.Add(name);
                 }
