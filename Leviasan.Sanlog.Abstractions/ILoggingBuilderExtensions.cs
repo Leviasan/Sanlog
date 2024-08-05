@@ -36,13 +36,13 @@ namespace Leviasan.Sanlog
             ArgumentNullException.ThrowIfNull(builder);
             // Add configuration
             builder.AddConfiguration();
-            // Register service to write log entries to the storage
-            _ = builder.Services.AddSingleton(serviceProvider => new FileLoggerWriter(directory, filePrefix, fileSizeLimit, fileCountLimit, strategy, encoding, allowSynchronousContinuations));
             // Register logger provider
-            builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>(
-                serviceProvider => new SanlogLoggerProvider(
-                    writer: serviceProvider.GetRequiredService<FileLoggerWriter>(),
-                    optionsMonitor: serviceProvider.GetRequiredService<IOptionsMonitor<SanlogLoggerOptions>>())));
+            builder.Services
+                .AddSingleton(serviceProvider => new FileLoggerWriter(directory, filePrefix, fileSizeLimit, fileCountLimit, strategy, encoding, allowSynchronousContinuations))
+                .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>(
+                    serviceProvider => new SanlogLoggerProvider(
+                        writer: serviceProvider.GetRequiredService<FileLoggerWriter>(),
+                        optionsMonitor: serviceProvider.GetRequiredService<IOptionsMonitor<SanlogLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services); // IL3026 + IL3050
             // Configure logging options
             if (loggingConfigure is not null) _ = builder.Services.Configure(loggingConfigure);
