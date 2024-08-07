@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
@@ -10,7 +9,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Provides a mechanism for writing log entries to storage. This class is abstract.
     /// </summary>
-    public abstract class SanlogLoggerWriter : IDisposable
+    public abstract class SanlogLoggerWriter : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -87,7 +86,6 @@ namespace Leviasan.Sanlog
             }
         }
         /// <inheritdoc/>
-        [SuppressMessage("Usage", "CA1816:Dispose methods should call SuppressFinalize", Justification = "https://learn.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-disposeasync")]
         public virtual async ValueTask DisposeAsync()
         {
             _channel.Writer.Complete(null);

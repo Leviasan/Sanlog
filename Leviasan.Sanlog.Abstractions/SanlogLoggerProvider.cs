@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -10,7 +11,7 @@ namespace Leviasan.Sanlog
     /// Represents a logger provider the can create instances of <see cref="SanlogLogger"/> and can consume external scope information.
     /// </summary>
     [ProviderAlias(nameof(SanlogLoggerProvider))]
-    public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope
+    public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable
     {
         /// <summary>
         /// The cache-collection of the created loggers.
@@ -88,6 +89,15 @@ namespace Leviasan.Sanlog
             }
         }
         /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
+        {
+            _loggers.Clear();
+            _changeTokenRegistration?.Dispose();
+            await _writer.DisposeAsync().ConfigureAwait(false);
+            Dispose(false);
+            GC.SuppressFinalize(this);
+        }
+        /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> is <see langword="null"/>.</exception>
         /// <exception cref="ObjectDisposedException">The logger provider is disposed.</exception>
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
@@ -114,5 +124,6 @@ namespace Leviasan.Sanlog
             _externalScopeProvider = scopeProvider;
             foreach (var logger in _loggers.Values) logger.SetScopeProvider(_externalScopeProvider);
         }
+
     }
 }
