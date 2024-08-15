@@ -41,6 +41,7 @@ namespace Leviasan.Sanlog
             builder.Services.TryAddEnumerable(ServiceDescriptor.KeyedSingleton<ILoggerProvider, SanlogLoggerProvider>(
                 serviceKey: typeof(FileLoggerWriter),
                 implementationFactory: (serviceProvider, key) => new SanlogLoggerProvider(
+                    serviceKey: key,
                     writer: serviceProvider.GetRequiredService<FileLoggerWriter>(),
                     optionsMonitor: serviceProvider.GetRequiredService<IOptionsMonitor<SanlogLoggerOptions>>())));
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services); // IL3026 + IL3050

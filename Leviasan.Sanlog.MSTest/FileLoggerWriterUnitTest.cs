@@ -8,6 +8,7 @@ namespace Leviasan.Sanlog.MSTest
     {
         private readonly string FilePath = "./";
         private static readonly Action<ILogger, string, string, Exception?> UserLogged = LoggerMessage.Define<string, string>(LogLevel.Information, default, "User {UserName} logged in from {MachineName}.");
+        private static readonly SanlogLoggerOptions Options = new SanlogLoggerOptions { AppId = Guid.NewGuid() };
 
         [TestCleanup]
         public void TestCleanup()
@@ -22,7 +23,7 @@ namespace Leviasan.Sanlog.MSTest
             string? searchPattern = null;
             await using (var writer = new FileLoggerWriter(directory: FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropWrite, encoding: Encoding.Unicode, allowSynchronousContinuations: false))
             {
-                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
+                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 3);
                 searchPattern = writer.SearchPattern;
             }
@@ -37,7 +38,7 @@ namespace Leviasan.Sanlog.MSTest
             string? searchPattern = null;
             using (var writer = new FileLoggerWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropNewest, encoding: Encoding.UTF8, allowSynchronousContinuations: false))
             {
-                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
+                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 50);
                 searchPattern = writer.SearchPattern;
             }
@@ -50,7 +51,7 @@ namespace Leviasan.Sanlog.MSTest
         public void FileCountLimitDropOldest()
         {
             var writer = new FileLoggerWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropOldest, encoding: Encoding.UTF8, allowSynchronousContinuations: false);
-            var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, new SanlogLoggerOptions { AppId = Guid.NewGuid() });
+            var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
             try
             {
                 UserLoggedInvoke(logger, null, 50);

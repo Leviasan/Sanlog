@@ -24,10 +24,10 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggerWriter _writer;
         /// <summary>
-        /// The logger options.
+        /// The function to get the current logger configuration.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SanlogLoggerOptions _options;
+        private readonly Func<SanlogLoggerOptions> _configure;
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
@@ -35,23 +35,23 @@ namespace Leviasan.Sanlog
         private IExternalScopeProvider? _externalScopeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the logger options.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
         /// </summary>
         /// <param name="categoryName">The category for messages produced by the logger.</param>
         /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
-        /// <param name="options">The logger options.</param>
+        /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string categoryName, SanlogLoggerWriter writer, SanlogLoggerOptions options)
+        public SanlogLogger(string categoryName, SanlogLoggerWriter writer, Func<SanlogLoggerOptions> configure)
         {
             _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _configure = configure ?? throw new ArgumentNullException(nameof(configure));
         }
 
         /// <inheritdoc/>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _externalScopeProvider?.Push(state);
         /// <inheritdoc/>
-        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && _options.AppId != Guid.Empty;
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && _configure.Invoke().AppId != Guid.Empty;
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -59,15 +59,16 @@ namespace Leviasan.Sanlog
             if (IsEnabled(logLevel))
             {
                 ArgumentNullException.ThrowIfNull(formatter);
+                var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
-                _ = formattedLogValuesFormatter.RegisterSensitiveData(_options.SensitiveData);
+                _ = formattedLogValuesFormatter.RegisterSensitiveData(options.SensitiveData);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
                     Id = logEntryId,
-                    ApplicationId = _options.AppId,
-                    Version = _options.OnRetrieveVersion?.Invoke(),
+                    ApplicationId = options.AppId,
+                    Version = options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.UtcNow,
                     LogLevelId = (int)logLevel,
                     Category = _categoryName,
@@ -86,7 +87,7 @@ namespace Leviasan.Sanlog
                             ? [GetErrorInformation(Guid.NewGuid(), exception, logEntryId, null)]
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : [],
-                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _options, _externalScopeProvider)
+                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider)
                 };
                 _ = _writer.Enqueue(loggingEntry);
             }
@@ -158,11 +159,5 @@ namespace Leviasan.Sanlog
         }
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => _externalScopeProvider = scopeProvider;
-        /// <summary>
-        /// Sets the logger options.
-        /// </summary>
-        /// <param name="options">The logger options.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        internal void SetLoggerOptions(SanlogLoggerOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 }

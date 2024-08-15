@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,6 +14,11 @@ namespace Leviasan.Sanlog
     [ProviderAlias(nameof(SanlogLoggerProvider))]
     public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable
     {
+        /// <summary>
+        /// The <see cref="ServiceDescriptor.ServiceKey"/> of the service.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly object? _serviceKey;
         /// <summary>
         /// The cache-collection of the created loggers.
         /// </summary>
@@ -47,12 +53,17 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified writer service and logger options.
         /// </summary>
+        /// <param name="serviceKey">The <see cref="ServiceDescriptor.ServiceKey"/> of the service.</param>
         /// <param name="writer">The writer service. The callee is responsible for disposing of the writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(SanlogLoggerWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        [ActivatorUtilitiesConstructor]
+        public SanlogLoggerProvider([ServiceKey] object? serviceKey, SanlogLoggerWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
             : this(writer, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
-                => _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
+        {
+            _serviceKey = serviceKey;
+            _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
+        }
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified writer service amd logger options.
         /// </summary>
@@ -65,6 +76,7 @@ namespace Leviasan.Sanlog
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
         }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -103,7 +115,7 @@ namespace Leviasan.Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _writer, _options);
+            var logger = new SanlogLogger(category, _writer, () => _options);
             logger.SetScopeProvider(_externalScopeProvider);
             return logger;
         });
@@ -116,7 +128,6 @@ namespace Leviasan.Sanlog
         private void OnChangeOptions(SanlogLoggerOptions options, string? name)
         {
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            foreach (var logger in _loggers.Values) logger.SetLoggerOptions(_options);
         }
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider)
@@ -124,6 +135,5 @@ namespace Leviasan.Sanlog
             _externalScopeProvider = scopeProvider;
             foreach (var logger in _loggers.Values) logger.SetScopeProvider(_externalScopeProvider);
         }
-
     }
 }
