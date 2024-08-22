@@ -21,7 +21,7 @@ namespace Leviasan.Sanlog.MSTest
         public async Task FileCountLimitDropWrite()
         {
             string? searchPattern = null;
-            await using (var writer = new FileLoggerWriter(directory: FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropWrite, encoding: Encoding.Unicode, allowSynchronousContinuations: false))
+            await using (var writer = new FileLoggerWriter(directory: FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropWrite, encoding: Encoding.Unicode, allowSynchronousContinuations: false))
             {
                 var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 3);
@@ -36,7 +36,7 @@ namespace Leviasan.Sanlog.MSTest
         public void FileCountLimitDropNewest()
         {
             string? searchPattern = null;
-            using (var writer = new FileLoggerWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropNewest, encoding: Encoding.UTF8, allowSynchronousContinuations: false))
+            using (var writer = new FileLoggerWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropNewest, encoding: Encoding.UTF8, allowSynchronousContinuations: false))
             {
                 var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 50);
@@ -50,7 +50,7 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void FileCountLimitDropOldest()
         {
-            var writer = new FileLoggerWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileLoggerWriterMode.DropOldest, encoding: Encoding.UTF8, allowSynchronousContinuations: false);
+            var writer = new FileLoggerWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropOldest, encoding: Encoding.UTF8, allowSynchronousContinuations: false);
             var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
             try
             {
