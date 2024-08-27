@@ -6,23 +6,23 @@ using System.Diagnostics;
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents the configuration of the sensitive data formatter.
+    /// Represents the configuration of the sensitive data.
     /// </summary>
-    public sealed class SensitiveFormatterConfiguration
+    public sealed class SensitiveConfiguration
     {
         /// <summary>
-        /// The dictionary of the registered sensitive data.
+        /// The registered sensitive data.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Dictionary<Type, HashSet<string>> _sensitiveData = [];
-        /// <summary>
-        /// Indicates whether the configuration is read-only.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _isReadOnly;
 
         /// <summary>
-        /// Registers property whose value belongs to sensitive data.
+        /// Gets a value indicating whether the configuration is read-only.
+        /// </summary>
+        public bool IsReadOnly { get; private set; }
+
+        /// <summary>
+        /// Registers a property whose value belongs to sensitive data.
         /// </summary>
         /// <remarks>
         /// Table of the supported types:
@@ -86,7 +86,7 @@ namespace Leviasan.Sanlog
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         private void CheckReadOnly()
         {
-            if (_isReadOnly)
+            if (IsReadOnly)
                 throw new InvalidOperationException("The configuration is read-only.");
         }
         /// <summary>
@@ -125,13 +125,13 @@ namespace Leviasan.Sanlog
             return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies an array of properties whose values belong to sensitive data from the specified configuration to the current.
+        /// Copies an array of properties whose values belong to sensitive data from the specified configuration to the current instance.
         /// </summary>
-        /// <param name="configuration">The configuration of the sensitive data formatter.</param>
-        /// <returns>The count of the added element.</returns>
+        /// <param name="configuration">The configuration of the sensitive data.</param>
+        /// <returns>The count of the copied element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="configuration"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public int CopyTo(SensitiveFormatterConfiguration configuration)
+        public int CopyTo(SensitiveConfiguration configuration)
         {
             ArgumentNullException.ThrowIfNull(configuration);
             var count = 0;
@@ -142,7 +142,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Makes the configuration is read-only.
         /// </summary>
-        public void MakeReadOnly() => _isReadOnly = true;
+        public void MakeReadOnly() => IsReadOnly = true;
         /// <summary>
         /// Removes all properties with the specified key.
         /// </summary>
@@ -156,7 +156,7 @@ namespace Leviasan.Sanlog
         /// <param name="type">The key of the element to remove.</param>
         /// <param name="property">The property whose value is belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>.
-        /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found in the sensitive data.</returns>
+        /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found.</returns>
         public bool Remove(Type type, string property) => _sensitiveData.TryGetValue(type, out var hashset) && hashset.Remove(property);
     }
 }

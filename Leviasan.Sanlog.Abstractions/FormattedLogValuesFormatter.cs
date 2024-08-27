@@ -39,6 +39,10 @@ namespace Leviasan.Sanlog
     ///         <description>Formats value as [object, object2, ..., objectN].</description>
     ///     </item>
     ///     <item>
+    ///         <term><see cref="IEnumerable"/> {<see cref="byte"/>}</term>
+    ///         <description>Formats value as "[{0} bytes]".</description>
+    ///     </item>
+    ///     <item>
     ///         <term><see cref="IDictionary"/></term>
     ///         <description>Formats value as [[Key1, Value1], [Key2, Value2]].</description>
     ///     </item>
@@ -62,6 +66,10 @@ namespace Leviasan.Sanlog
         /// The message format that represents a structured logging message.
         /// </summary>
         public const string OriginalFormat = "{OriginalFormat}";
+        /// <summary>
+        /// The message format that represents a byte array.
+        /// </summary>
+        public static readonly CompositeFormat ByteArrayFormat = CompositeFormat.Parse("[{0} bytes]");
 
         /// <summary>
         /// Max cached collection size.
@@ -111,11 +119,6 @@ namespace Leviasan.Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly MessageTemplate? _messageTemplate;
-        /// <summary>
-        /// The dictionary of the sensitive data.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<string>> _sensitiveDataType = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified dictionary of raw values and an object that supplies culture-specific formatting information.
@@ -183,6 +186,10 @@ namespace Leviasan.Sanlog
         /// Indicates whether <see cref="OriginalFormat"/> key is registered.
         /// </summary>
         public bool HasOriginalFormat => _dictionary.Any(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal));
+        /// <summary>
+        /// Gets the configuration of the sensitive data.
+        /// </summary>
+        public SensitiveConfiguration SensitiveData { get; } = new();
 
         /// <inheritdoc/>
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
@@ -220,9 +227,9 @@ namespace Leviasan.Sanlog
             {
                 return value switch
                 {
-                    // IDictionary implements IEnumerable so must be process before
-                    IDictionary dictionary => IDictionaryToString(dictionary, formatProvider),
-                    string @string => @string, // string implements IEnumerable so must be process before
+                    string stringValue => stringValue, // string implements IEnumerable so must be process before
+                    IDictionary dictionary => IDictionaryToString(dictionary, formatProvider), // IDictionary implements IEnumerable so must be process before
+                    IEnumerable<byte> bytes => ByteArrayToString(bytes, formatProvider), // IEnumerable<byte> implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider),
                     _ => null
                 } ?? Convert.ToString(value ?? NullValue, formatProvider) ?? string.Empty;
@@ -264,6 +271,14 @@ namespace Leviasan.Sanlog
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
+                // Summary: Converts IEnumerable<byte> object to a string representation using overridden custom formats and culture-specific formatting information.
+                // Param (enumerable): An object to format.
+                // Param (formatProvider): An object that supplies format information about the current instance.
+                // Returns: A string representation of the IEnumerable<byte> object.
+                static string ByteArrayToString(IEnumerable<byte> value, IFormatProvider? formatProvider)
+                {
+                    return string.Format(formatProvider, ByteArrayFormat, value.TryGetNonEnumeratedCount(out var count) ? count : value.Count());
+                }
             }
         }
         /// <inheritdoc/>
@@ -296,7 +311,7 @@ namespace Leviasan.Sanlog
             // Returns: An object considering hiding sensitive data.
             object? ProcessSensitiveObject(string key, object? value, bool redacted)
             {
-                return redacted && IsSensitiveData(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
+                return redacted && SensitiveData.Contains(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
 
                 // Summary: Hiding sensitive data of a specified object.
                 // Param (value): The object to format.
@@ -307,9 +322,8 @@ namespace Leviasan.Sanlog
                 {
                     return value switch
                     {
-                        // IDictionary implements IEnumerable so must be process before
-                        IDictionary dictionary => SensitiveDictionary(dictionary, redacted, formatter),
                         string @string => @string, // string implements IEnumerable so must be process before
+                        IDictionary dictionary => SensitiveDictionary(dictionary, redacted, formatter), // IDictionary implements IEnumerable so must be process before
                         IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted, formatter),
                         _ => value
                     };
@@ -325,7 +339,7 @@ namespace Leviasan.Sanlog
                         foreach (DictionaryEntry entry in dictionary)
                         {
                             var key = formatter.Format(null, entry.Key, formatter);
-                            var newvalue = redacted && formatter.IsSensitiveData(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
+                            var newvalue = redacted && formatter.SensitiveData.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
                             newdict.Add(entry.Key, newvalue);
                         }
                         return newdict;
@@ -387,120 +401,7 @@ namespace Leviasan.Sanlog
             var stringRepresentation = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
-        /// <summary>
-        /// Checks whether the property of the specified type belongs to sensitive data.
-        /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="MessageTemplate"/></term>
-        ///         <description>The property name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
-        /// <param name="property">The property whose value is belongs to sensitive data.</param>
-        /// <returns><see langword="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
-        public bool IsSensitiveData(Type type, string property)
-        {
-            ArgumentNullException.ThrowIfNull(type);
-            ArgumentNullException.ThrowIfNull(property);
-            return _sensitiveDataType.TryGetValue(type, out var hashset) && hashset.Contains(property);
-        }
-        /// <summary>
-        /// Registers a property whose value belongs to sensitive data.
-        /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="MessageTemplate"/></term>
-        ///         <description>The property name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
-        /// <param name="property">The property whose value is belongs to sensitive data.</param>
-        /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
-        public bool RegisterSensitiveData(Type type, string property)
-        {
-            ArgumentNullException.ThrowIfNull(type);
-            ArgumentNullException.ThrowIfNull(property);
-            return _sensitiveDataType.TryGetValue(type, out var hashset) ? hashset.Add(property) : _sensitiveDataType.TryAdd(type, [property]);
-        }
-        /// <summary>
-        /// Registers an array of properties whose values belong to sensitive data.
-        /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="MessageTemplate"/></term>
-        ///         <description>The property name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
-        /// <param name="args">An array of properties whose value belongs to sensitive data.</param>
-        /// <returns>The count of the added element.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/></exception>
-        public int RegisterSensitiveData(Type type, params string[] args)
-        {
-            ArgumentNullException.ThrowIfNull(args);
-            if (!Array.TrueForAll(args, x => x is not null))
-                throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
-
-            var count = 0;
-            foreach (var name in args)
-                count += Convert.ToInt32(RegisterSensitiveData(type, name));
-            return count;
-        }
-        /// <summary>
-        /// Registers an array of properties whose values belong to sensitive data.
-        /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="MessageTemplate"/></term>
-        ///         <description>The property name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="args">The configuration of the sensitive formatter.</param>
-        /// <returns>The count of the added element.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
-        public int RegisterSensitiveData(IEnumerable<KeyValuePair<Type, HashSet<string>>> args)
-        {
-            ArgumentNullException.ThrowIfNull(args);
-            if (!Array.TrueForAll([.. args], x => x.Key is not null || Array.TrueForAll([.. x.Value], x => x is not null)))
-                throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
-
-            var count = 0;
-            foreach (var arg in args)
-                count += RegisterSensitiveData(arg.Key, [.. arg.Value]);
-            return count;
-        }
-        /// <inheritdo1c/>
+        /// <inheritdoc/>
         public override string ToString()
         {
             return _messageTemplate is not null ? _messageTemplate.Format(this, TakeBySegmentOrder(_messageTemplate)) : NullFormat;

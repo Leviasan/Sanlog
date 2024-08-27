@@ -14,7 +14,7 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents a writer that can write a logging entry to file storage.
     /// </summary>
-    public sealed partial class FileLoggerWriter : SanlogLoggerWriter
+    public sealed partial class FileLoggerWriter : SanlogLoggerProcessor
     {
         [GeneratedRegex("^(?<prefix>.*)(?<datetime>\\d{8})_(?<number>-?\\d{1,}).log$")]
         private static partial Regex RegexLogFileName();
@@ -43,7 +43,7 @@ namespace Leviasan.Sanlog
         /// Specifies the behavior to use when writing to a log file that is already full.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly FileLoggerWriterMode _strategy;
+        private readonly FileFullMode _strategy;
         /// <summary>
         /// The encoding in which the output is written.
         /// </summary>
@@ -62,7 +62,7 @@ namespace Leviasan.Sanlog
         /// <param name="filePrefix">The prefix of the file name used to store the logging information. The current date in the format YYYYMMDD is added after the specified value. The default is "diagnostics-".</param>
         /// <param name="fileSizeLimit">The maximum log size in bytes. Once the log is full behavior depends on <paramref name="strategy"/>. The default is 10MB.</param>
         /// <param name="fileCountLimit">The maximum retained file count. The default is 2.</param>
-        /// <param name="strategy">Specifies the behavior to use when writing to a log file that is already full. The default is <see cref="FileLoggerWriterMode.DropWrite"/>.</param>
+        /// <param name="strategy">Specifies the behavior to use when writing to a log file that is already full. The default is <see cref="FileFullMode.DropWrite"/>.</param>
         /// <param name="encoding">The encoding in which the output is written. The default is <see cref="Encoding.UTF8"/>.</param>
         /// <param name="allowSynchronousContinuations"><see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations;
         /// <see langword="false"/> if all continuations should be invoked asynchronously.</param>
@@ -75,7 +75,7 @@ namespace Leviasan.Sanlog
         /// <exception cref="PathTooLongException">The specified <paramref name="directory"/> exceed the system-defined maximum length.</exception>
         /// <exception cref="SecurityException">The caller does not have the required permission.</exception>
         /// <exception cref="UnauthorizedAccessException">The caller does not have the required permission.</exception>
-        public FileLoggerWriter(string directory = "./", string? filePrefix = "diagnostics-", int fileSizeLimit = 10485760, int fileCountLimit = 2, FileLoggerWriterMode strategy = FileLoggerWriterMode.DropWrite,
+        public FileLoggerWriter(string directory = "./", string? filePrefix = "diagnostics-", int fileSizeLimit = 10485760, int fileCountLimit = 2, FileFullMode strategy = FileFullMode.DropWrite,
             Encoding? encoding = null, bool allowSynchronousContinuations = false) : base(allowSynchronousContinuations)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(directory);
@@ -154,11 +154,11 @@ namespace Leviasan.Sanlog
             {
                 if (files.Length >= _fileCountLimit)
                 {
-                    if (_strategy == FileLoggerWriterMode.DropNewest)
+                    if (_strategy == FileFullMode.DropNewest)
                     {
                         files[^1].Delete(); // IOException
                     }
-                    else if (_strategy == FileLoggerWriterMode.DropOldest)
+                    else if (_strategy == FileFullMode.DropOldest)
                     {
                         files[0].Delete(); // IOException
                     }

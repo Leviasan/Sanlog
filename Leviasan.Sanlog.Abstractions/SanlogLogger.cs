@@ -17,12 +17,12 @@ namespace Leviasan.Sanlog
         /// The category for messages produced by the logger.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string _categoryName;
+        private readonly string _category;
         /// <summary>
         /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggerWriter _writer;
+        private readonly SanlogLoggerProcessor _processor;
         /// <summary>
         /// The function to get the current logger configuration.
         /// </summary>
@@ -37,14 +37,14 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
         /// </summary>
-        /// <param name="categoryName">The category for messages produced by the logger.</param>
-        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
+        /// <param name="category">The category for messages produced by the logger.</param>
+        /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string categoryName, SanlogLoggerWriter writer, Func<SanlogLoggerOptions> configure)
+        public SanlogLogger(string category, SanlogLoggerProcessor processor, Func<SanlogLoggerOptions> configure)
         {
-            _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
-            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            _category = category ?? throw new ArgumentNullException(nameof(category));
+            _processor = processor ?? throw new ArgumentNullException(nameof(processor));
             _configure = configure ?? throw new ArgumentNullException(nameof(configure));
         }
 
@@ -61,7 +61,7 @@ namespace Leviasan.Sanlog
                 ArgumentNullException.ThrowIfNull(formatter);
                 var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
-                _ = formattedLogValuesFormatter.RegisterSensitiveData(options.SensitiveData);
+                _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveData);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -71,7 +71,7 @@ namespace Leviasan.Sanlog
                     Version = options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.UtcNow,
                     LogLevelId = (int)logLevel,
-                    Category = _categoryName,
+                    Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.HasOriginalFormat ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
@@ -89,7 +89,7 @@ namespace Leviasan.Sanlog
                         : [],
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider)
                 };
-                _ = _writer.Enqueue(loggingEntry);
+                _ = _processor.Enqueue(loggingEntry);
             }
 
             // Summary: Gets error information.
@@ -133,7 +133,7 @@ namespace Leviasan.Sanlog
                         if (scope is not null)
                         {
                             var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, formatProvider);
-                            _ = formattedLogValuesFormatter.RegisterSensitiveData(options.SensitiveData);
+                            _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveData);
 
                             var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope

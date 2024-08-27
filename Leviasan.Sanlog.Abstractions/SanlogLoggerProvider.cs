@@ -33,7 +33,7 @@ namespace Leviasan.Sanlog
         /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggerWriter _writer;
+        private readonly SanlogLoggerProcessor _writer;
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
@@ -58,7 +58,7 @@ namespace Leviasan.Sanlog
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
         [ActivatorUtilitiesConstructor]
-        public SanlogLoggerProvider([ServiceKey] object? serviceKey, SanlogLoggerWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        public SanlogLoggerProvider([ServiceKey] object? serviceKey, SanlogLoggerProcessor writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
             : this(writer, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
         {
             _serviceKey = serviceKey;
@@ -70,7 +70,7 @@ namespace Leviasan.Sanlog
         /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="options">The logger options.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(SanlogLoggerWriter writer, SanlogLoggerOptions options)
+        public SanlogLoggerProvider(SanlogLoggerProcessor writer, SanlogLoggerOptions options)
         {
             _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _options = options ?? throw new ArgumentNullException(nameof(options));
