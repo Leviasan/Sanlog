@@ -48,7 +48,7 @@ namespace Leviasan.Sanlog
     ///     </item>
     /// </list>
     /// </remarks>
-    public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter, IReadOnlyList<KeyValuePair<string, string>>
+    public sealed class FormattedLogValuesFormatter : SensitiveFormatter, IReadOnlyList<KeyValuePair<string, string>>
     {
         /// <summary>
         /// The message format that represents a null value.
@@ -58,10 +58,6 @@ namespace Leviasan.Sanlog
         /// The message format that represents a null format.
         /// </summary>
         public const string NullFormat = "[null]";
-        /// <summary>
-        /// The message format that represents a redacted value.
-        /// </summary>
-        public const string RedactedValue = "[Redacted]";
         /// <summary>
         /// The message format that represents a structured logging message.
         /// </summary>
@@ -123,7 +119,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified dictionary of raw values and an object that supplies culture-specific formatting information.
         /// </summary>
-        /// <param name="dictionary">A dictionary of raw values.</param>
+        /// <param name="dictionary">An dictionary of raw values.</param>
         /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
         /// <exception cref="InvalidOperationException">More than one <see cref="OriginalFormat"/> key was found at <paramref name="dictionary"/> array.</exception>
