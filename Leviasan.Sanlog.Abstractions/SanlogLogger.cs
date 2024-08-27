@@ -61,7 +61,7 @@ namespace Leviasan.Sanlog
                 ArgumentNullException.ThrowIfNull(formatter);
                 var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
-                _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveData);
+                _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveConfiguration);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -133,7 +133,7 @@ namespace Leviasan.Sanlog
                         if (scope is not null)
                         {
                             var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, formatProvider);
-                            _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveData);
+                            _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveConfiguration);
 
                             var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope

@@ -189,7 +189,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the configuration of the sensitive data.
         /// </summary>
-        public SensitiveConfiguration SensitiveData { get; } = new();
+        public SensitiveConfiguration SensitiveConfiguration { get; } = new();
 
         /// <inheritdoc/>
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
@@ -311,7 +311,7 @@ namespace Leviasan.Sanlog
             // Returns: An object considering hiding sensitive data.
             object? ProcessSensitiveObject(string key, object? value, bool redacted)
             {
-                return redacted && SensitiveData.Contains(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
+                return redacted && SensitiveConfiguration.Contains(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
 
                 // Summary: Hiding sensitive data of a specified object.
                 // Param (value): The object to format.
@@ -339,7 +339,7 @@ namespace Leviasan.Sanlog
                         foreach (DictionaryEntry entry in dictionary)
                         {
                             var key = formatter.Format(null, entry.Key, formatter);
-                            var newvalue = redacted && formatter.SensitiveData.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
+                            var newvalue = redacted && formatter.SensitiveConfiguration.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
                             newdict.Add(entry.Key, newvalue);
                         }
                         return newdict;
