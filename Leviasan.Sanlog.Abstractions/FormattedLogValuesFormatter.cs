@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -48,7 +49,7 @@ namespace Leviasan.Sanlog
     ///     </item>
     /// </list>
     /// </remarks>
-    public sealed class FormattedLogValuesFormatter : SensitiveFormatter, IEnumerable<KeyValuePair<string, string>>
+    public sealed class FormattedLogValuesFormatter : SensitiveFormatter
     {
         /// <summary>
         /// The message format that represents a null value.
@@ -81,13 +82,13 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
         /// </summary>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
+        /// <param name="cultureInfo">An object that supplies culture-specific formatting information.</param>
         /// <param name="format">A composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public static FormattedLogValuesFormatter Create(IFormatProvider? formatProvider, string format, params object?[] args)
+        public static FormattedLogValuesFormatter Create(CultureInfo? cultureInfo, string format, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
@@ -107,9 +108,9 @@ namespace Leviasan.Sanlog
             }
             else
             {
-                dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, formatProvider), element)).ToDictionary();
+                dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, cultureInfo), element)).ToDictionary();
             }
-            return new FormattedLogValuesFormatter(dictionary) { FormatProvider = formatProvider };
+            return new FormattedLogValuesFormatter(dictionary, null) { CultureInfo = cultureInfo };
         }
         /// <summary>
         /// Tries to get a message template from the cache or parses and tries to add to cache one.
@@ -143,34 +144,23 @@ namespace Leviasan.Sanlog
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified raw values.
         /// </summary>
         /// <param name="dictionary">The raw values.</param>
+        /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary) : base(dictionary)
+        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration) : base(dictionary, configuration)
         {
             _messageTemplate = TryGetOrAdd( // FormatException
                 format: dictionary.TryGetValue(OriginalFormat, out var value) ? value as string : null,
                 messageTemplate: out var messageTemplate) ? messageTemplate : null;
         }
 
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
-        public KeyValuePair<string, string> this[int index] => GetObjectAsString(index, true);
-        /// <summary>
-        /// Gets the element at the specified name in the read-only list.
-        /// </summary>
-        /// <param name="name">The property name of the element to get.</param>
-        /// <returns>The element at the specified name in the read-only list.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
-        public KeyValuePair<string, string> this[string name] => GetObjectAsString(name, true);
 
 
 
 
 
 
-        /// <inheritdoc/>
-        public int Count => _dictionary.Count;
+
 
         /// <inheritdoc/>
         public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
@@ -263,14 +253,6 @@ namespace Leviasan.Sanlog
                 }
             }
         }
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
-        {
-            for (var index = 0; index < Count; ++index)
-                yield return GetObjectAsString(index, true);
-        }
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>
