@@ -41,7 +41,7 @@ namespace Leviasan.Sanlog
         }
 
         /// <summary>
-        /// Gets or sets information about used culture.
+        /// Gets or sets the formatting culture.
         /// </summary>
         public CultureInfo? CultureInfo { get; set; }
         /// <summary>
@@ -49,13 +49,12 @@ namespace Leviasan.Sanlog
         /// </summary>
         public SensitiveConfiguration SensitiveConfiguration => _configuration;
 
-        /// <summary>
-        /// Determines whether the raw values contains an element that has the specified key.
-        /// </summary>
-        /// <param name="key">The key to locate.</param>
-        /// <returns><see langword="true"/> if the raw values contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
+        #region Interface: IFormatProvider
+        /// <inheritdoc/>
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : CultureInfo?.GetFormat(formatType);
+        #endregion
+
+        #region Interface: ICustomFormatter
         /// <inheritdoc/>
         public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
@@ -69,14 +68,21 @@ namespace Leviasan.Sanlog
                 _ => Convert.ToString(arg, formatProvider) ?? string.Empty
             };
         }
-        /// <inheritdoc/>
-        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : CultureInfo?.GetFormat(formatType);
+        #endregion
+
         /// <summary>
-        /// Gets a key-value pair taking into account the concealment of confidential data.
+        /// Determines whether the raw values contains an element that has the specified key.
+        /// </summary>
+        /// <param name="key">The key to locate.</param>
+        /// <returns><see langword="true"/> if the raw values contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
+        /// <summary>
+        /// Gets a key-value pair considering the concealment of confidential data.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair that describes a key and object taking into account the concealment of confidential data.</returns>
+        /// <returns>The key-value pair that describes a key and object considering the concealment of confidential data.</returns>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
@@ -85,11 +91,11 @@ namespace Leviasan.Sanlog
             return KeyValuePair.Create(kvp.Key, newvalue);
         }
         /// <summary>
-        /// Gets a key-value pair taking into account the concealment of confidential data.
+        /// Gets a key-value pair considering the concealment of confidential data.
         /// </summary>
         /// <param name="key">The key of the value to get.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair that describes a key and object taking into account the concealment of confidential data.</returns>
+        /// <returns>The key-value pair that describes a key and object considering the concealment of confidential data.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="key"/> does not exist in the collection.</exception>
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
@@ -99,12 +105,12 @@ namespace Leviasan.Sanlog
             return KeyValuePair.Create(key, newvalue);
         }
         /// <summary>
-        /// 
+        /// Processes a value through the sensitive formatter.
         /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        /// <param name="redacted"></param>
-        /// <returns></returns>
+        /// <param name="key">The key of the value.</param>
+        /// <param name="value">The value to process.</param>
+        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
+        /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
             return redacted && SensitiveConfiguration.Contains(typeof(object), key) ? RedactedValue : SensitiveObject(value, redacted);
@@ -138,5 +144,10 @@ namespace Leviasan.Sanlog
                 }
             }
         }
+        /// <summary>
+        /// Processes all values through the sensitive formatter.
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<KeyValuePair<string, object?>> ToEnumerable() => _dictionary.Select(element => GetObject(element.Key, true));
     }
 }
