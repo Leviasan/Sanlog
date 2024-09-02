@@ -74,7 +74,7 @@ namespace Leviasan.Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.HasOriginalFormat ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
+                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
                     Properties = formattedLogValuesFormatter.Select(property => new LoggingEntryProperty
                     {
                         Id = Guid.NewGuid(),
@@ -140,7 +140,7 @@ namespace Leviasan.Sanlog
                             {
                                 Id = scopeId,
                                 Type = scope.GetType().FullName!,
-                                Message = formattedLogValuesFormatter.HasOriginalFormat ? formattedLogValuesFormatter.ToString() : Convert.ToString(scope, formatProvider),
+                                Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : Convert.ToString(scope, formatProvider),
                                 LogEntryId = logEntryId,
                                 Properties = formattedLogValuesFormatter.Select(property => new LoggingScopeProperty
                                 {

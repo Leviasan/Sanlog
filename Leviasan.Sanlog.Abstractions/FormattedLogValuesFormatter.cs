@@ -9,7 +9,7 @@ using System.Text;
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents the formatter that supports custom formatting of <see cref="IReadOnlyList{T}"/> Microsoft.Extensions.Logging.FormattedLogValues object.
+    /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
     /// <remarks>
     /// Overrides standard behavior of the format string component:
@@ -48,7 +48,7 @@ namespace Leviasan.Sanlog
     ///     </item>
     /// </list>
     /// </remarks>
-    public sealed class FormattedLogValuesFormatter : SensitiveFormatter, IReadOnlyList<KeyValuePair<string, string>>
+    public sealed class FormattedLogValuesFormatter : SensitiveFormatter, IEnumerable<KeyValuePair<string, string>>
     {
         /// <summary>
         /// The message format that represents a null value.
@@ -79,6 +79,39 @@ namespace Leviasan.Sanlog
         private static readonly Dictionary<string, MessageTemplate> CachedMessageTemplates = [];
 
         /// <summary>
+        /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
+        /// </summary>
+        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
+        /// <param name="format">A composite/named format string.</param>
+        /// <param name="args">An object array that contains zero or more objects to format.</param>
+        /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
+        /// <exception cref="FormatException">A format item in template is invalid.</exception>
+        public static FormattedLogValuesFormatter Create(IFormatProvider? formatProvider, string format, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(format);
+            ArgumentNullException.ThrowIfNull(args);
+
+            var dictionary = new Dictionary<string, object?>();
+            if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
+            {
+                for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
+                {
+                    while (segmentId < messageTemplate.Segments.Count && dictionary.Any(x => x.Key == messageTemplate.Segments[segmentId]))
+                    {
+                        ++segmentId;
+                    }
+                    dictionary.Add(messageTemplate.Segments[segmentId], args[index]);
+                }
+                dictionary.Add(OriginalFormat, format);
+            }
+            else
+            {
+                dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, formatProvider), element)).ToDictionary();
+            }
+            return new FormattedLogValuesFormatter(dictionary) { FormatProvider = formatProvider };
+        }
+        /// <summary>
         /// Tries to get a message template from the cache or parses and tries to add to cache one.
         /// </summary>
         /// <param name="format">The original message template value.</param>
@@ -101,68 +134,22 @@ namespace Leviasan.Sanlog
         }
 
         /// <summary>
-        /// The dictionary of raw values.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<KeyValuePair<string, object?>> _dictionary;
-        /// <summary>
-        /// An object that supplies culture-specific formatting information.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IFormatProvider? _formatProvider;
-        /// <summary>
         /// The message template.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly MessageTemplate? _messageTemplate;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified dictionary of raw values and an object that supplies culture-specific formatting information.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified raw values.
         /// </summary>
-        /// <param name="dictionary">An dictionary of raw values.</param>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
+        /// <param name="dictionary">The raw values.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        /// <exception cref="InvalidOperationException">More than one <see cref="OriginalFormat"/> key was found at <paramref name="dictionary"/> array.</exception>
-        public FormattedLogValuesFormatter(IReadOnlyList<KeyValuePair<string, object?>>? dictionary, IFormatProvider? formatProvider)
+        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary) : base(dictionary)
         {
-            _dictionary = dictionary ?? [];
-            _formatProvider = formatProvider;
             _messageTemplate = TryGetOrAdd( // FormatException
-                format: _dictionary.SingleOrDefault(x => x.Key == OriginalFormat).Value as string,  // InvalidOperationException
+                format: dictionary.TryGetValue(OriginalFormat, out var value) ? value as string : null,
                 messageTemplate: out var messageTemplate) ? messageTemplate : null;
-        }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object that supplies culture-specific formatting information, a message template, and an object array that contains zero or more objects to format.
-        /// </summary>
-        /// <param name="formatProvider">An object that supplies culture-specific formatting information.</param>
-        /// <param name="format">A message template.</param>
-        /// <param name="args">An object array that contains zero or more objects to format.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public FormattedLogValuesFormatter(IFormatProvider? formatProvider, string format, params object?[] args)
-        {
-            ArgumentNullException.ThrowIfNull(format);
-            ArgumentNullException.ThrowIfNull(args);
-
-            if (TryGetOrAdd(format, out _messageTemplate)) // FormatException
-            {
-                var original = new List<KeyValuePair<string, object?>>();
-                for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
-                {
-                    while (segmentId < _messageTemplate.Segments.Count && original.Any(x => x.Key == _messageTemplate.Segments[segmentId]))
-                    {
-                        ++segmentId;
-                    }
-                    original.Add(KeyValuePair.Create(_messageTemplate.Segments[segmentId], args[index]));
-                }
-                original.Add(KeyValuePair.Create<string, object?>(OriginalFormat, format));
-                _dictionary = original;
-            }
-            else
-            {
-                _dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, _formatProvider), element)).ToList();
-            }
-            _formatProvider = formatProvider;
         }
 
         /// <inheritdoc/>
@@ -176,19 +163,17 @@ namespace Leviasan.Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
         public KeyValuePair<string, string> this[string name] => GetObjectAsString(name, true);
-        /// <inheritdoc/>
-        public int Count => _dictionary.Count;
-        /// <summary>
-        /// Indicates whether <see cref="OriginalFormat"/> key is registered.
-        /// </summary>
-        public bool HasOriginalFormat => _dictionary.Any(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal));
-        /// <summary>
-        /// Gets the configuration of the sensitive data.
-        /// </summary>
-        public SensitiveConfiguration SensitiveConfiguration { get; } = new();
+
+
+
+
+
 
         /// <inheritdoc/>
-        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        public int Count => _dictionary.Count;
+
+        /// <inheritdoc/>
+        public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyArray = "[]";
             return Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, out var stringValue) ? stringValue : arg switch
@@ -227,8 +212,9 @@ namespace Leviasan.Sanlog
                     IDictionary dictionary => IDictionaryToString(dictionary, formatProvider), // IDictionary implements IEnumerable so must be process before
                     IEnumerable<byte> bytes => ByteArrayToString(bytes, formatProvider), // IEnumerable<byte> implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider),
-                    _ => null
-                } ?? Convert.ToString(value ?? NullValue, formatProvider) ?? string.Empty;
+                    null => NullValue,
+                    _ => Convert.ToString(value, formatProvider) ?? string.Empty
+                };
 
                 // Summary: Converts the value of a specified object to a string representation using overridden and custom formats and culture-specific formatting information.
                 // Param (value): An object to format.
@@ -285,91 +271,6 @@ namespace Leviasan.Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        /// <inheritdoc/>
-        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _formatProvider?.GetFormat(formatType);
-        /// <summary>
-        /// Gets a key-value pair describing a property name and object considering hiding sensitive data.
-        /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
-        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
-        /// <returns>The key-value pair describing a property name and object.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
-        public KeyValuePair<string, object?> GetObject(int index, bool redacted)
-        {
-            var key = _dictionary[index].Key;
-            var value = ProcessSensitiveObject(key, _dictionary[index].Value, redacted);
-            return KeyValuePair.Create(key, value);
-
-            // Summary: Hiding sensitive data of a specified object.
-            // Param (key): The key of the object.
-            // Param (value): The object to format.
-            // Param (redacted): Indicates whether need to hide sensitive data.
-            // Returns: An object considering hiding sensitive data.
-            object? ProcessSensitiveObject(string key, object? value, bool redacted)
-            {
-                return redacted && SensitiveConfiguration.Contains(typeof(string), key) ? RedactedValue : SensitiveObject(value, redacted, this);
-
-                // Summary: Hiding sensitive data of a specified object.
-                // Param (value): The object to format.
-                // Param (redacted): Indicates whether need to hide sensitive data.
-                // Param (formatter): The current instance of the formatter.
-                // Returns: An object considering hiding sensitive data.
-                static object? SensitiveObject(object? value, bool redacted, FormattedLogValuesFormatter formatter)
-                {
-                    return value switch
-                    {
-                        string @string => @string, // string implements IEnumerable so must be process before
-                        IDictionary dictionary => SensitiveDictionary(dictionary, redacted, formatter), // IDictionary implements IEnumerable so must be process before
-                        IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted, formatter),
-                        _ => value
-                    };
-
-                    // Summary: Hiding sensitive data of a specified IDictionary object.
-                    // Param (dictionary): An object to format.
-                    // Param (redacted): Indicates whether need to hide sensitive data.
-                    // Param (formatter): The current instance of the formatter.
-                    // Returns: An IDictionary object considering hiding sensitive data.
-                    static IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted, FormattedLogValuesFormatter formatter)
-                    {
-                        var newdict = new Dictionary<object, object?>(dictionary.Count);
-                        foreach (DictionaryEntry entry in dictionary)
-                        {
-                            var key = formatter.Format(null, entry.Key, formatter);
-                            var newvalue = redacted && formatter.SensitiveConfiguration.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
-                            newdict.Add(entry.Key, newvalue);
-                        }
-                        return newdict;
-                    }
-                    // Summary: Hiding sensitive data of a specified IEnumerable object.
-                    // Param (dictionary): An object to format.
-                    // Param (redacted): Indicates whether need to hide sensitive data.
-                    // Param (formatter): The current instance of the formatter.
-                    // Returns: An IEnumerable object considering hiding sensitive data.
-                    static IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted, FormattedLogValuesFormatter formatter)
-                    {
-                        var newlist = new List<object?>();
-                        foreach (var entry in enumerable)
-                            newlist.Add(SensitiveObject(entry, redacted, formatter));
-                        return newlist;
-                    }
-                }
-            }
-        }
-        /// <summary>
-        /// Gets a key-value pair describing a property name and object considering hiding sensitive data.
-        /// </summary>
-        /// <param name="name">The property name to find.</param>
-        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
-        /// <returns>The key-value pair describing a property name and object.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
-        public KeyValuePair<string, object?> GetObject(string name, bool redacted)
-        {
-            ArgumentNullException.ThrowIfNull(name);
-            for (var index = 0; index < _dictionary.Count; ++index)
-                if (_dictionary[index].Key.Equals(name, StringComparison.Ordinal)) return GetObject(index, redacted);
-            throw new KeyNotFoundException();
-        }
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>

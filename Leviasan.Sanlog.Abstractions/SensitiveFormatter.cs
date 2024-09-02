@@ -2,14 +2,15 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
 
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// 
-    /// Represents the formatter that supports custom formatting of object.
+    /// Represents the formatter that supports custom formatting of objects considering redact sensitive data.
     /// </summary>
-    public abstract class SensitiveFormatter : IFormatProvider, ICustomFormatter
+    public class SensitiveFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// The message format that represents a redacted value.
@@ -20,7 +21,7 @@ namespace Leviasan.Sanlog
         /// The raw values.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<KeyValuePair<string, object?>> _dictionary;
+        private readonly IReadOnlyDictionary<string, object?> _dictionary;
         /// <summary>
         /// The configuration of the sensitive data.
         /// </summary>
@@ -28,72 +29,60 @@ namespace Leviasan.Sanlog
         private readonly SensitiveConfiguration _configuration;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified raw values and the configuration of the sensitive data.
+        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified raw values.
         /// </summary>
         /// <param name="dictionary">The raw values.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        protected SensitiveFormatter(IReadOnlyList<KeyValuePair<string, object?>> dictionary, SensitiveConfiguration configuration)
+        /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
+        public SensitiveFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration)
         {
             _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _configuration = configuration ?? new SensitiveConfiguration();
         }
 
         /// <summary>
-        /// Gets or sets an object that supplies culture-specific formatting information.
+        /// Gets or sets information about used culture.
         /// </summary>
-        public IFormatProvider? FormatProvider { get; set; }
+        public CultureInfo? CultureInfo { get; set; }
+        /// <summary>
+        /// Gets the configuration of the sensitive data.
+        /// </summary>
+        public SensitiveConfiguration SensitiveConfiguration => _configuration;
 
+        /// <summary>
+        /// Determines whether the raw values contains an element that has the specified key.
+        /// </summary>
+        /// <param name="key">The key to locate.</param>
+        /// <returns><see langword="true"/> if the raw values contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
         /// <inheritdoc/>
-        public abstract string Format(string? format, object? arg, IFormatProvider? formatProvider);
+        public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            if (Equals(formatProvider))
+            {
+                formatProvider = CultureInfo;
+            }
+            return arg switch
+            {
+                IFormattable formattable => formattable.ToString(format, formatProvider),
+                _ => Convert.ToString(arg, formatProvider) ?? string.Empty
+            };
+        }
         /// <inheritdoc/>
-        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : FormatProvider?.GetFormat(formatType);
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : CultureInfo?.GetFormat(formatType);
         /// <summary>
         /// Gets a key-value pair taking into account the concealment of confidential data.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The key-value pair that describes a key and object taking into account the concealment of confidential data.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
-            var key = _dictionary[index].Key; // ArgumentOutOfRangeException
-            var value = ProcessSensitiveObject(key, _dictionary[index].Value, redacted);
-            return KeyValuePair.Create(key, value);
-
-            object? ProcessSensitiveObject(string key, object? value, bool redacted)
-            {
-                return redacted && _configuration.Contains(typeof(object), key) ? RedactedValue : SensitiveObject(value, redacted);
-
-                object? SensitiveObject(object? value, bool redacted)
-                {
-                    return value switch
-                    {
-                        string stringValue => stringValue, // string implements IEnumerable so must be process before
-                        IDictionary dictionary => SensitiveDictionary(dictionary, redacted), // IDictionary implements IEnumerable so must be process before
-                        IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted),
-                        _ => value
-                    };
-                    IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted)
-                    {
-                        var newdict = new Dictionary<object, object?>(dictionary.Count);
-                        foreach (DictionaryEntry entry in dictionary)
-                        {
-                            var key = Format(null, entry.Key, this);
-                            var newvalue = redacted && _configuration.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
-                            newdict.Add(entry.Key, newvalue);
-                        }
-                        return newdict;
-                    }
-                    IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
-                    {
-                        var newlist = new List<object?>();
-                        foreach (var entry in enumerable)
-                            newlist.Add(SensitiveObject(entry, redacted));
-                        return newlist;
-                    }
-                }
-            }
+            var kvp = _dictionary.ElementAt(index); // ArgumentOutOfRangeException
+            var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+            return KeyValuePair.Create(kvp.Key, newvalue);
         }
         /// <summary>
         /// Gets a key-value pair taking into account the concealment of confidential data.
@@ -102,13 +91,52 @@ namespace Leviasan.Sanlog
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The key-value pair that describes a key and object taking into account the concealment of confidential data.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> does not exist in the collection.</exception>
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
         {
-            ArgumentNullException.ThrowIfNull(key);
-            for (var index = 0; index < _dictionary.Count; ++index)
-                if (_dictionary[index].Key.Equals(key, StringComparison.Ordinal)) return GetObject(index, redacted);
-            throw new KeyNotFoundException();
+            var value = _dictionary[key]; // ArgumentNullException + KeyNotFoundException
+            var newvalue = ProcessSensitiveObject(key, value, redacted);
+            return KeyValuePair.Create(key, newvalue);
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="key"></param>
+        /// <param name="value"></param>
+        /// <param name="redacted"></param>
+        /// <returns></returns>
+        private object? ProcessSensitiveObject(string key, object? value, bool redacted)
+        {
+            return redacted && SensitiveConfiguration.Contains(typeof(object), key) ? RedactedValue : SensitiveObject(value, redacted);
+
+            object? SensitiveObject(object? value, bool redacted)
+            {
+                return value switch
+                {
+                    string stringValue => stringValue, // string implements IEnumerable so must be process before
+                    IDictionary dictionary => SensitiveDictionary(dictionary, redacted), // IDictionary implements IEnumerable so must be process before
+                    IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted),
+                    _ => value
+                };
+                IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted)
+                {
+                    var newdict = new Dictionary<object, object?>(dictionary.Count);
+                    foreach (DictionaryEntry entry in dictionary)
+                    {
+                        var key = Format(null, entry.Key, this);
+                        var newvalue = redacted && SensitiveConfiguration.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
+                        newdict.Add(entry.Key, newvalue);
+                    }
+                    return newdict;
+                }
+                IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
+                {
+                    var newlist = new List<object?>();
+                    foreach (var value in enumerable)
+                        newlist.Add(SensitiveObject(value, redacted));
+                    return newlist;
+                }
+            }
         }
     }
 }
