@@ -119,9 +119,8 @@ namespace Leviasan.Sanlog
             {
                 return value switch
                 {
-                    string stringValue => stringValue, // string implements IEnumerable so must be process before
+                    string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => SensitiveDictionary(dictionary, redacted), // IDictionary implements IEnumerable so must be process before
-                    IEnumerable<byte> byteArray => value, // IEnumerable<byte> implements IEnumerable so must be process before
                     IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted),
                     _ => value
                 };
@@ -138,6 +137,17 @@ namespace Leviasan.Sanlog
                 }
                 IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
                 {
+                    var type = enumerable.GetType();
+                    if (type.IsArray)
+                    {
+                        var elementType = type.GetElementType();
+                        if (elementType is not null && elementType.IsPrimitive) return enumerable;
+                    }
+                    else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
+                    {
+                        var elementType = type.GenericTypeArguments.First();
+                        if (elementType.IsPrimitive) return enumerable;
+                    }
                     var newlist = new List<object?>();
                     foreach (var value in enumerable)
                         newlist.Add(SensitiveObject(value, redacted));
