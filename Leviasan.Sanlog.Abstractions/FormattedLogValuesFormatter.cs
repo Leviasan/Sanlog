@@ -83,12 +83,13 @@ namespace Leviasan.Sanlog
         /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
         /// </summary>
         /// <param name="cultureInfo">An object that supplies culture-specific formatting information.</param>
+        /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <param name="format">A composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public static FormattedLogValuesFormatter Create(CultureInfo? cultureInfo, string format, params object?[] args)
+        public static FormattedLogValuesFormatter Create(CultureInfo? cultureInfo, SensitiveConfiguration? configuration, string format, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
@@ -110,7 +111,7 @@ namespace Leviasan.Sanlog
             {
                 dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, cultureInfo), element)).ToDictionary();
             }
-            return new FormattedLogValuesFormatter(dictionary, null) { CultureInfo = cultureInfo };
+            return new FormattedLogValuesFormatter(dictionary, configuration) { CultureInfo = cultureInfo };
         }
         /// <summary>
         /// Tries to get a message template from the cache or parses and tries to add to cache one.
