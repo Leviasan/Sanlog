@@ -40,8 +40,8 @@ namespace Leviasan.Sanlog
     ///         <description>Formats value as [object, object2, ..., objectN].</description>
     ///     </item>
     ///     <item>
-    ///         <term><see cref="IEnumerable"/> {<see cref="byte"/>}</term>
-    ///         <description>Formats value as "[{0} bytes]".</description>
+    ///         <term><see cref="IEnumerable"/> of <see cref="Type.IsPrimitive"/></term>
+    ///         <description>Formats value as "[*{ElementCount} {Type.Name}*]".</description>
     ///     </item>
     ///     <item>
     ///         <term><see cref="IDictionary"/></term>
@@ -248,24 +248,16 @@ namespace Leviasan.Sanlog
         }
         #endregion
 
-
-
-
-
-
-
-
-
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
-        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
+        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
         public KeyValuePair<string, string> GetObjectAsString(int index, bool redacted)
         {
-            var pair = GetObject(index, redacted);
+            var pair = GetObject(index, redacted); // ArgumentOutOfRangeException
             var stringRepresentation = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
@@ -273,18 +265,21 @@ namespace Leviasan.Sanlog
         /// Gets a key-value pair describing a property name and string representation of the object.
         /// </summary>
         /// <param name="name">The property name to find.</param>
-        /// <param name="redacted">Indicates whether need to hide sensitive data.</param>
+        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
         /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
         public KeyValuePair<string, string> GetObjectAsString(string name, bool redacted)
         {
-            var pair = GetObject(name, redacted);
+            var pair = GetObject(name, redacted); // ArgumentNullException + KeyNotFoundException
             var stringRepresentation = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
-        /// <inheritdoc/>
-        public override string ToString()
+        /// <summary>
+        /// Replaces format items in the composite string and builds result string.
+        /// </summary>
+        /// <returns>The string representation of the values formatted by the formatter.</returns>
+        public string BuildString()
         {
             return _messageTemplate is not null ? _messageTemplate.Format(this, TakeBySegmentOrder(_messageTemplate)) : NullFormat;
 

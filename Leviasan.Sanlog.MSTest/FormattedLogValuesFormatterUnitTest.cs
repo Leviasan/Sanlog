@@ -19,10 +19,10 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsNull(formatter.CultureInfo);
-            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(object), "Password"));
-            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(typeof(object), "Password"));
-            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
+            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.BuildString());
+            Assert.IsTrue(formatter.Sensitive.Add(typeof(object), "Password"));
+            Assert.IsTrue(formatter.Sensitive.Contains(typeof(object), "Password"));
+            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.BuildString());
         }
         [TestMethod]
         [DataRow("", MathF.PI, "3.14159274")]
@@ -32,7 +32,7 @@ namespace Leviasan.Sanlog.MSTest
         public void FormatValue(string culture, object value, string expected)
         {
             CultureInfo? cultureInfo = CultureInfo.GetCultureInfo(culture);
-            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "Format: {FormatValue}.", value);
+            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "BuildString: {FormatValue}.", value);
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual(cultureInfo, formatter.CultureInfo);
             Assert.AreEqual(expected, formatter.GetObjectAsString("FormatValue", true).Value);
@@ -152,7 +152,7 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual("[1, (null), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [[Password, some_password]]]", formatter.GetObjectAsString("FormatValue", true).Value);
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
+            Assert.IsTrue(formatter.Sensitive.Add(typeof(DictionaryEntry), "Password"));
             formatter.PrimitiveTypeArray = true;
             Assert.AreEqual("[1, (null), [*10 Int32*], [[Password, [Redacted]]]]", formatter.GetObjectAsString("FormatValue", true).Value);
         }
