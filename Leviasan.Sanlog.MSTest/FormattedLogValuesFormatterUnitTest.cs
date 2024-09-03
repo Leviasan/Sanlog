@@ -67,6 +67,7 @@ namespace Leviasan.Sanlog.MSTest
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
             formatter.CultureInfo = cultureInfo;
+            formatter.PrimitiveTypeArray = true;
 
             Assert.AreEqual(MathF.PI.ToString("G9", cultureInfo), formatter.GetObjectAsString("Single", true).Value);
             Assert.AreEqual(Math.PI.ToString("G17", cultureInfo), formatter.GetObjectAsString("Double", true).Value);
