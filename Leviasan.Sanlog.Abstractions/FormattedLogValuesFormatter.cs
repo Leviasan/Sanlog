@@ -114,6 +114,15 @@ namespace Leviasan.Sanlog
             return new FormattedLogValuesFormatter(dictionary, configuration) { CultureInfo = cultureInfo };
         }
         /// <summary>
+        /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
+        /// </summary>
+        /// <param name="format">A composite/named format string.</param>
+        /// <param name="args">An object array that contains zero or more objects to format.</param>
+        /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
+        /// <exception cref="FormatException">A format item in template is invalid.</exception>
+        public static FormattedLogValuesFormatter Create(string format, params object?[] args) => Create(null, null, format, args);
+        /// <summary>
         /// Tries to get a message template from the cache or parses and tries to add to cache one.
         /// </summary>
         /// <param name="format">The original message template value.</param>

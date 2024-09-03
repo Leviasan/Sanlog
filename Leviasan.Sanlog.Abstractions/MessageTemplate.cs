@@ -168,7 +168,7 @@ namespace Leviasan.Sanlog
         /// <exception cref="FormatException">The index of a format item is greater than or equal to the number of supplied arguments.</exception>
         public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, CompositeFormat, args);
         /// <inheritdoc/>
-        public override string OriginalFormatBuild() => CompositeFormat.Format;
+        public override string ToString() => CompositeFormat.Format;
 
         /// <summary>
         /// Defines segment naming convention.
