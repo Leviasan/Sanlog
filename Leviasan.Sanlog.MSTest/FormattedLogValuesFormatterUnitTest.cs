@@ -58,7 +58,7 @@ namespace Leviasan.Sanlog.MSTest
                 { "DateTime", DateTimeValue },
                 { "DateTimeOffset", DateTimeOffsetValue },
                 { "NullValue", null },
-                { "Enumerable", new object?[4] { 1, null, 2, new Dictionary<string, object?> { { "Password", "some_password" } } } },
+                { "Enumerable", new object?[4] { 1, null, new byte[15], new Dictionary<string, object?> { { "Password", "some_password" } } } },
                 { "Dictionary", new Dictionary<string, object?> { { "NotNull", 1 }, { "NullValue", null } } },
                 { "ByteList", new List<byte>(new byte[125]) },
                 { "ByteArray", new byte[125] }
@@ -74,7 +74,7 @@ namespace Leviasan.Sanlog.MSTest
             Assert.AreEqual(DateTimeValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTime", true).Value);
             Assert.AreEqual(DateTimeOffsetValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTimeOffset", true).Value);
             Assert.AreEqual(FormattedLogValuesFormatter.NullValue, formatter.GetObjectAsString("NullValue", true).Value);
-            Assert.AreEqual("[1, (null), 2, [[Password, [Redacted]]]]", formatter.GetObjectAsString("Enumerable", true).Value);
+            Assert.AreEqual("[1, (null), [*15 bytes*], [[Password, [Redacted]]]]", formatter.GetObjectAsString("Enumerable", true).Value);
             Assert.AreEqual("[[NotNull, 1], [NullValue, (null)]]", formatter.GetObjectAsString("Dictionary", true).Value);
             Assert.AreEqual("[*125 bytes*]", formatter.GetObjectAsString("ByteList", true).Value);
             Assert.AreEqual("[*125 bytes*]", formatter.GetObjectAsString("ByteArray", true).Value);
