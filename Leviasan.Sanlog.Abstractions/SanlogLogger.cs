@@ -58,11 +58,12 @@ namespace Leviasan.Sanlog
         {
             if (IsEnabled(logLevel))
             {
-                /*
                 ArgumentNullException.ThrowIfNull(formatter);
+
                 var options = _configure.Invoke();
-                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
-                _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveConfiguration);
+                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(
+                    dictionary: state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [],
+                    configuration: options.Sensitive);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -75,14 +76,16 @@ namespace Leviasan.Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
-                    Properties = formattedLogValuesFormatter.Select(property => new LoggingEntryProperty
+                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.BuildString() : formatter.Invoke(state, exception),
+
+                    Properties = formattedLogValuesFormatter.ToEnumerable().Select(property => new LoggingEntryProperty
                     {
                         Id = Guid.NewGuid(),
                         Key = property.Key,
                         Value = property.Value,
                         LogEntryId = logEntryId
                     }).ToList(),
+
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
                             ? [GetErrorInformation(Guid.NewGuid(), exception, logEntryId, null)]
@@ -91,7 +94,6 @@ namespace Leviasan.Sanlog
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider)
                 };
                 _ = _processor.Enqueue(loggingEntry);
-                */
             }
 
             // Summary: Gets error information.
