@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Globalization;
 
@@ -6,12 +7,8 @@ namespace Leviasan.Sanlog.MSTest
     [TestClass]
     public sealed class FormattedLogValuesFormatterUnitTest
     {
-        private static readonly DateTime DateTimeValue = new(2024, 5, 22, 23, 56, 18);
-        private static readonly DateTimeOffset DateTimeOffsetValue = new(DateTimeValue);
-        private static readonly StringComparison StringComparisonValue = StringComparison.Ordinal;
-
         [TestMethod]
-        public void CtorListOrdered()
+        public void Constructor()
         {
             var dictionary = new Dictionary<string, object?>
             {
@@ -21,66 +18,144 @@ namespace Leviasan.Sanlog.MSTest
             };
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
-
+            Assert.IsNull(formatter.CultureInfo);
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
             Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(object), "Password"));
-            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
-        }
-        [TestMethod]
-        public void CtorListOrderedNo()
-        {
-            var dictionary = new Dictionary<string, object?>
-            {
-                { FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}." },
-                { "Password", "some_password" },
-                { "Login", "some_username" }
-            };
-            var formatter = new FormattedLogValuesFormatter(dictionary, null);
-            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
-
-            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.AreEqual(2, formatter.SensitiveConfiguration.Add(typeof(object), [FormattedLogValuesFormatter.OriginalFormat, "Password"]));
-            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(typeof(object), FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsTrue(formatter.SensitiveConfiguration.Contains(typeof(object), "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
-        [DataRow("")]
-        [DataRow("uk-ua")]
-        public void CtorListProviderDependence(string culture)
+        [DataRow("", MathF.PI, "3.14159274")]
+        [DataRow("uk-ua", MathF.PI, "3,14159274")]
+        [DataRow("", Math.PI, "3.1415926535897931")]
+        [DataRow("uk-ua", Math.PI, "3,1415926535897931")]
+        public void FormatValue(string culture, object value, string expected)
         {
             CultureInfo? cultureInfo = CultureInfo.GetCultureInfo(culture);
+            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "Format: {FormatValue}.", value);
+            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual(cultureInfo, formatter.CultureInfo);
+            Assert.AreEqual(expected, formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatEnum()
+        {
             var dictionary = new Dictionary<string, object?>
             {
-                { "Single", MathF.PI },
-                { "Double", Math.PI },
-                { "Enum", StringComparisonValue },
-                { "DateTime", DateTimeValue },
-                { "DateTimeOffset", DateTimeOffsetValue },
-                { "NullValue", null },
-                { "Enumerable", new object?[4] { 1, null, new int[10], new Dictionary<string, object?> { { "Password", "some_password" } } } },
-                { "Dictionary", new Dictionary<string, object?> { { "NotNull", 1 }, { "NullValue", null }, { "ShortArray", new short[10] } } },
-                { "ByteList", new List<byte>(new byte[10]) },
-                { "LongArray", new long[10] }
+                { "FormatValue", StringComparison.Ordinal }
             };
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
-            formatter.CultureInfo = cultureInfo;
-            formatter.PrimitiveTypeArray = true;
-
-            Assert.AreEqual(MathF.PI.ToString("G9", cultureInfo), formatter.GetObjectAsString("Single", true).Value);
-            Assert.AreEqual(Math.PI.ToString("G17", cultureInfo), formatter.GetObjectAsString("Double", true).Value);
-            Assert.AreEqual(StringComparisonValue.ToString("D"), formatter.GetObjectAsString("Enum", true).Value);
-            Assert.AreEqual(DateTimeValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTime", true).Value);
-            Assert.AreEqual(DateTimeOffsetValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTimeOffset", true).Value);
-            Assert.AreEqual(FormattedLogValuesFormatter.NullValue, formatter.GetObjectAsString("NullValue", true).Value);
-            Assert.AreEqual("[1, (null), [*10 Int32*], [[Password, [Redacted]]]]", formatter.GetObjectAsString("Enumerable", true).Value);
-            Assert.AreEqual("[[NotNull, 1], [NullValue, (null)], [ShortArray, [*10 Int16*]]]", formatter.GetObjectAsString("Dictionary", true).Value);
-            Assert.AreEqual("[*10 Byte*]", formatter.GetObjectAsString("ByteList", true).Value);
-            Assert.AreEqual("[*10 Int64*]", formatter.GetObjectAsString("LongArray", true).Value);
+            Assert.AreEqual(StringComparison.Ordinal.ToString("D"), formatter.GetObjectAsString("FormatValue", true).Value);
         }
-
+        [TestMethod]
+        public void FormatNullValue()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "FormatValue", null }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual(FormattedLogValuesFormatter.NullValue, formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatDateTime()
+        {
+            var datetime = DateTime.Now;
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "FormatValue", datetime }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatDateTimeOffset()
+        {
+            var offset = DateTimeOffset.Now;
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "FormatValue", offset }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual(offset.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatInt64Array()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "FormatValue", new long[10] }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("FormatValue", true).Value);
+            formatter.PrimitiveTypeArray = true;
+            Assert.AreEqual("[*10 Int64*]", formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatListByte()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "FormatValue", new List<byte>(new byte[10]) }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("FormatValue", true).Value);
+            formatter.PrimitiveTypeArray = true;
+            Assert.AreEqual("[*10 Byte*]", formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatDictionary()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                {
+                    "FormatValue",
+                    new Dictionary<string, object?>
+                    {
+                        { "NotNull", 1 },
+                        { "NullValue", null },
+                        { "ShortArray", new short[10] }
+                    }
+                }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual("[[NotNull, 1], [NullValue, (null)], [ShortArray, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]]", formatter.GetObjectAsString("FormatValue", true).Value);
+            formatter.PrimitiveTypeArray = true;
+            Assert.AreEqual("[[NotNull, 1], [NullValue, (null)], [ShortArray, [*10 Int16*]]]", formatter.GetObjectAsString("FormatValue", true).Value);
+        }
+        [TestMethod]
+        public void FormatEnumerable()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                {
+                    "FormatValue",
+                    new object?[4]
+                    { 
+                        1,
+                        null,
+                        new int[10],
+                        new Dictionary<string, string>
+                        {
+                            { "Password", "some_password" }
+                        }
+                    }
+                }
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.AreEqual("[1, (null), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [[Password, some_password]]]", formatter.GetObjectAsString("FormatValue", true).Value);
+            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
+            formatter.PrimitiveTypeArray = true;
+            Assert.AreEqual("[1, (null), [*10 Int32*], [[Password, [Redacted]]]]", formatter.GetObjectAsString("FormatValue", true).Value);
+        }
         /*
             [TestMethod]
             public void CtorNamedFormatUseInt32KeyName()
