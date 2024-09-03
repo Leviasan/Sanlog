@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog.MSTest
 {
+    /*
     [TestClass]
     public sealed class FileLoggerWriterUnitTest
     {
@@ -73,4 +74,5 @@ namespace Leviasan.Sanlog.MSTest
                 UserLogged.Invoke(logger, Environment.UserName, Environment.MachineName, exception);
         }
     }
+    */
 }

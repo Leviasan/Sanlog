@@ -66,7 +66,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// The message format that represents a byte array.
         /// </summary>
-        public static readonly CompositeFormat ByteArrayFormat = CompositeFormat.Parse("[{0} bytes]");
+        public static readonly CompositeFormat ByteArrayFormat = CompositeFormat.Parse("[*{0} bytes*]");
 
         /// <summary>
         /// Max cached collection size.
@@ -166,18 +166,13 @@ namespace Leviasan.Sanlog
         public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyArray = "[]";
-            return Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, out var stringValue) ? stringValue : arg switch
+            if (Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, base.Format, out var stringValue))
             {
-                IFormattable formattable => formattable.ToString(format, formatProvider),
-                _ => FormatFallback(arg, formatProvider)
-            };
+                return stringValue;
+            }
+            return base.Format(format, arg, formatProvider);
 
-            // Summary: Tries to convert the value of a specified object to an equivalent string representation using overridden string format and culture-specific formatting information.
-            // Param (value): An object to format.
-            // Param (formatProvider): An object that supplies format information about the current instance.
-            // Param (stringValue): When this method returns, it contains a string representation of the specified value or null if the operation failed.
-            // Returns: true if the operation is successful; otherwise false.
-            static bool TryCustomFormat(object? value, IFormatProvider? formatProvider, [NotNullWhen(true)] out string? stringValue)
+            static bool TryCustomFormat(object? value, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter, [NotNullWhen(true)] out string? stringValue)
             {
                 stringValue = value switch
                 {
@@ -186,10 +181,63 @@ namespace Leviasan.Sanlog
                     Enum @enum => @enum.ToString("D"),
                     float binary32 => binary32.ToString("G9", formatProvider),
                     double binary64 => binary64.ToString("G17", formatProvider),
+
+                    string str => str, // string implements IEnumerable so must be process before
+                    IDictionary dictionary => IDictionaryToString(dictionary, formatProvider, formatter), // IDictionary implements IEnumerable so must be process before
+                    IEnumerable<byte> byteEnumerable => ByteArrayToString(byteEnumerable, formatProvider), // IEnumerable<byte> implements IEnumerable so must be process before
+                    IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider, formatter),
+                    null => NullValue,
+
                     _ => null
                 };
                 return !string.IsNullOrEmpty(stringValue);
             }
+            static string ObjectToString(object? value, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
+            {
+                return TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
+            }
+            static string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
+            {
+                var first = true;
+                StringBuilder? stringBuilder = null;
+                foreach (var value in enumerable)
+                {
+                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                    stringBuilder = stringBuilder.Append(ObjectToString(value, formatProvider, formatter));
+                    first = false;
+                }
+                return stringBuilder?.Append(']').ToString() ?? EmptyArray;
+            }
+            static string IDictionaryToString(IDictionary dictionary, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
+            {
+                var first = true;
+                StringBuilder? stringBuilder = null;
+                foreach (DictionaryEntry entry in dictionary)
+                {
+                    stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
+                    stringBuilder = stringBuilder.Append(formatProvider, $"[{ObjectToString(entry.Key, formatProvider, formatter)}, {ObjectToString(entry.Value, formatProvider, formatter)}]");
+                    first = false;
+                }
+                return stringBuilder?.Append(']').ToString() ?? EmptyArray;
+            }
+            static string ByteArrayToString(IEnumerable<byte> value, IFormatProvider? formatProvider)
+            {
+                return string.Format(formatProvider, ByteArrayFormat, value.TryGetNonEnumeratedCount(out var count) ? count : value.Count());
+            }
+
+
+
+
+            /*
+             * 
+             *             // Summary: Tries to convert the value of a specified object to an equivalent string representation using overridden string format and culture-specific formatting information.
+            // Param (value): An object to format.
+            // Param (formatProvider): An object that supplies format information about the current instance.
+            // Param (stringValue): When this method returns, it contains a string representation of the specified value or null if the operation failed.
+            // Returns: true if the operation is successful; otherwise false.
+
+
+
             // Summary: Converts the value of a specified object to a string representation using custom format and culture-specific formatting information.
             // Param (value): An object to format.
             // Param (formatProvider): An object that supplies format information about the current instance.
@@ -198,9 +246,9 @@ namespace Leviasan.Sanlog
             {
                 return value switch
                 {
-                    string stringValue => stringValue, // string implements IEnumerable so must be process before
                     IDictionary dictionary => IDictionaryToString(dictionary, formatProvider), // IDictionary implements IEnumerable so must be process before
                     IEnumerable<byte> bytes => ByteArrayToString(bytes, formatProvider), // IEnumerable<byte> implements IEnumerable so must be process before
+                    string stringValue => stringValue, // string implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider),
                     null => NullValue,
                     _ => Convert.ToString(value, formatProvider) ?? string.Empty
@@ -252,6 +300,7 @@ namespace Leviasan.Sanlog
                     return string.Format(formatProvider, ByteArrayFormat, value.TryGetNonEnumeratedCount(out var count) ? count : value.Count());
                 }
             }
+            */
         }
         /// <summary>
         /// Gets a key-value pair describing a property name and string representation of the object.

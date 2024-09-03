@@ -24,6 +24,6 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// The list of the sensitive data.
         /// </summary>
-        public SensitiveDataConfiguration SensitiveData { get; } = new();
+        public SensitiveConfiguration SensitiveConfiguration { get; } = new();
     }
 }

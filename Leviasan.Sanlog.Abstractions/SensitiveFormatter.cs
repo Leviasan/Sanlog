@@ -121,6 +121,7 @@ namespace Leviasan.Sanlog
                 {
                     string stringValue => stringValue, // string implements IEnumerable so must be process before
                     IDictionary dictionary => SensitiveDictionary(dictionary, redacted), // IDictionary implements IEnumerable so must be process before
+                    IEnumerable<byte> byteArray => value, // IEnumerable<byte> implements IEnumerable so must be process before
                     IEnumerable enumerable => SensitiveEnumerable(enumerable, redacted),
                     _ => value
                 };

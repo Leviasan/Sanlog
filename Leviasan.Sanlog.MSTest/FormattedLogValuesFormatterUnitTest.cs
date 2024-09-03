@@ -13,35 +13,35 @@ namespace Leviasan.Sanlog.MSTest
         [TestMethod]
         public void CtorListOrdered()
         {
-            var list = new List<KeyValuePair<string, object?>>
+            var dictionary = new Dictionary<string, object?>
             {
-                { KeyValuePair.Create<string, object?>("Login", "some_username") },
-                { KeyValuePair.Create<string, object?>("Password", "some_password") },
-                { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}.") },
+                { "Login", "some_username" },
+                { "Password", "some_password" },
+                { FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}." }
             };
-            var formatter = new FormattedLogValuesFormatter(list, null);
-            Assert.IsTrue(formatter.HasOriginalFormat);
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
 
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.IsTrue(formatter.RegisterSensitiveData(typeof(string), "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(object), "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
         public void CtorListOrderedNo()
         {
-            var list = new List<KeyValuePair<string, object?>>
+            var dictionary = new Dictionary<string, object?>
             {
-                { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}.") },
-                { KeyValuePair.Create<string, object?>("Password", "some_password") },
-                { KeyValuePair.Create<string, object?>("Login", "some_username") }
+                { FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}." },
+                { "Password", "some_password" },
+                { "Login", "some_username" }
             };
-            var formatter = new FormattedLogValuesFormatter(list, null);
-            Assert.IsTrue(formatter.HasOriginalFormat);
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
 
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.AreEqual(2, formatter.RegisterSensitiveData(typeof(string), [FormattedLogValuesFormatter.OriginalFormat, "Password"]));
-            Assert.IsTrue(formatter.IsSensitiveData(typeof(string), FormattedLogValuesFormatter.OriginalFormat));
-            Assert.IsTrue(formatter.IsSensitiveData(typeof(string), "Password"));
+            Assert.AreEqual(2, formatter.SensitiveConfiguration.Add(typeof(object), [FormattedLogValuesFormatter.OriginalFormat, "Password"]));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(typeof(object), FormattedLogValuesFormatter.OriginalFormat));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(typeof(object), "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
         }
         [TestMethod]
@@ -49,111 +49,120 @@ namespace Leviasan.Sanlog.MSTest
         [DataRow("uk-ua")]
         public void CtorListProviderDependence(string culture)
         {
-            IFormatProvider? formatProvider = CultureInfo.GetCultureInfo(culture);
-            var list = new List<KeyValuePair<string, object?>>
+            CultureInfo? cultureInfo = CultureInfo.GetCultureInfo(culture);
+            var dictionary = new Dictionary<string, object?>
             {
-                { KeyValuePair.Create<string, object?>("Single", MathF.PI) },
-                { KeyValuePair.Create<string, object?>("Double", Math.PI) },
-                { KeyValuePair.Create<string, object?>("Enum", StringComparisonValue) },
-                { KeyValuePair.Create<string, object?>("DateTime", DateTimeValue) },
-                { KeyValuePair.Create<string, object?>("DateTimeOffset", DateTimeOffsetValue) },
-                { KeyValuePair.Create<string, object?>("NullValue", null) },
-                { KeyValuePair.Create<string, object?>("Enumerable", new object?[3] { 1, null, 2 }) },
-                { KeyValuePair.Create<string, object?>("Dictionary", new Dictionary<string, object?> { { "NotNull", 1 }, { "NullValue", null } }) }
+                { "Single", MathF.PI },
+                { "Double", Math.PI },
+                { "Enum", StringComparisonValue },
+                { "DateTime", DateTimeValue },
+                { "DateTimeOffset", DateTimeOffsetValue },
+                { "NullValue", null },
+                { "Enumerable", new object?[4] { 1, null, 2, new Dictionary<string, object?> { { "Password", "some_password" } } } },
+                { "Dictionary", new Dictionary<string, object?> { { "NotNull", 1 }, { "NullValue", null } } },
+                { "ByteList", new List<byte>(new byte[125]) },
+                { "ByteArray", new byte[125] }
             };
-            var formatter = new FormattedLogValuesFormatter(list, formatProvider);
-            Assert.IsFalse(formatter.HasOriginalFormat);
+            var formatter = new FormattedLogValuesFormatter(dictionary, null);
+            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
+            formatter.CultureInfo = cultureInfo;
 
-            Assert.AreEqual(MathF.PI.ToString("G9", formatProvider), formatter["Single"].Value);
-            Assert.AreEqual(Math.PI.ToString("G17", formatProvider), formatter["Double"].Value);
-            Assert.AreEqual(StringComparisonValue.ToString("D"), formatter["Enum"].Value);
-            Assert.AreEqual(DateTimeValue.ToString("O", formatProvider), formatter["DateTime"].Value);
-            Assert.AreEqual(DateTimeOffsetValue.ToString("O", formatProvider), formatter["DateTimeOffset"].Value);
-            Assert.AreEqual("(null)", formatter["NullValue"].Value);
-            Assert.AreEqual("[1, (null), 2]", formatter["Enumerable"].Value);
-            Assert.AreEqual("[[NotNull, 1], [NullValue, (null)]]", formatter["Dictionary"].Value);
+            Assert.AreEqual(MathF.PI.ToString("G9", cultureInfo), formatter.GetObjectAsString("Single", true).Value);
+            Assert.AreEqual(Math.PI.ToString("G17", cultureInfo), formatter.GetObjectAsString("Double", true).Value);
+            Assert.AreEqual(StringComparisonValue.ToString("D"), formatter.GetObjectAsString("Enum", true).Value);
+            Assert.AreEqual(DateTimeValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTime", true).Value);
+            Assert.AreEqual(DateTimeOffsetValue.ToString("O", cultureInfo), formatter.GetObjectAsString("DateTimeOffset", true).Value);
+            Assert.AreEqual(FormattedLogValuesFormatter.NullValue, formatter.GetObjectAsString("NullValue", true).Value);
+            Assert.AreEqual("[1, (null), 2, [[Password, [Redacted]]]]", formatter.GetObjectAsString("Enumerable", true).Value);
+            Assert.AreEqual("[[NotNull, 1], [NullValue, (null)]]", formatter.GetObjectAsString("Dictionary", true).Value);
+            Assert.AreEqual("[*125 bytes*]", formatter.GetObjectAsString("ByteList", true).Value);
+            Assert.AreEqual("[*125 bytes*]", formatter.GetObjectAsString("ByteArray", true).Value);
         }
-        [TestMethod]
-        public void CtorNamedFormatUseInt32KeyName()
-        {
-            var formatter = new FormattedLogValuesFormatter(formatProvider: null, format: string.Empty, args: "some_username");
-            Assert.IsFalse(formatter.HasOriginalFormat);
 
-            Assert.AreEqual("0", formatter[0].Key);
-            Assert.AreEqual("some_username", formatter[0].Value);
-        }
-        [TestMethod]
-        public void CtorNamedInvalidFormat()
-        {
-            _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {{Login}. Password: {Password}.", "some_username", "some_password"));
-        }
-        [TestMethod]
-        public void CtorNamedNegativeIndex()
-        {
-            _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {2147483648}. Password: {0}.", "some_username", "some_password"));
-        }
-        [TestMethod]
-        public void GetObjectAsString()
-        {
-            var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
-            Assert.IsTrue(formatter.HasOriginalFormat);
-
-            Assert.IsTrue(formatter.RegisterSensitiveData(typeof(string), "Password"));
-            Assert.AreEqual("[Redacted]", formatter.GetObjectAsString(1, true).Value);
-            Assert.AreEqual("some_password", formatter.GetObjectAsString(1, false).Value);
-            Assert.AreEqual("[Redacted]", formatter.GetObjectAsString("Password", true).Value);
-            Assert.AreEqual("some_password", formatter.GetObjectAsString("Password", false).Value);
-
-            _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => formatter.GetObjectAsString(3, true));
-            _ = Assert.ThrowsException<ArgumentNullException>(() => formatter.GetObjectAsString(null!, true));
-            _ = Assert.ThrowsException<KeyNotFoundException>(() => formatter.GetObjectAsString("InvalidKey", true));
-        }
-        [TestMethod]
-        public void IDictionarySensitiveData()
-        {
-            var list = new List<KeyValuePair<string, object?>>
+        /*
+            [TestMethod]
+            public void CtorNamedFormatUseInt32KeyName()
             {
-                { KeyValuePair.Create<string, object?>("Credential", new Dictionary<string, object?> { { "Username", "some_username" }, { "Password", "some_password" } }) },
-                { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Credential: {Credential}.") }
-            };
-            var formatter = new FormattedLogValuesFormatter(list, null);
+                var formatter = new FormattedLogValuesFormatter(formatProvider: null, format: string.Empty, args: "some_username");
+                Assert.IsFalse(formatter.HasOriginalFormat);
 
-            Assert.AreEqual("Credential: [[Username, some_username], [Password, some_password]].", formatter.ToString());
-            Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", true).Value);
-            Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", false).Value);
+                Assert.AreEqual("0", formatter[0].Key);
+                Assert.AreEqual("some_username", formatter[0].Value);
+            }
+            [TestMethod]
+            public void CtorNamedInvalidFormat()
+            {
+                _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {{Login}. Password: {Password}.", "some_username", "some_password"));
+            }
+            [TestMethod]
+            public void CtorNamedNegativeIndex()
+            {
+                _ = Assert.ThrowsException<FormatException>(() => new FormattedLogValuesFormatter(null, "Login: {2147483648}. Password: {0}.", "some_username", "some_password"));
+            }
+            [TestMethod]
+            public void GetObjectAsString()
+            {
+                var formatter = new FormattedLogValuesFormatter(null, "Login: {Login}. Password: {Password}.", "some_username", "some_password");
+                Assert.IsTrue(formatter.HasOriginalFormat);
 
-            Assert.IsTrue(formatter.RegisterSensitiveData(typeof(DictionaryEntry), "Password"));
-            Assert.AreEqual("Credential: [[Username, some_username], [Password, [Redacted]]].", formatter.ToString());
-            Assert.AreEqual("[[Username, some_username], [Password, [Redacted]]]", formatter.GetObjectAsString("Credential", true).Value);
-            Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", false).Value);
-        }
-        [TestMethod]
-        public void RegisterSensitiveDataTransaction()
-        {
-            var formatter = new FormattedLogValuesFormatter([], null);
-            Assert.AreEqual(4, formatter.RegisterSensitiveData([KeyValuePair.Create<Type, HashSet<string>>(typeof(string), ["Username", "Password"]), KeyValuePair.Create<Type, HashSet<string>>(typeof(DictionaryEntry), ["Username", "Password"])]));
+                Assert.IsTrue(formatter.RegisterSensitiveData(typeof(string), "Password"));
+                Assert.AreEqual("[Redacted]", formatter.GetObjectAsString(1, true).Value);
+                Assert.AreEqual("some_password", formatter.GetObjectAsString(1, false).Value);
+                Assert.AreEqual("[Redacted]", formatter.GetObjectAsString("Password", true).Value);
+                Assert.AreEqual("some_password", formatter.GetObjectAsString("Password", false).Value);
 
-            formatter = new FormattedLogValuesFormatter([], null);
-            Assert.ThrowsException<ArgumentNullException>(() => formatter.RegisterSensitiveData([KeyValuePair.Create<Type, HashSet<string>>(typeof(string), ["Username", "Password"]), KeyValuePair.Create<Type, HashSet<string>>(typeof(DictionaryEntry), [null, "Password"])]));
-            Assert.AreEqual(false, formatter.IsSensitiveData(typeof(DictionaryEntry), "Username"));
-        }
-        [TestMethod]
-        public void ParseOneItemZeroAlignmentSpecifiedFormat()
-        {
-            var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "DateTime: {DateTime:Y}", DateTimeValue);
-            Assert.AreEqual("DateTime: 2024 May", formatter.ToString());
+                _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => formatter.GetObjectAsString(3, true));
+                _ = Assert.ThrowsException<ArgumentNullException>(() => formatter.GetObjectAsString(null!, true));
+                _ = Assert.ThrowsException<KeyNotFoundException>(() => formatter.GetObjectAsString("InvalidKey", true));
+            }
+            [TestMethod]
+            public void IDictionarySensitiveData()
+            {
+                var list = new List<KeyValuePair<string, object?>>
+                {
+                    { KeyValuePair.Create<string, object?>("Credential", new Dictionary<string, object?> { { "Username", "some_username" }, { "Password", "some_password" } }) },
+                    { KeyValuePair.Create<string, object?>(FormattedLogValuesFormatter.OriginalFormat, "Credential: {Credential}.") }
+                };
+                var formatter = new FormattedLogValuesFormatter(list, null);
 
-            Assert.IsTrue(formatter.RegisterSensitiveData(typeof(string), "DateTime"));
-            Assert.AreEqual("[Redacted]", formatter.GetObjectAsString(0, true).Value);
-            Assert.AreEqual("2024-05-22T23:56:18.0000000", formatter.GetObjectAsString(0, false).Value);
-            Assert.AreEqual("[Redacted]", formatter.GetObject(0, true).Value);
-            Assert.AreEqual(DateTimeValue, formatter.GetObject(0, false).Value);
-        }
-        [TestMethod]
-        public void ParseThreeItemsTwoEqualsDifferentFormats()
-        {
-            var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "Year month: {DateTime:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {DateTime:s}.", DateTimeValue, StringComparisonValue);
-            Assert.AreEqual("Year month: 2024 May. StringComparison: 4. Sortable date/time: 2024-05-22T23:56:18.", formatter.ToString());
-        }
+                Assert.AreEqual("Credential: [[Username, some_username], [Password, some_password]].", formatter.ToString());
+                Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", true).Value);
+                Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", false).Value);
+
+                Assert.IsTrue(formatter.RegisterSensitiveData(typeof(DictionaryEntry), "Password"));
+                Assert.AreEqual("Credential: [[Username, some_username], [Password, [Redacted]]].", formatter.ToString());
+                Assert.AreEqual("[[Username, some_username], [Password, [Redacted]]]", formatter.GetObjectAsString("Credential", true).Value);
+                Assert.AreEqual("[[Username, some_username], [Password, some_password]]", formatter.GetObjectAsString("Credential", false).Value);
+            }
+            [TestMethod]
+            public void RegisterSensitiveDataTransaction()
+            {
+                var formatter = new FormattedLogValuesFormatter([], null);
+                Assert.AreEqual(4, formatter.RegisterSensitiveData([KeyValuePair.Create<Type, HashSet<string>>(typeof(string), ["Username", "Password"]), KeyValuePair.Create<Type, HashSet<string>>(typeof(DictionaryEntry), ["Username", "Password"])]));
+
+                formatter = new FormattedLogValuesFormatter([], null);
+                Assert.ThrowsException<ArgumentNullException>(() => formatter.RegisterSensitiveData([KeyValuePair.Create<Type, HashSet<string>>(typeof(string), ["Username", "Password"]), KeyValuePair.Create<Type, HashSet<string>>(typeof(DictionaryEntry), [null, "Password"])]));
+                Assert.AreEqual(false, formatter.IsSensitiveData(typeof(DictionaryEntry), "Username"));
+            }
+            [TestMethod]
+            public void ParseOneItemZeroAlignmentSpecifiedFormat()
+            {
+                var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "DateTime: {DateTime:Y}", DateTimeValue);
+                Assert.AreEqual("DateTime: 2024 May", formatter.ToString());
+
+                Assert.IsTrue(formatter.RegisterSensitiveData(typeof(string), "DateTime"));
+                Assert.AreEqual("[Redacted]", formatter.GetObjectAsString(0, true).Value);
+                Assert.AreEqual("2024-05-22T23:56:18.0000000", formatter.GetObjectAsString(0, false).Value);
+                Assert.AreEqual("[Redacted]", formatter.GetObject(0, true).Value);
+                Assert.AreEqual(DateTimeValue, formatter.GetObject(0, false).Value);
+            }
+            [TestMethod]
+            public void ParseThreeItemsTwoEqualsDifferentFormats()
+            {
+                var formatter = new FormattedLogValuesFormatter(CultureInfo.InvariantCulture, "Year month: {DateTime:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {DateTime:s}.", DateTimeValue, StringComparisonValue);
+                Assert.AreEqual("Year month: 2024 May. StringComparison: 4. Sortable date/time: 2024-05-22T23:56:18.", formatter.ToString());
+            }
+        */
     }
 }

@@ -58,6 +58,7 @@ namespace Leviasan.Sanlog
         {
             if (IsEnabled(logLevel))
             {
+                /*
                 ArgumentNullException.ThrowIfNull(formatter);
                 var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state as IReadOnlyList<KeyValuePair<string, object?>>, CultureInfo.InvariantCulture);
@@ -90,6 +91,7 @@ namespace Leviasan.Sanlog
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider)
                 };
                 _ = _processor.Enqueue(loggingEntry);
+                */
             }
 
             // Summary: Gets error information.
@@ -123,6 +125,7 @@ namespace Leviasan.Sanlog
             // Param (options): The logger options.
             // Param (externalScopeProvider): The external storage of the common scope data.
             // Returns: An array of the scope data.
+#pragma warning disable CS8321 // Local function is declared but never used
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
@@ -132,6 +135,7 @@ namespace Leviasan.Sanlog
                     {
                         if (scope is not null)
                         {
+                            /*
                             var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope as IReadOnlyList<KeyValuePair<string, object?>>, formatProvider);
                             _ = options.SensitiveData.CopyTo(formattedLogValuesFormatter.SensitiveConfiguration);
 
@@ -151,11 +155,13 @@ namespace Leviasan.Sanlog
                                 }).ToList()
                             };
                             scopes.Add(loggingScope);
+                            */
                         }
                     }, state);
                 }
                 return scopes;
             }
+#pragma warning restore CS8321 // Local function is declared but never used
         }
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => _externalScopeProvider = scopeProvider;
