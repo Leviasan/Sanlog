@@ -141,12 +141,14 @@ namespace Leviasan.Sanlog
                     if (type.IsArray)
                     {
                         var elementType = type.GetElementType();
-                        if (elementType is not null && elementType.IsPrimitive) return enumerable;
+                        if (elementType is not null && elementType.IsPrimitive)
+                            return enumerable;
                     }
                     else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
                     {
                         var elementType = type.GenericTypeArguments.First();
-                        if (elementType.IsPrimitive) return enumerable;
+                        if (elementType.IsPrimitive)
+                            return enumerable;
                     }
                     var newlist = new List<object?>();
                     foreach (var value in enumerable)

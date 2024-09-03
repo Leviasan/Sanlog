@@ -64,9 +64,9 @@ namespace Leviasan.Sanlog
         /// </summary>
         public const string OriginalFormat = "{OriginalFormat}";
         /// <summary>
-        /// The message format that represents a byte array.
+        /// The message format that represents a primitive type array.
         /// </summary>
-        public static readonly CompositeFormat ByteArrayFormat = CompositeFormat.Parse("[*{0} bytes*]");
+        public static readonly CompositeFormat ArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// Max cached collection size.
@@ -184,7 +184,6 @@ namespace Leviasan.Sanlog
 
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => IDictionaryToString(dictionary, formatProvider, formatter), // IDictionary implements IEnumerable so must be process before
-                    IEnumerable<byte> byteEnumerable => ByteArrayToString(byteEnumerable, formatProvider), // IEnumerable<byte> implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider, formatter),
                     null => NullValue,
 
@@ -198,6 +197,20 @@ namespace Leviasan.Sanlog
             }
             static string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
+                var type = enumerable.GetType();
+                if (type.IsArray)
+                {
+                    var elementType = type.GetElementType();
+                    if (elementType is not null && elementType.IsPrimitive)
+                        return ArrayToFormat(enumerable, elementType, formatProvider);
+                }
+                else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
+                {
+                    var elementType = type.GenericTypeArguments.First();
+                    if (elementType.IsPrimitive)
+                        return ArrayToFormat(enumerable, elementType, formatProvider);
+                }
+
                 var first = true;
                 StringBuilder? stringBuilder = null;
                 foreach (var value in enumerable)
@@ -220,9 +233,16 @@ namespace Leviasan.Sanlog
                 }
                 return stringBuilder?.Append(']').ToString() ?? EmptyArray;
             }
-            static string ByteArrayToString(IEnumerable<byte> value, IFormatProvider? formatProvider)
+            static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
             {
-                return string.Format(formatProvider, ByteArrayFormat, value.TryGetNonEnumeratedCount(out var count) ? count : value.Count());
+                return string.Format(formatProvider, ArrayFormat, IEnumerableCount(enumerable), type.Name);
+
+                static int IEnumerableCount(IEnumerable enumerable)
+                {
+                    int count = 0;
+                    foreach (var item in enumerable) ++count;
+                    return count;
+                }
             }
 
 
