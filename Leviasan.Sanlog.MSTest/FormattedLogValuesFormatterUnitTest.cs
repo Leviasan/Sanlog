@@ -18,10 +18,10 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsNull(formatter.CultureInfo);
-            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.BuildString());
+            Assert.AreEqual("Login: some_username. Password: some_password.", formatter.FormatMessageTemplate());
             Assert.IsTrue(formatter.Sensitive.Add(typeof(object), "Password"));
             Assert.IsTrue(formatter.Sensitive.Contains(typeof(object), "Password"));
-            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.BuildString());
+            Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.FormatMessageTemplate());
 
             Assert.AreEqual("some_password", formatter.GetObjectAsString(1, false).Value);
             Assert.AreEqual("[Redacted]", formatter.GetObjectAsString(1, true).Value);
@@ -44,7 +44,7 @@ namespace Leviasan.Sanlog.MSTest
         public void FormatValue(string culture, object value, string expected)
         {
             CultureInfo? cultureInfo = CultureInfo.GetCultureInfo(culture);
-            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "BuildString: {FormatValue}.", value);
+            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "FormatMessageTemplate: {FormatValue}.", value);
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual(cultureInfo, formatter.CultureInfo);
             Assert.AreEqual(expected, formatter.GetObjectAsString("FormatValue", true).Value);
@@ -173,7 +173,7 @@ namespace Leviasan.Sanlog.MSTest
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
             var formatter = FormattedLogValuesFormatter.Create(CultureInfo.InvariantCulture, null, "DateTime: {DateTime:Y}", datetime);
-            Assert.AreEqual("DateTime: 2024 May", formatter.BuildString());
+            Assert.AreEqual("DateTime: 2024 May", formatter.FormatMessageTemplate());
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, false).Value);
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, true).Value);
         }
@@ -182,7 +182,7 @@ namespace Leviasan.Sanlog.MSTest
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
             var formatter = FormattedLogValuesFormatter.Create(CultureInfo.InvariantCulture, null, "Year month: {DateTime,9:Y}. StringComparison: {StringComparison:G}. Sortable date/time: {DateTime:s}.", datetime, StringComparison.Ordinal);
-            Assert.AreEqual("Year month:  2024 May. StringComparison: Ordinal. Sortable date/time: 2024-05-22T23:56:18.", formatter.BuildString());
+            Assert.AreEqual("Year month:  2024 May. StringComparison: Ordinal. Sortable date/time: 2024-05-22T23:56:18.", formatter.FormatMessageTemplate());
         }
     }
 }

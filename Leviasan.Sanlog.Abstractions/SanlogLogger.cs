@@ -76,7 +76,7 @@ namespace Leviasan.Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.BuildString() : formatter.Invoke(state, exception),
+                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.FormatMessageTemplate() : formatter.Invoke(state, exception),
 
                     Properties = formattedLogValuesFormatter.ToEnumerable().Select(property => new LoggingEntryProperty
                     {
