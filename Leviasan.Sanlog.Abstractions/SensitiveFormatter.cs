@@ -150,7 +150,7 @@ namespace Leviasan.Sanlog
                         if (elementType.IsPrimitive)
                             return enumerable;
                     }
-                    var newlist = new List<object?>();
+                    var newlist = new ArrayList();
                     foreach (var value in enumerable)
                         newlist.Add(SensitiveObject(value, redacted));
                     return newlist;
