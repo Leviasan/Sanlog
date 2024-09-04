@@ -34,8 +34,6 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         {
             _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
             _cancellationTokenSource = new CancellationTokenSource();
-
-            Task.Factory.StartNew(Write, )
         }
 
         /// <inheritdoc/>

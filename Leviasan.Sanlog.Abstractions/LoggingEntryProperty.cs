@@ -5,24 +5,8 @@ namespace Leviasan.Sanlog
     /// <summary>
     /// Represents the message property of the logging entry.
     /// </summary>
-    public sealed record class LoggingEntryProperty
+    public sealed record class LoggingEntryProperty : LoggingBaseProperty
     {
-        /// <summary>
-        /// Gets the object identifier.
-        /// </summary>
-        public Guid Id { get; init; }
-        /// <summary>
-        /// Gets the property key.
-        /// </summary>
-        public required string Key { get; init; }
-        /// <summary>
-        /// Gets the property value.
-        /// </summary>
-        public string? Value { get; init; }
-        /// <summary>
-        /// Gets the logging entry identifier.
-        /// </summary>
-        public Guid LogEntryId { get; init; }
         /// <summary>
         /// Gets the logging entry.
         /// </summary>

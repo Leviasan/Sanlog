@@ -1,28 +1,10 @@
-﻿using System;
-
-namespace Leviasan.Sanlog
+﻿namespace Leviasan.Sanlog
 {
     /// <summary>
     /// Represents the property of the external scope data.
     /// </summary>
-    public sealed record class LoggingScopeProperty
+    public sealed record class LoggingScopeProperty : LoggingBaseProperty
     {
-        /// <summary>
-        /// Gets the object identifier.
-        /// </summary>
-        public Guid Id { get; init; }
-        /// <summary>
-        /// Gets the property key.
-        /// </summary>
-        public required string Key { get; init; }
-        /// <summary>
-        /// Gets the property value.
-        /// </summary>
-        public string? Value { get; init; }
-        /// <summary>
-        /// Gets the scope identifier.
-        /// </summary>
-        public Guid ScopeId { get; init; }
         /// <summary>
         /// Gets the external scope data.
         /// </summary>
