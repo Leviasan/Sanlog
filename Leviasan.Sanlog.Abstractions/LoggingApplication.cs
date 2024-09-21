@@ -15,12 +15,15 @@ namespace Leviasan.Sanlog
         /// <param name="id">The application name.</param>
         /// <param name="application">The application name.</param>
         /// <param name="environment">The environment name.</param>
-        /// <exception cref="ArgumentException">The <paramref name="application"/> or <paramref name="environment"/> is empty string.</exception>
+        /// <exception cref="ArgumentException">The <paramref name="application"/> or <paramref name="environment"/> is empty string. -or- The <paramref name="id"/> is <see cref="Guid.Empty"/>.</exception>
         /// <exception cref="ArgumentNullException">The <paramref name="application"/> or <paramref name="environment"/> is <see langword="null"/>.</exception>
         public LoggingApplication(Guid id, string application, string environment)
         {
+            if (id == Guid.Empty)
+                throw new ArgumentException(null, nameof(id));
             ArgumentException.ThrowIfNullOrEmpty(application);
             ArgumentException.ThrowIfNullOrEmpty(environment);
+
             Id = id;
             Application = application;
             Environment = environment;
