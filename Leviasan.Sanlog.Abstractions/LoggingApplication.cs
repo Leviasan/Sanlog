@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+using System.Diagnostics;
 
 namespace Leviasan.Sanlog
 {
@@ -10,40 +9,71 @@ namespace Leviasan.Sanlog
     public sealed record class LoggingApplication
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="LoggingApplication"/> class with the specified application name and environment name.
+        /// The object identifier.
         /// </summary>
-        /// <param name="id">The object identifier.</param>
-        /// <param name="application">The application name.</param>
-        /// <param name="environment">The environment name.</param>
-        /// <exception cref="ArgumentException">The <paramref name="application"/> or <paramref name="environment"/> is empty string. -or- The <paramref name="id"/> is <see cref="Guid.Empty"/>.</exception>
-        /// <exception cref="ArgumentNullException">The <paramref name="application"/> or <paramref name="environment"/> is <see langword="null"/>.</exception>
-        public LoggingApplication(Guid id, string application, string environment)
-        {
-            if (id == Guid.Empty)
-                throw new ArgumentException(null, nameof(id));
-            ArgumentException.ThrowIfNullOrEmpty(application);
-            ArgumentException.ThrowIfNullOrEmpty(environment);
-            Id = id;
-            Application = application;
-            Environment = environment;
-        }
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Guid _id;
+        /// <summary>
+        /// The application name.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly string? _application;
+        /// <summary>
+        /// The environment name.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly string? _environment;
 
         /// <summary>
         /// Gets the object identifier.
         /// </summary>
-        public Guid Id { get; }
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
+        public Guid Id
+        {
+            get
+            {
+                return _id;
+            }
+            init
+            {
+                if (value == Guid.Empty)
+                    throw new ArgumentException(null, nameof(Id));
+                _id = Id;
+            }
+        }
         /// <summary>
         /// Gets the application name.
         /// </summary>
-        public string Application { get; }
+        /// <exception cref="ArgumentException">The setter value is an empty string.</exception>
+        /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
+        public required string Application
+        {
+            get
+            {
+                return _application!;
+            }
+            init
+            {
+                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Application));
+                _application = value;
+            }
+        }
         /// <summary>
         /// Gets the environment name.
         /// </summary>
-        public string Environment { get; }
-        /// <summary>
-        /// Gets the logging entries with the current application.
-        /// </summary>
-        [JsonIgnore]
-        public IReadOnlyList<LoggingEntry>? LogEntries { get; init; }
+        /// <exception cref="ArgumentException">The setter value is an empty string.</exception>
+        /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
+        public required string Environment
+        {
+            get
+            {
+                return _environment!;
+            }
+            init
+            {
+                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Environment));
+                _environment = value;
+            }
+        }
     }
 }

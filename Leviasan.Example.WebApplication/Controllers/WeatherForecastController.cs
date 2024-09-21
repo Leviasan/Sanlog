@@ -46,7 +46,7 @@ namespace Leviasan.Example.WebApplication.Controllers
         [HttpGet("GetApps")]
         public IEnumerable<LoggingApplication> GetApps([FromServices] SanlogDbContext context)
         {
-            var apps = context.LogApps.Include(x => x.LogEntries).ToList();
+            var apps = context.LogApps/*.Include(x => x.LogEntries)*/.ToList();
             return apps;
         }
     }
