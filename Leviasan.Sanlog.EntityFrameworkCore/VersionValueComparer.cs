@@ -9,11 +9,15 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
     /// Defines the snapshotting and comparison actions for <see cref="Version"/> type.
     /// </summary>
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
-    internal sealed class VersionValueComparer : ValueComparer<Version>
+    internal sealed class VersionValueComparer : ValueComparer<Version?>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="VersionValueComparer"/> class.
         /// </summary>
-        public VersionValueComparer() : base(static (x, y) => EqualityComparer<Version>.Default.Equals(x, y), static (x) => x.GetHashCode(), static (x) => (Version)x.Clone()) { }
+        public VersionValueComparer() : base(
+            equalsExpression: static (x, y) => EqualityComparer<Version>.Default.Equals(x, y),
+            hashCodeExpression: static (x) => x != null ? x.GetHashCode() : 0,
+            snapshotExpression: static (x) => x != null ? (Version)x.Clone() : null)
+        { }
     }
 }

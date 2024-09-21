@@ -55,7 +55,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets a collection that provides logging entry properties.
         /// </summary>
-        public IReadOnlyList<LoggingEntryProperty>? Properties { get; init; }
+        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
         /// <summary>
         /// Gets a collection that provides external scope data.
         /// </summary>

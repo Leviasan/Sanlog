@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -18,6 +19,8 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// The <see cref="DbContext.OnConfiguring(DbContextOptionsBuilder)"/> method will still be called to allow further configuration of the options.
         /// </summary>
         /// <param name="options">The options for this context.</param>
+        [RequiresDynamicCode("EF Core isn't fully compatible with NativeAOT, and running the application may generate unexpected runtime failures.")]
+        [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures. Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]
         public SanlogDbContext(DbContextOptions<SanlogDbContext> options) : base(options) { }
 
         /// <summary>
@@ -33,17 +36,9 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         /// </summary>
         public DbSet<LoggingEntry> LogEntries => Set<LoggingEntry>();
         /// <summary>
-        /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingEntryProperty"/>.
-        /// </summary>
-        public DbSet<LoggingEntryProperty> LogEntryProperties => Set<LoggingEntryProperty>();
-        /// <summary>
         /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingScope"/>.
         /// </summary>
         public DbSet<LoggingScope> LogScopes => Set<LoggingScope>();
-        /// <summary>
-        /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingScopeProperty"/>.
-        /// </summary>
-        public DbSet<LoggingScopeProperty> LogScopeProperties => Set<LoggingScopeProperty>();
         /// <summary>
         /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingError"/>.
         /// </summary>
@@ -63,11 +58,9 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             Debug.Assert(modelBuilder is not null);
             _ = modelBuilder.ApplyConfiguration(new LoggingApplicationConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingEntryConfiguration());
-            _ = modelBuilder.ApplyConfiguration(new LoggingEntryPropertyConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingErrorConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingLevelConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingScopeConfiguration());
-            _ = modelBuilder.ApplyConfiguration(new LoggingScopePropertyConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }

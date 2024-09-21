@@ -8,12 +8,14 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
     /// Defines conversions from <see cref="Version"/> object in a model to <see cref="string"/> in the storage.
     /// </summary>
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
-    internal sealed class VersionValueConverter : ValueConverter<Version, string>
+    internal sealed class VersionValueConverter : ValueConverter<Version?, string?>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="VersionValueConverter"/> class.
         /// </summary>
-        public VersionValueConverter() : base(static (x) => x.ToString(), static (x) => TryParse(x)!) { }
+        public VersionValueConverter() : base(
+            convertToProviderExpression: static x => x != null ? x.ToString() : null,
+            convertFromProviderExpression: static x => x != null ? TryParse(x) : default) { }
 
         /// <summary>
         /// Tries to convert the string representation of a version number to an equivalent <see cref="Version"/> object.

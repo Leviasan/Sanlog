@@ -23,7 +23,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets a collection that provides scope properties.
         /// </summary>
-        public IReadOnlyList<LoggingScopeProperty>? Properties { get; init; }
+        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
         /// <summary>
         /// Gets the logging entry identifier.
         /// </summary>

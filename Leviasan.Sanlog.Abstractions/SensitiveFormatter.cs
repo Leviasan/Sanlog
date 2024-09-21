@@ -47,7 +47,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the configuration of the sensitive data.
         /// </summary>
-        public SensitiveConfiguration Sensitive => _configuration;
+        public SensitiveConfiguration SensitiveConfiguration => _configuration;
 
         #region Interface: IFormatProvider
         /// <inheritdoc/>
@@ -113,7 +113,7 @@ namespace Leviasan.Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            return redacted && Sensitive.Contains(typeof(object), key) ? RedactedValue : SensitiveObject(value, redacted);
+            return redacted && SensitiveConfiguration.Contains(typeof(object), key) ? RedactedValue : SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
@@ -126,12 +126,12 @@ namespace Leviasan.Sanlog
                 };
                 IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted)
                 {
-                    var newdict = new Dictionary<object, object?>(dictionary.Count);
+                    var newdict = new Dictionary<string, object?>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
-                        var key = Format(null, entry.Key, this);
-                        var newvalue = redacted && Sensitive.Contains(typeof(DictionaryEntry), key) ? RedactedValue : entry.Value;
-                        newdict.Add(entry.Key, newvalue);
+                        var newkey = Format(null, entry.Key, this);
+                        var newvalue = redacted && SensitiveConfiguration.Contains(typeof(DictionaryEntry), newkey) ? RedactedValue : entry.Value;
+                        newdict.Add(newkey, newvalue);
                     }
                     return newdict;
                 }
@@ -158,9 +158,26 @@ namespace Leviasan.Sanlog
             }
         }
         /// <summary>
-        /// Processes all values through the sensitive formatter.
+        /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
-        /// <returns></returns>
-        public IEnumerable<KeyValuePair<string, object?>> ToEnumerable() => _dictionary.Select(element => GetObject(element.Key, true));
+        /// <returns>A dictionary whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
+        public Dictionary<string, string?>? SelectToDictionary()
+        {
+            return SelectToDictionary(selector => Format(null, selector, this));
+        }
+        /// <summary>
+        /// Projects each element processes through the formatter into a new form.
+        /// </summary>
+        /// <param name="selector">A transform function to apply to each element.</param>
+        /// <typeparam name="TResult">The type of the value returned by selector.</typeparam>
+        /// <returns>A dictionary whose elements result from invoking the transform function on each element.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="selector"/> is <see langword="null"/>.</exception>
+        public Dictionary<string, TResult?>? SelectToDictionary<TResult>(Func<object?, TResult?> selector)
+        {
+            var newdict = _dictionary
+                .Select(x => GetObject(x.Key, true))
+                .ToDictionary(ks => ks.Key, es => selector.Invoke(es.Value));
+            return newdict.Count == 0 ? null : newdict;
+        }
     }
 }

@@ -12,8 +12,9 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         public void Configure(EntityTypeBuilder<LoggingScope> builder)
         {
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
-            _ = builder.Property(x => x.Type).IsRequired(true);
-            _ = builder.Property(x => x.Message).IsRequired(false).HasMaxLength(int.MaxValue);
+            _ = builder.Property(x => x.Type).IsRequired(true).IsUnicode(false);
+            _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
+            _ = builder.Property(x => x.Properties).HasConversion<StringDictionaryValueConverter, StringDictionaryValueComparer>().IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
         }
     }
 }

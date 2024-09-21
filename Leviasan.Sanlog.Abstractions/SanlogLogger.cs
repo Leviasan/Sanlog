@@ -63,7 +63,7 @@ namespace Leviasan.Sanlog
                 var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(
                     dictionary: state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [],
-                    configuration: options.Sensitive);
+                    configuration: options.SensitiveConfiguration);
 
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -76,27 +76,17 @@ namespace Leviasan.Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.FormatMessageTemplate() : formatter.Invoke(state, exception),
-
-                    Properties = formattedLogValuesFormatter.ToEnumerable().Select(property => new LoggingEntryProperty
-                    {
-                        Id = Guid.NewGuid(),
-                        Type = property.Key,
-                        Message = formattedLogValuesFormatter.Format(null, property.Value, formattedLogValuesFormatter),
-                        ParentId = logEntryId
-                    }).ToList(),
-
+                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : formatter.Invoke(state, exception),
+                    Properties = formattedLogValuesFormatter.SelectToDictionary(),
+                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
                             ? [GetErrorInformation(Guid.NewGuid(), exception, logEntryId, null)]
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, null)).ToList()
-                        : [],
-
-                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider)
+                        : []
                 };
                 _ = _processor.Enqueue(loggingEntry);
             }
-
             // Summary: Gets error information.
             // Param (id): The identifier of the new object.
             // Param (exception): The exception to get error information.
@@ -118,7 +108,11 @@ namespace Leviasan.Sanlog
                     TargetSite = exception.TargetSite?.ToString(), // IL2026
                     LogEntryId = logEntryId,
                     ParentExceptionId = parentErrorId,
-                    InnerException = exception.InnerException is not null ? [GetErrorInformation(Guid.NewGuid(), exception.InnerException, logEntryId, id)] : []
+                    InnerException = exception.InnerException is not null
+                        ? exception.InnerException is not AggregateException aggregateException
+                            ? [GetErrorInformation(Guid.NewGuid(), exception.InnerException, logEntryId, id)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, id)).ToList()
+                        : []
                 };
             }
             // Summary: Gets scope information.
@@ -139,24 +133,15 @@ namespace Leviasan.Sanlog
                         {
                             var formattedLogValuesFormatter = new FormattedLogValuesFormatter(
                                 dictionary: scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [],
-                                configuration: options.Sensitive);
+                                configuration: options.SensitiveConfiguration);
 
-                            var scopeId = Guid.NewGuid();
                             var loggingScope = new LoggingScope
                             {
-                                Id = scopeId,
+                                Id = Guid.NewGuid(),
                                 Type = scope.GetType().FullName!,
-                                Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : Convert.ToString(scope, formatProvider),
+                                Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : Convert.ToString(scope, formatProvider),
                                 LogEntryId = logEntryId,
-
-                                Properties = formattedLogValuesFormatter.ToEnumerable().Select(property => new LoggingScopeProperty
-                                {
-                                    Id = Guid.NewGuid(),
-                                    Type = property.Key,
-                                    Message = formattedLogValuesFormatter.Format(null, property.Value, formattedLogValuesFormatter),
-                                    ParentId = scopeId
-                                }).ToList()
-
+                                Properties = formattedLogValuesFormatter.SelectToDictionary()
                             };
                             scopes.Add(loggingScope);
                         }

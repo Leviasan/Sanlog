@@ -1,0 +1,6 @@
+@Leviasan.Example.WebApplication_HostAddress = http://localhost:5011
+
+GET {{Leviasan.Example.WebApplication_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

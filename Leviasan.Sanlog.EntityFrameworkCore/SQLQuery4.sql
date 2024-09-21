@@ -1,0 +1,1 @@
+﻿insert into dbo.LogApps values ('e6bcc7df-e201-4d0b-02a3-08dbd09ffc89', 'ConsoleApp', 'Development')

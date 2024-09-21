@@ -288,7 +288,7 @@ namespace Leviasan.Sanlog
         /// Replaces format items in the composite string and builds result string.
         /// </summary>
         /// <returns>The string representation of the values formatted by the formatter.</returns>
-        public string FormatMessageTemplate()
+        public string ToMessage()
         {
             return _messageTemplate is not null ? _messageTemplate.Format(this, TakeBySegmentOrder(_messageTemplate)) : NullFormat;
 

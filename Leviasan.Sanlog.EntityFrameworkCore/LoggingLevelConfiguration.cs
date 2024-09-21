@@ -14,7 +14,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         public void Configure(EntityTypeBuilder<LoggingLevel> builder)
         {
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
-            _ = builder.Property(x => x.Name).HasConversion<EnumToStringConverter<LogLevel>>().HasMaxLength(11);
+            _ = builder.Property(x => x.Name).HasConversion<EnumToStringConverter<LogLevel>>().IsRequired(true).IsUnicode(false).HasMaxLength(11);
             _ = builder.HasData(
                 new LoggingLevel { Id = (int)LogLevel.Trace, Name = LogLevel.Trace },
                 new LoggingLevel { Id = (int)LogLevel.Debug, Name = LogLevel.Debug },
