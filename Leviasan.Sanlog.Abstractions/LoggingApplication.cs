@@ -12,7 +12,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="LoggingApplication"/> class with the specified application name and environment name.
         /// </summary>
-        /// <param name="id">The application name.</param>
+        /// <param name="id">The object identifier.</param>
         /// <param name="application">The application name.</param>
         /// <param name="environment">The environment name.</param>
         /// <exception cref="ArgumentException">The <paramref name="application"/> or <paramref name="environment"/> is empty string. -or- The <paramref name="id"/> is <see cref="Guid.Empty"/>.</exception>
@@ -23,7 +23,6 @@ namespace Leviasan.Sanlog
                 throw new ArgumentException(null, nameof(id));
             ArgumentException.ThrowIfNullOrEmpty(application);
             ArgumentException.ThrowIfNullOrEmpty(environment);
-
             Id = id;
             Application = application;
             Environment = environment;
