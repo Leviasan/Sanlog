@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Leviasan.Sanlog
 {
@@ -40,6 +41,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the logging entries with the current application.
         /// </summary>
+        [JsonIgnore]
         public IReadOnlyList<LoggingEntry>? LogEntries { get; init; }
     }
 }
