@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog
 {
@@ -16,9 +15,5 @@ namespace Leviasan.Sanlog
         /// Gets the logging level name.
         /// </summary>
         public LogLevel Name { get; init; }
-        /// <summary>
-        /// Gets the logging entries with the current logging level.
-        /// </summary>
-        public IReadOnlyList<LoggingEntry>? LogEntries { get; init; }
     }
 }

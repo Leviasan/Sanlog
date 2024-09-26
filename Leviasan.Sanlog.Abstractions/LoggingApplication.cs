@@ -9,6 +9,11 @@ namespace Leviasan.Sanlog
     public sealed record class LoggingApplication
     {
         /// <summary>
+        /// The multitenant identifier.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Guid _tenantId;
+        /// <summary>
         /// The object identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -24,6 +29,10 @@ namespace Leviasan.Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _environment;
 
+        /// <summary>
+        /// Gets the multitenant identifier.
+        /// </summary>
+        internal Guid TenantId => _tenantId;
         /// <summary>
         /// Gets the object identifier.
         /// </summary>
