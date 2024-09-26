@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Microsoft.Extensions.Logging;
 
 namespace Leviasan.Sanlog.EntityFrameworkCore
 {
@@ -13,6 +15,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         {
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
             _ = builder.Property(x => x.Version).HasConversion<VersionValueConverter, VersionValueComparer>().IsRequired(false).IsUnicode(false).HasMaxLength(43);
+            _ = builder.Property(x => x.LogLevel).HasConversion<EnumToNumberConverter<LogLevel, int>>();
             _ = builder.Property(x => x.Category).IsRequired(true).IsUnicode(true);
             _ = builder.Property(x => x.EventName).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);

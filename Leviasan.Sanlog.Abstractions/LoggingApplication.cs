@@ -37,8 +37,8 @@ namespace Leviasan.Sanlog
             init
             {
                 if (value == Guid.Empty)
-                    throw new ArgumentException(null, nameof(Id));
-                _id = Id;
+                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(Id));
+                _id = value;
             }
         }
         /// <summary>
