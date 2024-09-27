@@ -14,7 +14,8 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
             _ = builder.Property(x => x.Application).IsRequired(true).IsUnicode(true).HasMaxLength(450);
             _ = builder.Property(x => x.Environment).IsRequired(true).IsUnicode(true).HasMaxLength(450);
-            _ = builder.HasIndex(x => new { x.Application, x.Environment }).IsUnique();
+            _ = builder.HasIndex(x => new { x.TenantId, x.Application, x.Environment }).IsUnique();
+            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne("Application").HasForeignKey(x => x.ApplicationId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
         }
     }
 }

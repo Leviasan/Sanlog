@@ -18,8 +18,8 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             _ = builder.Property(x => x.Source).IsRequired(false).IsUnicode(false);
             _ = builder.Property(x => x.HelpLink).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.TargetSite).IsRequired(false).IsUnicode(false);
-            _ = builder.HasOne(x => x.LogEntry).WithMany(x => x.Errors).HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
-            _ = builder.HasMany(x => x.InnerException).WithOne(x => x.ParentException).HasForeignKey(x => x.ParentExceptionId).OnDelete(DeleteBehavior.ClientCascade);
+            _ = builder.HasOne<LoggingEntry>("LogEntry").WithMany(x => x.Errors).HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
+            _ = builder.HasMany(x => x.InnerException).WithOne("ParentException").HasForeignKey(x => x.ParentExceptionId).OnDelete(DeleteBehavior.ClientCascade).IsRequired(false);
         }
     }
 }

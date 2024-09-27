@@ -21,6 +21,8 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.Properties).HasConversion<StringDictionaryValueConverter, StringDictionaryValueComparer>().IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
             _ = builder.HasIndex(x => x.DateTime);
+            _ = builder.HasMany(x => x.Scopes).WithOne("LogEntry").HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
+            _ = builder.HasMany(x => x.Errors).WithOne("LogEntry").HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
         }
     }
 }

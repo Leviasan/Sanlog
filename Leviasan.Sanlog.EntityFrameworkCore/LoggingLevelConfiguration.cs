@@ -23,6 +23,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
                 new LoggingLevel { Id = (int)LogLevel.Error, Name = LogLevel.Error },
                 new LoggingLevel { Id = (int)LogLevel.Critical, Name = LogLevel.Critical });
             _ = builder.HasIndex(x => x.Name).IsUnique();
+            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne().HasForeignKey(x => x.LogLevel).OnDelete(DeleteBehavior.Restrict).IsRequired(true);
         }
     }
 }
