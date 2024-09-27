@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Leviasan.Sanlog
 {
@@ -9,28 +10,106 @@ namespace Leviasan.Sanlog
     public sealed record class LoggingScope
     {
         /// <summary>
+        /// The multitenant identifier.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Guid _tenantId;
+        /// <summary>
+        /// The object identifier.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Guid _id;
+        /// <summary>
+        /// The fully qualified name of the scope type.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly string? _type;
+        /// <summary>
+        /// The message that describes the current scope.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly string? _message;
+        /// <summary>
+        /// The collection that provides scope properties.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly IReadOnlyDictionary<string, string?>? _properties;
+        /// <summary>
+        /// The logging entry identifier.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Guid _logEntryId;
+
+        /// <summary>
+        /// Gets the multitenant identifier.
+        /// </summary>
+        internal Guid TenantId => _tenantId;
+        /// <summary>
         /// Gets the object identifier.
         /// </summary>
-        public Guid Id { get; init; }
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
+        public Guid Id
+        {
+            get
+            {
+                return _id;
+            }
+            init
+            {
+                if (value == Guid.Empty)
+                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(Id));
+                _id = value;
+            }
+        }
         /// <summary>
         /// Gets the fully qualified name of the scope type.
         /// </summary>
-        public required string Type { get; init; }
+        /// <exception cref="ArgumentException">The setter value is empty string.</exception>
+        /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
+        public string Type
+        {
+            get
+            {
+                return _type ?? string.Empty;
+            }
+            init
+            {
+                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Type));
+                _type = value;
+            }
+        }
         /// <summary>
         /// Gets a message that describes the current scope.
         /// </summary>
-        public string? Message { get; init; }
+        public string? Message
+        {
+            get => _message;
+            init => _message = value;
+        }
         /// <summary>
         /// Gets a collection that provides scope properties.
         /// </summary>
-        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
+        public IReadOnlyDictionary<string, string?>? Properties
+        {
+            get => _properties;
+            init => _properties = value;
+        }
         /// <summary>
         /// Gets the logging entry identifier.
         /// </summary>
-        public Guid LogEntryId { get; init; }
-        /// <summary>
-        /// Gets the logging entry.
-        /// </summary>
-        public LoggingEntry? LogEntry { get; init; }
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
+        public Guid LogEntryId
+        {
+            get
+            {
+                return _logEntryId;
+            }
+            init
+            {
+                if (value == Guid.Empty)
+                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(LogEntryId));
+                _logEntryId = value;
+            }
+        }
     }
 }
