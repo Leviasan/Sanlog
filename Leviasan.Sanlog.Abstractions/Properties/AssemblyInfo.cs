@@ -5,5 +5,5 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 // The following GUID is for the ID of the typelib if this project is exposed to COM.
 [assembly: Guid("fde70942-e542-49f0-a4fd-c61263054149")]
-// Visible internal properties for support multu-tenancy
+// Visible internal properties for support multi-tenancy
 [assembly: InternalsVisibleTo("Leviasan.Sanlog.EntityFrameworkCore")]
