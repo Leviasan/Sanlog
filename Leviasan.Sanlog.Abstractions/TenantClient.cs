@@ -4,35 +4,26 @@ using System.Diagnostics;
 namespace Leviasan.Sanlog
 {
     /// <summary>
-    /// Represents information about the application.
+    /// Represents the tenant client.
     /// </summary>
-    public sealed record class LoggingApplication
+    public sealed record class TenantClient
     {
-        /// <summary>
-        /// The multitenant identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid _tenantId;
         /// <summary>
         /// The object identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _id;
         /// <summary>
-        /// The application name.
+        /// The client name.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _application;
+        private readonly string? _clientName;
         /// <summary>
-        /// The environment name.
+        /// The client description.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _environment;
+        private readonly string? _clientDescription;
 
-        /// <summary>
-        /// Gets the multitenant identifier.
-        /// </summary>
-        public Guid TenantId => _tenantId;
         /// <summary>
         /// Gets the object identifier.
         /// </summary>
@@ -51,37 +42,34 @@ namespace Leviasan.Sanlog
             }
         }
         /// <summary>
-        /// Gets the application name.
+        /// Gets the client name.
         /// </summary>
         /// <exception cref="ArgumentException">The setter value is an empty string.</exception>
         /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
-        public string Application
+        public string ClientName
         {
             get
             {
-                return _application!;
+                return _clientName!;
             }
             init
             {
-                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Application));
-                _application = value;
+                ArgumentException.ThrowIfNullOrEmpty(value, nameof(ClientName));
+                _clientName = value;
             }
         }
         /// <summary>
-        /// Gets the environment name.
+        /// Gets the client description.
         /// </summary>
-        /// <exception cref="ArgumentException">The setter value is an empty string.</exception>
-        /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
-        public string Environment
+        public string? ClientDescription
         {
             get
             {
-                return _environment!;
+                return _clientDescription;
             }
             init
             {
-                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Environment));
-                _environment = value;
+                _clientDescription = value;
             }
         }
     }

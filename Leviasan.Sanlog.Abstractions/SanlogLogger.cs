@@ -72,7 +72,7 @@ namespace Leviasan.Sanlog
                     ApplicationId = options.AppId,
                     Version = options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.UtcNow,
-                    LogLevel = logLevel,
+                    LogLevelId = logLevel,
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,

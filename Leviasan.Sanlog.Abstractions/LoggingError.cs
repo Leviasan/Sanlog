@@ -73,7 +73,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the multitenant identifier.
         /// </summary>
-        internal Guid TenantId => _tenantId;
+        public Guid TenantId => _tenantId;
         /// <summary>
         /// Gets the object identifier.
         /// </summary>

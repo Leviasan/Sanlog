@@ -15,7 +15,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
         {
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
             _ = builder.Property(x => x.Version).HasConversion<VersionValueConverter, VersionValueComparer>().IsRequired(false).IsUnicode(false).HasMaxLength(43);
-            _ = builder.Property(x => x.LogLevel).HasConversion<EnumToNumberConverter<LogLevel, int>>();
+            _ = builder.Property(x => x.LogLevelId).HasConversion<EnumToNumberConverter<LogLevel, int>>();
             _ = builder.Property(x => x.Category).IsRequired(true).IsUnicode(true);
             _ = builder.Property(x => x.EventName).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
@@ -23,6 +23,7 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
             _ = builder.HasIndex(x => x.DateTime);
             _ = builder.HasMany(x => x.Scopes).WithOne("LogEntry").HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
             _ = builder.HasMany(x => x.Errors).WithOne("LogEntry").HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
+            _ = builder.HasOne<TenantClient>("Tenant").WithMany("LogEntries").HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
         }
     }
 }

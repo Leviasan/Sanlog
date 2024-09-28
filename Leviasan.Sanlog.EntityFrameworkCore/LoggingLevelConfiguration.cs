@@ -22,8 +22,8 @@ namespace Leviasan.Sanlog.EntityFrameworkCore
                 new LoggingLevel { Id = (int)LogLevel.Warning, Name = LogLevel.Warning },
                 new LoggingLevel { Id = (int)LogLevel.Error, Name = LogLevel.Error },
                 new LoggingLevel { Id = (int)LogLevel.Critical, Name = LogLevel.Critical });
-            _ = builder.HasIndex(x => x.Name).IsUnique();
-            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne().HasForeignKey(x => x.LogLevel).OnDelete(DeleteBehavior.Restrict).IsRequired(true);
+            _ = builder.HasIndex(x => x.Name).IsUnique(true);
+            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne("LogLevel").HasForeignKey(x => x.LogLevelId).OnDelete(DeleteBehavior.Restrict).IsRequired(true);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Leviasan.Sanlog
         /// The logging level.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly LogLevel _logLevel;
+        private readonly LogLevel _logLevelId;
         /// <summary>
         /// The logging category.
         /// </summary>
@@ -80,7 +80,7 @@ namespace Leviasan.Sanlog
         /// <summary>
         /// Gets the multitenant identifier.
         /// </summary>
-        internal Guid TenantId => _tenantId;
+        public Guid TenantId => _tenantId;
         /// <summary>
         /// Gets the object identifier.
         /// </summary>
@@ -136,19 +136,19 @@ namespace Leviasan.Sanlog
         /// </summary>
         /// <exception cref="ArgumentException">Passed <see cref="LogLevel.None"/> value that is not used for writing log messages. Specifies that a logging category should not write any messages.</exception>
         /// <exception cref="InvalidEnumArgumentException">The setter value is invalid enum.</exception>
-        public LogLevel LogLevel
+        public LogLevel LogLevelId
         {
             get
             {
-                return _logLevel;
+                return _logLevelId;
             }
             init
             {
                 if (value == LogLevel.None)
                     throw new InvalidEnumArgumentException("Not used for writing log messages. Specifies that a logging category should not write any messages.");
                 if (!Enum.IsDefined(value))
-                    throw new InvalidEnumArgumentException(nameof(LogLevel), (int)value, typeof(LogLevel));
-                _logLevel = value;
+                    throw new InvalidEnumArgumentException(nameof(LogLevelId), (int)value, typeof(LogLevel));
+                _logLevelId = value;
             }
         }
         /// <summary>
