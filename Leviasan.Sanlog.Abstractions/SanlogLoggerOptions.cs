@@ -2,7 +2,7 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
-namespace Leviasan.Sanlog
+namespace Sanlog
 {
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.

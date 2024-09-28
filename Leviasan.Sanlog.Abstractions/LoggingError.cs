@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Leviasan.Sanlog
+namespace Sanlog
 {
     /// <summary>
     /// Represents the information about runtime error.

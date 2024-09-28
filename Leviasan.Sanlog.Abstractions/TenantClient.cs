@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Leviasan.Sanlog
+namespace Sanlog
 {
     /// <summary>
     /// Represents the tenant client.

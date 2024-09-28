@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 
-namespace Leviasan.Sanlog
+namespace Sanlog
 {
     /// <summary>
     /// Represents the formatter that supports custom formatting of objects considering redact sensitive data.

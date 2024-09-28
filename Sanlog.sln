@@ -11,7 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Sanlog.Abstractions", "Leviasan.Sanlog.Abstractions\Leviasan.Sanlog.Abstractions.csproj", "{C06201EA-5627-42C2-8816-FE7839968CB7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog", "Leviasan.Sanlog.Abstractions\Sanlog.csproj", "{C06201EA-5627-42C2-8816-FE7839968CB7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Sanlog.EntityFrameworkCore", "Leviasan.Sanlog.EntityFrameworkCore\Leviasan.Sanlog.EntityFrameworkCore.csproj", "{21B7B437-33EB-4CA9-8BE3-6CF37A3A41F7}"
 EndProject
@@ -19,7 +19,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Sanlog.MSTest", "L
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leviasan.Sanlog.File", "Leviasan.Sanlog.File\Leviasan.Sanlog.File.csproj", "{9CAC35F3-D9AE-486A-982A-7334F4495A46}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leviasan.Example.WebApplication", "Leviasan.Example.WebApplication\Leviasan.Example.WebApplication.csproj", "{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Example.WebApplication", "Leviasan.Example.WebApplication\Leviasan.Example.WebApplication.csproj", "{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

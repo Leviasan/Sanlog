@@ -6,7 +6,7 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 
-namespace Leviasan.Sanlog
+namespace Sanlog
 {
     /// <summary>
     /// Represents a type used to perform logging.
