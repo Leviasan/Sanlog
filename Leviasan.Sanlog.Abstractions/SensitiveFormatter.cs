@@ -152,7 +152,7 @@ namespace Sanlog
                     }
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
-                        newlist.Add(SensitiveObject(value, redacted));
+                        _ = newlist.Add(SensitiveObject(value, redacted));
                     return newlist;
                 }
             }
@@ -162,9 +162,7 @@ namespace Sanlog
         /// </summary>
         /// <returns>A dictionary whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
         public Dictionary<string, string?>? SelectToDictionary()
-        {
-            return SelectToDictionary(selector => Format(null, selector, this));
-        }
+            => SelectToDictionary(selector => Format(null, selector, this));
         /// <summary>
         /// Projects each element processes through the formatter into a new form.
         /// </summary>

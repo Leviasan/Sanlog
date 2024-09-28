@@ -174,11 +174,9 @@ namespace Sanlog
         public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyArray = "[]";
-            if (Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, base.Format, out var stringValue))
-            {
-                return stringValue;
-            }
-            return base.Format(format, arg, formatProvider);
+            return Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, base.Format, out var stringValue)
+                ? stringValue
+                : base.Format(format, arg, formatProvider);
 
             bool TryCustomFormat(object? value, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter, [NotNullWhen(true)] out string? stringValue)
             {
@@ -198,9 +196,7 @@ namespace Sanlog
                 return !string.IsNullOrEmpty(stringValue);
             }
             string ObjectToString(object? value, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
-            {
-                return TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
-            }
+                => TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
             string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
                 if (PrimitiveTypeArray)
@@ -248,7 +244,7 @@ namespace Sanlog
 
                 static int IEnumerableCount(IEnumerable enumerable)
                 {
-                    int count = 0;
+                    var count = 0;
                     foreach (var item in enumerable)
                         ++count;
                     return count;

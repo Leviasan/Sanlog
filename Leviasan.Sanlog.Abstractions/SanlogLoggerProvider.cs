@@ -126,9 +126,7 @@ namespace Sanlog
         /// <param name="name">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
         private void OnChangeOptions(SanlogLoggerOptions options, string? name)
-        {
-            _options = options ?? throw new ArgumentNullException(nameof(options));
-        }
+            => _options = options ?? throw new ArgumentNullException(nameof(options));
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider)
         {

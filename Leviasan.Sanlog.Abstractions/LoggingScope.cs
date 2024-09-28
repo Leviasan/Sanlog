@@ -50,10 +50,7 @@ namespace Sanlog
         /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid Id
         {
-            get
-            {
-                return _id;
-            }
+            get => _id;
             init
             {
                 if (value == Guid.Empty)
@@ -68,10 +65,7 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
         public string Type
         {
-            get
-            {
-                return _type ?? string.Empty;
-            }
+            get => _type ?? string.Empty;
             init
             {
                 ArgumentException.ThrowIfNullOrEmpty(value, nameof(Type));
@@ -100,10 +94,7 @@ namespace Sanlog
         /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid LogEntryId
         {
-            get
-            {
-                return _logEntryId;
-            }
+            get => _logEntryId;
             init
             {
                 if (value == Guid.Empty)

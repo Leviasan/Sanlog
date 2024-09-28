@@ -87,10 +87,7 @@ namespace Sanlog
         /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid Id
         {
-            get
-            {
-                return _id;
-            }
+            get => _id;
             init
             {
                 if (value == Guid.Empty)
@@ -104,10 +101,7 @@ namespace Sanlog
         /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid ApplicationId
         {
-            get
-            {
-                return _applicationId;
-            }
+            get => _applicationId;
             init
             {
                 if (value == Guid.Empty)
@@ -138,10 +132,7 @@ namespace Sanlog
         /// <exception cref="InvalidEnumArgumentException">The setter value is invalid enum.</exception>
         public LogLevel LogLevelId
         {
-            get
-            {
-                return _logLevelId;
-            }
+            get => _logLevelId;
             init
             {
                 if (value == LogLevel.None)
@@ -158,10 +149,7 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
         public string Category
         {
-            get
-            {
-                return _category ?? string.Empty;
-            }
+            get => _category ?? string.Empty;
             init
             {
                 ArgumentException.ThrowIfNullOrEmpty(value, nameof(Category));
