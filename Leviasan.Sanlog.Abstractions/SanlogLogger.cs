@@ -38,6 +38,15 @@ namespace Leviasan.Sanlog
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
         /// </summary>
         /// <param name="category">The category for messages produced by the logger.</param>
+        /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param> // TODO: writer service ?!
+        /// <param name="options">The logger configuration.</param>
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        public SanlogLogger(string category, SanlogLoggerProcessor processor, SanlogLoggerOptions options)
+            : this(category, processor, options is not null ? () => options : throw new ArgumentNullException(nameof(options))) { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
+        /// </summary>
+        /// <param name="category">The category for messages produced by the logger.</param>
         /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
