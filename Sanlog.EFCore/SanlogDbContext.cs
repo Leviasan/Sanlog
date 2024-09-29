@@ -43,6 +43,10 @@ namespace Sanlog.EFCore
         /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingError"/>.
         /// </summary>
         public DbSet<LoggingError> LogErrors => Set<LoggingError>();
+        /// <summary>
+        /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="TenantClient"/>.
+        /// </summary>
+        public DbSet<TenantClient> TenantClients => Set<TenantClient>();
 
         /// <inheritdoc/>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -61,6 +65,7 @@ namespace Sanlog.EFCore
             _ = modelBuilder.ApplyConfiguration(new LoggingErrorConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingLevelConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingScopeConfiguration());
+            _ = modelBuilder.ApplyConfiguration(new TenantClientConfiguration());
             base.OnModelCreating(modelBuilder);
         }
     }
