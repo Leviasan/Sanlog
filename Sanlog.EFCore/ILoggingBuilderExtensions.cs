@@ -25,7 +25,7 @@ namespace Sanlog.EFCore
 
             builder.AddConfiguration();
             builder.Services
-                .AddDbContextFactory<SanlogDbContext>(contextConfigure) // IL2026
+                .AddDbContextFactory<SanlogDbContext>(contextConfigure, ServiceLifetime.Scoped) // IL2026
                 .AddSingleton(serviceProvider => new EFCoreProcessor(
                     contextFactory: serviceProvider.GetRequiredService<IDbContextFactory<SanlogDbContext>>(),
                     allowSynchronousContinuations: allowSynchronousContinuations))

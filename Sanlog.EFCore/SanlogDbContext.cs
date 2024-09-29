@@ -1,10 +1,22 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Sanlog.EFCore
 {
+    public interface ITenantService
+    {
+        Guid TenantId { get; }
+        //void SetTenant(string tenant);
+        //string[] GetTenants();
+        // event TenantChangedEventHandler OnTenantChanged;
+    }
+
+
+
+
     /// <summary>
     /// Represents the database context of the logger.
     /// </summary>
@@ -14,6 +26,9 @@ namespace Sanlog.EFCore
     /// </remarks>
     public sealed class SanlogDbContext : DbContext
     {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly ITenantService _tenantService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogDbContext"/> class using the specified options.
         /// The <see cref="DbContext.OnConfiguring(DbContextOptionsBuilder)"/> method will still be called to allow further configuration of the options.
@@ -21,7 +36,8 @@ namespace Sanlog.EFCore
         /// <param name="options">The options for this context.</param>
         [RequiresDynamicCode("EF Core isn't fully compatible with NativeAOT, and running the application may generate unexpected runtime failures.")]
         [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures. Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]
-        public SanlogDbContext(DbContextOptions<SanlogDbContext> options) : base(options) { }
+        public SanlogDbContext(DbContextOptions<SanlogDbContext> options, ITenantService service) : base(options)
+            => _tenantService = service ?? throw new ArgumentNullException(nameof(service));
 
         /// <summary>
         /// The <see cref="DbSet{TEntity}"/> that can be used to query and save instances of <see cref="LoggingApplication"/>.
@@ -66,6 +82,11 @@ namespace Sanlog.EFCore
             _ = modelBuilder.ApplyConfiguration(new LoggingLevelConfiguration());
             _ = modelBuilder.ApplyConfiguration(new LoggingScopeConfiguration());
             _ = modelBuilder.ApplyConfiguration(new TenantClientConfiguration());
+            _ = modelBuilder.Entity<LoggingApplication>().HasQueryFilter(x => x.TenantId == _tenantService.TenantId);
+            _ = modelBuilder.Entity<LoggingEntry>().HasQueryFilter(x => x.TenantId == _tenantService.TenantId);
+            _ = modelBuilder.Entity<LoggingScope>().HasQueryFilter(x => x.TenantId == _tenantService.TenantId);
+            _ = modelBuilder.Entity<LoggingError>().HasQueryFilter(x => x.TenantId == _tenantService.TenantId);
+            _ = modelBuilder.Entity<TenantClient>().HasQueryFilter(x => x.Id == _tenantService.TenantId);
             base.OnModelCreating(modelBuilder);
         }
     }
