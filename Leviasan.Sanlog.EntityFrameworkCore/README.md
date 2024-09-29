@@ -1,4 +1,4 @@
-﻿# Leviasan.Sanlog.EntityFrameworkCore
+﻿# Sanlog.EFCore
 Represents the logger for the NET8.0+ apps. Provides API for using EntityFrameworkCore context as storage for saving log entries from different applications in one database scheme separated by application identifier.
 
 # Get started

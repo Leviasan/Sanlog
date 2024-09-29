@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Leviasan.Sanlog.EntityFrameworkCore
+namespace Sanlog.EFCore
 {
     /// <summary>
     /// The model configuration of the <see cref="LoggingError"/> model.

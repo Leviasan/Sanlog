@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq;
 
-namespace Leviasan.Sanlog.EntityFrameworkCore
+namespace Sanlog.EFCore
 {
     /// <summary>
     /// Defines the snapshotting and comparison actions for <see cref="IReadOnlyDictionary{TKey, TValue}"/> type.

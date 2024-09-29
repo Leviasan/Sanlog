@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Leviasan.Sanlog.EntityFrameworkCore
+namespace Sanlog.EFCore
 {
     /// <summary>
     /// Represents the database context of the logger.

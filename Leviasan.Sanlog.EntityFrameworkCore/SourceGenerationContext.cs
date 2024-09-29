@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Leviasan.Sanlog.EntityFrameworkCore
+namespace Sanlog.EFCore
 {
     /// <summary>
     /// Provides metadata about a set of types that is relevant to JSON serialization.

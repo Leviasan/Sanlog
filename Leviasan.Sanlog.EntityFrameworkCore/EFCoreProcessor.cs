@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
-namespace Leviasan.Sanlog.EntityFrameworkCore
+namespace Sanlog.EFCore
 {
     /// <summary>
     /// Represents a mechanism to write events to the storage in sync mode.
