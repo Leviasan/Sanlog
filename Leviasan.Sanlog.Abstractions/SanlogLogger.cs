@@ -77,6 +77,7 @@ namespace Sanlog
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
+                    TenantId = options.TenantId,
                     Id = logEntryId,
                     ApplicationId = options.AppId,
                     Version = options.OnRetrieveVersion?.Invoke(),
@@ -87,11 +88,11 @@ namespace Sanlog
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : formatter.Invoke(state, exception),
                     Properties = formattedLogValuesFormatter.SelectToDictionary(),
-                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
+                    Scopes = GetScopeInformation(options.TenantId, CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(options.TenantId, Guid.NewGuid(), exception, logEntryId, null)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options.TenantId, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
                 _ = _processor.Enqueue(loggingEntry);
@@ -103,10 +104,11 @@ namespace Sanlog
             // Param (parentErrorId): The parent error identifier.
             // Returns: The error information.
             [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "TargetSite metadata might be incomplete or removed")]
-            static LoggingError GetErrorInformation(Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
+            static LoggingError GetErrorInformation(Guid tenantId, Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
             {
                 return new LoggingError
                 {
+                    TenantId = tenantId,
                     Id = id,
                     Type = exception.GetType().FullName!,
                     Message = exception.Message,
@@ -119,8 +121,8 @@ namespace Sanlog
                     ParentExceptionId = parentErrorId,
                     InnerException = exception.InnerException is not null
                         ? exception.InnerException is not AggregateException aggregateException
-                            ? [GetErrorInformation(Guid.NewGuid(), exception.InnerException, logEntryId, id)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(Guid.NewGuid(), innerException, logEntryId, id)).ToList()
+                            ? [GetErrorInformation(tenantId, Guid.NewGuid(), exception.InnerException, logEntryId, id)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(tenantId, Guid.NewGuid(), innerException, logEntryId, id)).ToList()
                         : []
                 };
             }
@@ -131,7 +133,7 @@ namespace Sanlog
             // Param (options): The logger options.
             // Param (externalScopeProvider): The external storage of the common scope data.
             // Returns: An array of the scope data.
-            static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
+            static List<LoggingScope> GetScopeInformation(Guid tenantId, IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
                 if (options.IncludeScopes && externalScopeProvider is not null)

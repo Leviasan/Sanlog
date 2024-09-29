@@ -14,6 +14,10 @@ namespace Sanlog
         /// </summary>
         public Guid AppId { get; set; }
         /// <summary>
+        /// Gets or sets the multi-tenancy identifier.
+        /// </summary>
+        public Guid TenantId { get; set; }
+        /// <summary>
         /// Indicates whether need to include external scope data. By default <see langword="false"/>.
         /// </summary>
         public bool IncludeScopes { get; set; }

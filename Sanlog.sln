@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog", "Leviasan.Sanlog.Abstractions\Sanlog.csproj", "{C06201EA-5627-42C2-8816-FE7839968CB7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Sanlog.EntityFrameworkCore", "Leviasan.Sanlog.EntityFrameworkCore\Leviasan.Sanlog.EntityFrameworkCore.csproj", "{21B7B437-33EB-4CA9-8BE3-6CF37A3A41F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.EFCore.Client", "Leviasan.Sanlog.EntityFrameworkCore\Sanlog.EFCore.Client.csproj", "{21B7B437-33EB-4CA9-8BE3-6CF37A3A41F7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Sanlog.MSTest", "Leviasan.Sanlog.MSTest\Leviasan.Sanlog.MSTest.csproj", "{C19E35E6-C4D0-4A0C-9C81-488742CA6223}"
 EndProject

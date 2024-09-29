@@ -80,7 +80,16 @@ namespace Sanlog
         /// <summary>
         /// Gets the multitenant identifier.
         /// </summary>
-        public Guid TenantId => _tenantId;
+        public Guid TenantId
+        {
+            get => _tenantId;
+            init
+            {
+                if (value == Guid.Empty)
+                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(TenantId));
+                _tenantId = value;
+            }
+        }
         /// <summary>
         /// Gets the object identifier.
         /// </summary>

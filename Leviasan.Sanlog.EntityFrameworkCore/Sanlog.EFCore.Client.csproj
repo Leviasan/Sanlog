@@ -7,10 +7,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    
     <IsTrimmable>true</IsTrimmable>
     <IsAotCompatible>true</IsAotCompatible>
-    
     <DebugType>embedded</DebugType>
     <Authors>Leviasan</Authors>
     <Description>Represents a logger provider that uses an EntityFrameworkCore context as storage for saving log entries from different applications in one database scheme separated by application identifier.</Description>
@@ -23,10 +21,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.8" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Leviasan.Sanlog.Abstractions\Leviasan.Sanlog.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
