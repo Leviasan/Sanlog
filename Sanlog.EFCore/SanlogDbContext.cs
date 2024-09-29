@@ -6,17 +6,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Sanlog.EFCore
 {
-    public interface ITenantService
-    {
-        Guid TenantId { get; }
-        //void SetTenant(string tenant);
-        //string[] GetTenants();
-        // event TenantChangedEventHandler OnTenantChanged;
-    }
-
-
-
-
     /// <summary>
     /// Represents the database context of the logger.
     /// </summary>
@@ -26,6 +15,9 @@ namespace Sanlog.EFCore
     /// </remarks>
     public sealed class SanlogDbContext : DbContext
     {
+        /// <summary>
+        /// 
+        /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ITenantService _tenantService;
 
