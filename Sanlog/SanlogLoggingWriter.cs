@@ -9,7 +9,7 @@ namespace Sanlog
     /// <summary>
     /// Provides a mechanism for writing log entries to storage. This class is abstract.
     /// </summary>
-    public abstract class SanlogLoggerProcessor : IDisposable, IAsyncDisposable
+    public abstract class SanlogLoggingWriter : IDisposable, IAsyncDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -33,11 +33,11 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProcessor"/> class with the specified synchronous or asynchronous state of the channel.
+        /// Initializes a new instance of the <see cref="SanlogLoggingWriter"/> class with the specified synchronous or asynchronous state of the channel.
         /// </summary>
         /// <param name="allowSynchronousContinuations"><see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations;
         /// <see langword="false"/> if all continuations should be invoked asynchronously.</param>
-        protected SanlogLoggerProcessor(bool allowSynchronousContinuations)
+        protected SanlogLoggingWriter(bool allowSynchronousContinuations)
         {
             _cancellationTokenSource = new CancellationTokenSource();
             _channel = Channel.CreateUnbounded<LoggingEntry>(new UnboundedChannelOptions

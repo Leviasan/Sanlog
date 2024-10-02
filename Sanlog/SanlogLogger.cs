@@ -22,7 +22,7 @@ namespace Sanlog
         /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggerProcessor _processor;
+        private readonly SanlogLoggingWriter _processor;
         /// <summary>
         /// The function to get the current logger configuration.
         /// </summary>
@@ -55,7 +55,7 @@ namespace Sanlog
         /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param> // TODO: writer service ?!
         /// <param name="options">The logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggerProcessor processor, SanlogLoggerOptions options)
+        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter processor, SanlogLoggerOptions options)
             : this(category, tenantService, processor, options is not null ? () => options : throw new ArgumentNullException(nameof(options))) { }
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
@@ -64,7 +64,7 @@ namespace Sanlog
         /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggerProcessor processor, Func<SanlogLoggerOptions> configure)
+        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter processor, Func<SanlogLoggerOptions> configure)
         {
             _category = category ?? throw new ArgumentNullException(nameof(category));
             _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));

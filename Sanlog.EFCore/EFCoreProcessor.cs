@@ -10,7 +10,7 @@ namespace Sanlog.EFCore
     /// Represents a mechanism to write events to the storage in sync mode.
     /// </summary>
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
-    internal sealed class EFCoreProcessor : SanlogLoggerProcessor
+    internal sealed class EFCoreProcessor : SanlogLoggingWriter
     {
         /// <summary>
         /// The factory for creating <see cref="SanlogDbContext"/> instances.
