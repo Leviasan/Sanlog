@@ -5,3 +5,6 @@ Represents the logger for the NET8.0+ apps. API provides a logger that supports 
 - `MessageTemplate` - Represents a message template.
 - `SensitiveFormatter` - Represents the formatter that supports custom formatting of objects considering redact sensitive data.
 - `FormattedLogValuesFormatter` - Represents the formatter that supports Microsoft custom of the formatting.Extensions.Logging.FormattedLogValues objects. It depends on `MessageTemplate` and is inherited from `SensitiveFormatter`.
+
+### Miscellaneous
+- Multi-tenancy (https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy).

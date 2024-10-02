@@ -16,7 +16,7 @@ namespace Sanlog.EFCore
     public sealed class SanlogDbContext : DbContext
     {
         /// <summary>
-        /// 
+        /// Provides a mechanism for retrieving details about the tenancy.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ITenantService _tenantService;

@@ -144,3 +144,7 @@ For apps that use a host, logging configuration is commonly provided by the "Log
 # Attention!
 - `ODP.NET` does support `Guid`s. `Guid`s can be inserted into a `RAW(16)` column which is big enough to hold any `Guid` value. But caution needs to be taken in order to handle `Guid`s appropriately. This is due to the fact that as the .NET `Guid` structure flips the byte values in reverse order for the integer-based parts of the `Guid` values when `Guid(byte[ ])` constructor is used and when the `ToByteArray()` method on the `Guid` struct is invoked. More information: https://docs.oracle.com/en/database/oracle/oracle-database/23/odpnt/featGUID.html.
 - If using `EFCore.NamingConventions` you must configure `DbContextOptionsBuilder` using invoke `Use*CaseNamingConvention` in both places with the same method. It is the design time service that implements `IDesignTimeDbContextFactory<SanlogDbContext>` and the second place is while configuring the Sanlog logger.
+
+# Miscellaneous
+- Backing Fields (https://learn.microsoft.com/en-us/ef/core/modeling/backing-field).
+- Global Query Filters (https://learn.microsoft.com/en-us/ef/core/querying/filters).

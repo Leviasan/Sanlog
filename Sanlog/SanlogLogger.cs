@@ -33,6 +33,20 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IExternalScopeProvider? _externalScopeProvider;
+        /// <summary>
+        /// Provides a mechanism for retrieving details about the tenancy.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly ITenantService _tenantService;
+
+
+
+
+
+
+
+
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
@@ -41,8 +55,8 @@ namespace Sanlog
         /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param> // TODO: writer service ?!
         /// <param name="options">The logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, SanlogLoggerProcessor processor, SanlogLoggerOptions options)
-            : this(category, processor, options is not null ? () => options : throw new ArgumentNullException(nameof(options))) { }
+        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggerProcessor processor, SanlogLoggerOptions options)
+            : this(category, tenantService, processor, options is not null ? () => options : throw new ArgumentNullException(nameof(options))) { }
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
         /// </summary>
@@ -50,9 +64,10 @@ namespace Sanlog
         /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, SanlogLoggerProcessor processor, Func<SanlogLoggerOptions> configure)
+        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggerProcessor processor, Func<SanlogLoggerOptions> configure)
         {
             _category = category ?? throw new ArgumentNullException(nameof(category));
+            _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
             _processor = processor ?? throw new ArgumentNullException(nameof(processor));
             _configure = configure ?? throw new ArgumentNullException(nameof(configure));
         }
@@ -79,7 +94,7 @@ namespace Sanlog
                 {
                     TenantId = options.TenantId,
                     Id = logEntryId,
-                    ApplicationId = options.AppId,
+                    AppId = options.AppId,
                     Version = options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.UtcNow,
                     LogLevelId = logLevel,

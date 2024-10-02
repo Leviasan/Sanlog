@@ -167,7 +167,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets a value indicating whether a primitive type array will be formatted.
         /// </summary>
-        public bool PrimitiveTypeArray { get; set; }
+        public bool ArrayPrimitive { get; set; }
 
         #region Override: SensitiveFormatter
         /// <inheritdoc/>
@@ -199,7 +199,7 @@ namespace Sanlog
                 => TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
             string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
-                if (PrimitiveTypeArray)
+                if (ArrayPrimitive)
                 {
                     var type = enumerable.GetType();
                     if (type.IsArray)

@@ -25,7 +25,7 @@ namespace Sanlog
         /// The application identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid _applicationId;
+        private readonly Guid _appId;
         /// <summary>
         /// The date and time when the event occurred.
         /// </summary>
@@ -108,14 +108,14 @@ namespace Sanlog
         /// Gets the application identifier.
         /// </summary>
         /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
-        public Guid ApplicationId
+        public Guid AppId
         {
-            get => _applicationId;
+            get => _appId;
             init
             {
                 if (value == Guid.Empty)
-                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(ApplicationId));
-                _applicationId = value;
+                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(AppId));
+                _appId = value;
             }
         }
         /// <summary>

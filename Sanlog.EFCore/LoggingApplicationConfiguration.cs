@@ -15,7 +15,7 @@ namespace Sanlog.EFCore
             _ = builder.Property(x => x.Application).IsRequired(true).IsUnicode(true).HasMaxLength(450);
             _ = builder.Property(x => x.Environment).IsRequired(true).IsUnicode(true).HasMaxLength(450);
             _ = builder.HasIndex(x => new { x.TenantId, x.Application, x.Environment }).IsUnique();
-            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne("Application").HasForeignKey(x => x.ApplicationId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
+            _ = builder.HasMany<LoggingEntry>("LogEntries").WithOne("Application").HasForeignKey(x => x.AppId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
             _ = builder.HasOne<TenantClient>("Tenant").WithMany("LogApps").HasForeignKey(x => x.TenantId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
         }
     }
