@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Reflection;
-using Microsoft.Extensions.Logging;
 
 namespace Sanlog
 {
     /// <summary>
     /// Represents <see cref="SanlogLogger"/> configuration.
     /// </summary>
-    public sealed class SanlogLoggerOptions : LogDefineOptions
+    public sealed class SanlogLoggerOptions
     {
         /// <summary>
         /// Indicates whether need to include external scope data. By default <see langword="false"/>.

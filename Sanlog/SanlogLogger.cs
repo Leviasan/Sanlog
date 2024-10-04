@@ -11,7 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a type used to perform logging.
     /// </summary>
-    public sealed class SanlogLogger : ILogger, ISupportExternalScope
+    public sealed class SanlogLogger : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
@@ -19,10 +19,15 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _category;
         /// <summary>
-        /// The writer service.
+        /// Provides a mechanism for retrieving details about the tenancy.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggingWriter _processor;
+        private readonly ITenantService _tenantService;
+        /// <summary>
+        /// The logging writer service.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly SanlogLoggingWriter _writer;
         /// <summary>
         /// The function to get the current logger configuration.
         /// </summary>
@@ -33,57 +38,35 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IExternalScopeProvider? _externalScopeProvider;
-        /// <summary>
-        /// Provides a mechanism for retrieving details about the tenancy.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly ITenantService _tenantService;
-
-
-
-
-
-
-
-
-
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service,
+        /// the function to get the current logger configuration, and the function to get the external storage of the common scope data.
         /// </summary>
         /// <param name="category">The category for messages produced by the logger.</param>
-        /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param> // TODO: writer service ?!
-        /// <param name="options">The logger configuration.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter processor, SanlogLoggerOptions options)
-            : this(category, tenantService, processor, options is not null ? () => options : throw new ArgumentNullException(nameof(options))) { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
-        /// </summary>
-        /// <param name="category">The category for messages produced by the logger.</param>
-        /// <param name="processor">The writer service. The caller is responsible for disposing of the writer.</param>
+        /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
+        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter processor, Func<SanlogLoggerOptions> configure)
+        /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="tenantService"/> or <paramref name="writer"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+        public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter writer, Func<SanlogLoggerOptions> configure)
         {
             _category = category ?? throw new ArgumentNullException(nameof(category));
             _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
-            _processor = processor ?? throw new ArgumentNullException(nameof(processor));
+            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
             _configure = configure ?? throw new ArgumentNullException(nameof(configure));
         }
 
         /// <inheritdoc/>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _externalScopeProvider?.Push(state);
         /// <inheritdoc/>
-        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && _configure.Invoke().AppId != Guid.Empty;
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && _tenantService.AppId != Guid.Empty && _tenantService.TenantId != Guid.Empty;
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
+            ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                ArgumentNullException.ThrowIfNull(formatter);
-
                 var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(
                     dictionary: state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [],
@@ -92,9 +75,9 @@ namespace Sanlog
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
-                    TenantId = options.TenantId,
+                    TenantId = _tenantService.TenantId,
                     Id = logEntryId,
-                    AppId = options.AppId,
+                    AppId = _tenantService.AppId,
                     Version = options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.UtcNow,
                     LogLevelId = logLevel,
@@ -103,14 +86,14 @@ namespace Sanlog
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : formatter.Invoke(state, exception),
                     Properties = formattedLogValuesFormatter.SelectToDictionary(),
-                    Scopes = GetScopeInformation(options.TenantId, CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
+                    Scopes = GetScopeInformation(_tenantService, CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(options.TenantId, Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options.TenantId, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(_tenantService, Guid.NewGuid(), exception, logEntryId, null)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_tenantService, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _ = _processor.Enqueue(loggingEntry);
+                _ = _writer.Enqueue(loggingEntry);
             }
             // Summary: Gets error information.
             // Param (id): The identifier of the new object.
@@ -119,11 +102,11 @@ namespace Sanlog
             // Param (parentErrorId): The parent error identifier.
             // Returns: The error information.
             [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "TargetSite metadata might be incomplete or removed")]
-            static LoggingError GetErrorInformation(Guid tenantId, Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
+            static LoggingError GetErrorInformation(ITenantService tenantService, Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
             {
                 return new LoggingError
                 {
-                    TenantId = tenantId,
+                    TenantId = tenantService.TenantId,
                     Id = id,
                     Type = exception.GetType().FullName!,
                     Message = exception.Message,
@@ -136,8 +119,8 @@ namespace Sanlog
                     ParentExceptionId = parentErrorId,
                     InnerException = exception.InnerException is not null
                         ? exception.InnerException is not AggregateException aggregateException
-                            ? [GetErrorInformation(tenantId, Guid.NewGuid(), exception.InnerException, logEntryId, id)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(tenantId, Guid.NewGuid(), innerException, logEntryId, id)).ToList()
+                            ? [GetErrorInformation(tenantService, Guid.NewGuid(), exception.InnerException, logEntryId, id)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(tenantService, Guid.NewGuid(), innerException, logEntryId, id)).ToList()
                         : []
                 };
             }
@@ -148,7 +131,7 @@ namespace Sanlog
             // Param (options): The logger options.
             // Param (externalScopeProvider): The external storage of the common scope data.
             // Returns: An array of the scope data.
-            static List<LoggingScope> GetScopeInformation(Guid tenantId, IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
+            static List<LoggingScope> GetScopeInformation(ITenantService tenantService, IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
                 if (options.IncludeScopes && externalScopeProvider is not null)
@@ -163,6 +146,7 @@ namespace Sanlog
 
                             var loggingScope = new LoggingScope
                             {
+                                TenantId = tenantService.TenantId,
                                 Id = Guid.NewGuid(),
                                 Type = scope.GetType().FullName!,
                                 Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : Convert.ToString(scope, formatProvider),
