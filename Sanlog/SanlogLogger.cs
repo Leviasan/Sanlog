@@ -96,6 +96,7 @@ namespace Sanlog
                 _ = _writer.Enqueue(loggingEntry);
             }
             // Summary: Gets error information.
+            // Param (tenantService): Provides a mechanism for retrieving details about the tenancy.
             // Param (id): The identifier of the new object.
             // Param (exception): The exception to get error information.
             // Param (logEntryId): The parent logging entry identifier.
@@ -125,6 +126,7 @@ namespace Sanlog
                 };
             }
             // Summary: Gets scope information.
+            // Param (tenantService): Provides a mechanism for retrieving details about the tenancy.
             // Param (formatProvider): An object that supplies culture-specific formatting information.
             // Param (state): An object that describes scope.
             // Param (logEntryId): The parent logging entry identifier.
