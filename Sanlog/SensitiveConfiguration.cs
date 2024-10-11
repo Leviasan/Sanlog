@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 
 namespace Sanlog
 {
@@ -126,7 +125,7 @@ namespace Sanlog
             return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies an array of properties whose values belong to sensitive data to the specified configuration from the current instance.
+        /// Copies an array of properties to the specified configuration from the current instance.
         /// </summary>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <returns>The count of the added element.</returns>
@@ -150,7 +149,12 @@ namespace Sanlog
         /// <param name="type">The key of the element to remove.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>. This method returns <see langword="false"/> if key is not found.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
-        public bool Remove(Type type) => _sensitiveData.Remove(type);
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        public bool Remove(Type type)
+        {
+            CheckReadOnly(); // InvalidOperationException
+            return _sensitiveData.Remove(type);
+        }
         /// <summary>
         /// Removes the specified property whose values belong to sensitive data.
         /// </summary>
@@ -158,6 +162,11 @@ namespace Sanlog
         /// <param name="property">The property whose value is belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>.
         /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found.</returns>
-        public bool Remove(Type type, string property) => _sensitiveData.TryGetValue(type, out var hashset) && hashset.Remove(property);
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        public bool Remove(Type type, string property)
+        {
+            CheckReadOnly(); // InvalidOperationException
+            return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Remove(property);
+        }
     }
 }
