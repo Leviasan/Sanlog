@@ -11,10 +11,10 @@ namespace Sanlog
     public sealed class SensitiveConfiguration
     {
         /// <summary>
-        /// The registered sensitive data.
+        /// The dictionary of the sensitive properties.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<string>> _sensitiveData = [];
+        private readonly Dictionary<Type, HashSet<string>> _dictionary = [];
 
         /// <summary>
         /// Gets a value indicating whether the configuration is read-only.
@@ -29,7 +29,7 @@ namespace Sanlog
         /// <list type="table">
         ///     <item>
         ///         <term><see cref="object"/></term>
-        ///         <description>The property name of the message template.</description>
+        ///         <description>The segment name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
@@ -37,8 +37,8 @@ namespace Sanlog
         ///     </item>
         /// </list>
         /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
-        /// <param name="property">The property whose value is belongs to sensitive data.</param>
+        /// <param name="type">The sensitive key type.</param>
+        /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
@@ -47,7 +47,7 @@ namespace Sanlog
             CheckReadOnly(); // InvalidOperationException
             ArgumentNullException.ThrowIfNull(type);
             ArgumentNullException.ThrowIfNull(property);
-            return _sensitiveData.TryGetValue(type, out var hashset) ? hashset.Add(property) : _sensitiveData.TryAdd(type, [property]);
+            return _dictionary.TryGetValue(type, out var hashset) ? hashset.Add(property) : _dictionary.TryAdd(type, [property]);
         }
         /// <summary>
         /// Registers an array of properties whose values belong to sensitive data.
@@ -57,7 +57,7 @@ namespace Sanlog
         /// <list type="table">
         ///     <item>
         ///         <term><see cref="object"/></term>
-        ///         <description>The property name of the message template.</description>
+        ///         <description>The segment name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
@@ -65,7 +65,7 @@ namespace Sanlog
         ///     </item>
         /// </list>
         /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
+        /// <param name="type">The sensitive key type.</param>
         /// <param name="args">An array of properties whose value belongs to sensitive data.</param>
         /// <returns>The count of the added element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/></exception>
@@ -96,7 +96,7 @@ namespace Sanlog
         public void Clear()
         {
             CheckReadOnly(); // InvalidOperationException
-            _sensitiveData.Clear();
+            _dictionary.Clear();
         }
         /// <summary>
         /// Checks whether the property of the specified type belongs to sensitive data.
@@ -106,7 +106,7 @@ namespace Sanlog
         /// <list type="table">
         ///     <item>
         ///         <term><see cref="object"/></term>
-        ///         <description>The property name of the message template.</description>
+        ///         <description>The segment name of the message template.</description>
         ///     </item>
         ///     <item>
         ///         <term><see cref="DictionaryEntry"/></term>
@@ -114,18 +114,18 @@ namespace Sanlog
         ///     </item>
         /// </list>
         /// </remarks>
-        /// <param name="type">The sensetive key type.</param>
-        /// <param name="property">The property whose value is belongs to sensitive data.</param>
+        /// <param name="type">The sensitive key type.</param>
+        /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
         public bool Contains(Type type, string property)
         {
             ArgumentNullException.ThrowIfNull(type);
             ArgumentNullException.ThrowIfNull(property);
-            return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Contains(property);
+            return _dictionary.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies an array of properties to the specified configuration from the current instance.
+        /// Copies all the elements to the specified configuration.
         /// </summary>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <returns>The count of the added element.</returns>
@@ -135,12 +135,12 @@ namespace Sanlog
         {
             ArgumentNullException.ThrowIfNull(configuration);
             var count = 0;
-            foreach (var sensitive in _sensitiveData)
+            foreach (var sensitive in _dictionary)
                 count += configuration.Add(sensitive.Key, [.. sensitive.Value]); // InvalidOperationException
             return count;
         }
         /// <summary>
-        /// Makes the configuration is read-only.
+        /// Makes the configuration read-only.
         /// </summary>
         public void MakeReadOnly() => IsReadOnly = true;
         /// <summary>
@@ -153,20 +153,20 @@ namespace Sanlog
         public bool Remove(Type type)
         {
             CheckReadOnly(); // InvalidOperationException
-            return _sensitiveData.Remove(type);
+            return _dictionary.Remove(type);
         }
         /// <summary>
-        /// Removes the specified property whose values belong to sensitive data.
+        /// Removes the specified property whose value belongs to sensitive data.
         /// </summary>
         /// <param name="type">The key of the element to remove.</param>
-        /// <param name="property">The property whose value is belongs to sensitive data.</param>
+        /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>.
         /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found.</returns>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         public bool Remove(Type type, string property)
         {
             CheckReadOnly(); // InvalidOperationException
-            return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Remove(property);
+            return _dictionary.TryGetValue(type, out var hashset) && hashset.Remove(property);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Sanlog
         private readonly SensitiveConfiguration _configuration;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified raw values.
+        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified raw values and configuration of the sensitive data.
         /// </summary>
         /// <param name="dictionary">The raw values.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
