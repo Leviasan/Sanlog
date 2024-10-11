@@ -13,7 +13,7 @@ namespace Sanlog
     public class SensitiveFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
-        /// The message format that represents a redacted value.
+        /// The message format of the redacted value.
         /// </summary>
         public const string RedactedValue = "[Redacted]";
 
@@ -71,19 +71,19 @@ namespace Sanlog
         #endregion
 
         /// <summary>
-        /// Determines whether the raw values contains an element that has the specified key.
+        /// Determines whether the dictionary contains an element that has the specified key.
         /// </summary>
         /// <param name="key">The key to locate.</param>
-        /// <returns><see langword="true"/> if the raw values contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the dictionary contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
         public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
         /// <summary>
-        /// Gets a key-value pair considering the concealment of confidential data.
+        /// Returns the element at a specified index in a sequence.
         /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <param name="index">The zero-based index of the element to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair that describes a key and object considering the concealment of confidential data.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
+        /// <returns>The element at the specified position in the source sequence.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
             var kvp = _dictionary.ElementAt(index); // ArgumentOutOfRangeException
@@ -91,13 +91,13 @@ namespace Sanlog
             return KeyValuePair.Create(kvp.Key, newvalue);
         }
         /// <summary>
-        /// Gets a key-value pair considering the concealment of confidential data.
+        /// Returns the element with a specified name in a sequence.
         /// </summary>
-        /// <param name="key">The key of the value to get.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair that describes a key and object considering the concealment of confidential data.</returns>
+        /// <returns>The element with the specified name in the source sequence.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> does not exist in the collection.</exception>
+        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> does not exist in the dictionary.</exception>
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
         {
             var value = _dictionary[key]; // ArgumentNullException + KeyNotFoundException
@@ -107,7 +107,7 @@ namespace Sanlog
         /// <summary>
         /// Processes a value through the sensitive formatter.
         /// </summary>
-        /// <param name="key">The key of the value.</param>
+        /// <param name="key">The key.</param>
         /// <param name="value">The value to process.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>A new value considering the concealment of confidential data.</returns>
@@ -161,21 +161,19 @@ namespace Sanlog
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
         /// <returns>A dictionary whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
-        public Dictionary<string, string?>? SelectToDictionary()
-            => SelectToDictionary(selector => Format(null, selector, this));
+        public Dictionary<string, string?> ToDictionary() => ToDictionary(selector => Format(null, selector, this));
         /// <summary>
         /// Projects each element processes through the formatter into a new form.
         /// </summary>
         /// <param name="selector">A transform function to apply to each element.</param>
         /// <typeparam name="TResult">The type of the value returned by selector.</typeparam>
         /// <returns>A dictionary whose elements result from invoking the transform function on each element.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="selector"/> is <see langword="null"/>.</exception>
-        public Dictionary<string, TResult?>? SelectToDictionary<TResult>(Func<object?, TResult?> selector)
+        private Dictionary<string, TResult?> ToDictionary<TResult>(Func<object?, TResult?> selector)
         {
-            var newdict = _dictionary
+            Debug.Assert(selector is not null);
+            return _dictionary
                 .Select(x => GetObject(x.Key, true))
                 .ToDictionary(ks => ks.Key, es => selector.Invoke(es.Value));
-            return newdict.Count == 0 ? null : newdict;
         }
     }
 }

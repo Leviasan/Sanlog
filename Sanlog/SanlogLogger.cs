@@ -84,7 +84,7 @@ namespace Sanlog
                     EventId = eventId.Id,
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : formatter.Invoke(state, exception),
-                    Properties = formattedLogValuesFormatter.SelectToDictionary(),
+                    Properties = formattedLogValuesFormatter.ToDictionary(),
                     Scopes = GetScopeInformation(_tenantService, CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -152,7 +152,7 @@ namespace Sanlog
                                 Type = scope.GetType().FullName!,
                                 Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : Convert.ToString(scope, formatProvider),
                                 LogEntryId = logEntryId,
-                                Properties = formattedLogValuesFormatter.SelectToDictionary()
+                                Properties = formattedLogValuesFormatter.ToDictionary()
                             };
                             scopes.Add(loggingScope);
                         }
