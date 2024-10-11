@@ -18,7 +18,7 @@ namespace Sanlog
         public const string RedactedValue = "[Redacted]";
 
         /// <summary>
-        /// The raw values.
+        /// An object array that contains zero or more objects to format.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IReadOnlyDictionary<string, object?> _dictionary;
@@ -31,7 +31,7 @@ namespace Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified raw values and configuration of the sensitive data.
         /// </summary>
-        /// <param name="dictionary">The raw values.</param>
+        /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
         public SensitiveFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration)
@@ -91,7 +91,7 @@ namespace Sanlog
             return KeyValuePair.Create(kvp.Key, newvalue);
         }
         /// <summary>
-        /// Returns the element with a specified name in a sequence.
+        /// Returns the element with the specified key in a sequence.
         /// </summary>
         /// <param name="key">The key of the value to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>

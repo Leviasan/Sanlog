@@ -36,11 +36,7 @@ namespace Sanlog
     ///     </item>
     ///     <item>
     ///         <term><see cref="IEnumerable"/></term>
-    ///         <description>Formats value as [object, object2, ..., objectN].</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="IEnumerable"/> of <see cref="Type.IsPrimitive"/></term>
-    ///         <description>Formats value as "[*{ElementCount} {Type.Name}*]".</description>
+    ///         <description>Formats value as [object, object2, ..., objectN] or [*{ElementCount} {Type.Name}*] if <see cref="Type.IsPrimitive"/> and <see cref="FormatPrimitiveArray"/> is <see langword="true"/>.</description>
     ///     </item>
     ///     <item>
     ///         <term><see cref="IDictionary"/></term>
@@ -140,19 +136,19 @@ namespace Sanlog
         private readonly MessageTemplate? _messageTemplate;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified raw values and configuration of the sensitive data.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format and configuration of the sensitive data.
         /// </summary>
-        /// <param name="dictionary">The raw values.</param>
+        /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
+        /// <exception cref="FormatException">A format item in <see cref="OriginalFormat"/> value is invalid.</exception>
         public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration)
             : this(null, dictionary ?? throw new ArgumentNullException(nameof(dictionary)), configuration) { }
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified message template, raw values, and configuration of the sensitive data.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified message template, an object array that contains zero or more objects to format, and configuration of the sensitive data.
         /// </summary>
         /// <param name="messageTemplate">The message template.</param>
-        /// <param name="dictionary">The raw values.</param>
+        /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in <see cref="OriginalFormat"/> value is invalid.</exception>
@@ -252,11 +248,11 @@ namespace Sanlog
         #endregion
 
         /// <summary>
-        /// Gets a key-value pair describing a property name and string representation of the object.
+        /// Returns the string representation of the element at a specified index in a sequence.
         /// </summary>
-        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <param name="index">The zero-based index of the element to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
+        /// <returns>The string representation of the element at a specified index in a sequence.</returns>
         /// <exception cref="ArgumentOutOfRangeException">Index was outside the bounds of the array.</exception>
         public KeyValuePair<string, string> GetObjectAsString(int index, bool redacted)
         {
@@ -265,23 +261,23 @@ namespace Sanlog
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
         /// <summary>
-        /// Gets a key-value pair describing a property name and string representation of the object.
+        /// Returns the string representation of the element with the specified key in a sequence.
         /// </summary>
-        /// <param name="name">The property name to find.</param>
+        /// <param name="key">The key of the value to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>The key-value pair describing a property name and string representation of the object.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="name"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="name"/> is not found.</exception>
-        public KeyValuePair<string, string> GetObjectAsString(string name, bool redacted)
+        /// <returns>The string representation of the element with the specified key in a sequence.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
+        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        public KeyValuePair<string, string> GetObjectAsString(string key, bool redacted)
         {
-            var pair = GetObject(name, redacted); // ArgumentNullException + KeyNotFoundException
+            var pair = GetObject(key, redacted); // ArgumentNullException + KeyNotFoundException
             var stringRepresentation = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
         /// <summary>
         /// Replaces format items in the composite string and builds result string.
         /// </summary>
-        /// <returns>The string representation of the values formatted by the formatter.</returns>
+        /// <returns>The string representation of the message.</returns>
         public string ToMessage()
         {
             return _messageTemplate is not null ? _messageTemplate.Format(this, TakeBySegmentOrder(_messageTemplate)) : NullFormat;
