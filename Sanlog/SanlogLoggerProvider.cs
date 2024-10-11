@@ -12,13 +12,18 @@ namespace Sanlog
     /// Represents a logger provider the can create instances of <see cref="SanlogLogger"/> and can consume external scope information.
     /// </summary>
     [ProviderAlias(nameof(SanlogLoggerProvider))]
-    public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable
+    public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable, IDisposable
     {
         /// <summary>
         /// The <see cref="ServiceDescriptor.ServiceKey"/> of the service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly object? _serviceKey;
+        /// <summary>
+        /// Provides a mechanism for retrieving details about the tenancy.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly ITenantService _tenantService;
         /// <summary>
         /// The cache-collection of the created loggers.
         /// </summary>
@@ -30,7 +35,7 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
-        /// The writer service.
+        /// The logging writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggingWriter _writer;
@@ -54,26 +59,22 @@ namespace Sanlog
         /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified writer service and logger options.
         /// </summary>
         /// <param name="serviceKey">The <see cref="ServiceDescriptor.ServiceKey"/> of the service.</param>
+        /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
         /// <param name="writer">The writer service. The callee is responsible for disposing of the writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="tenantService"/> or <paramref name="writer"/> or <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
         [ActivatorUtilitiesConstructor]
-        public SanlogLoggerProvider([ServiceKey] object? serviceKey, SanlogLoggingWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
-            : this(writer, optionsMonitor?.CurrentValue ?? throw new ArgumentNullException(nameof(optionsMonitor)))
+        public SanlogLoggerProvider([ServiceKey] object? serviceKey, ITenantService tenantService, SanlogLoggingWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
         {
+            ArgumentNullException.ThrowIfNull(tenantService);
+            ArgumentNullException.ThrowIfNull(writer);
+            ArgumentNullException.ThrowIfNull(optionsMonitor);
+
             _serviceKey = serviceKey;
+            _tenantService = tenantService;
+            _writer = writer;
             _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
-        }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified writer service amd logger options.
-        /// </summary>
-        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
-        /// <param name="options">The logger options.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public SanlogLoggerProvider(SanlogLoggingWriter writer, SanlogLoggerOptions options)
-        {
-            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-            _options = options ?? throw new ArgumentNullException(nameof(options));
+            _options = optionsMonitor.CurrentValue;
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
         }
 
@@ -115,7 +116,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _writer, () => _options);
+            var logger = new SanlogLogger(category, _tenantService, _writer, () => _options);
             logger.SetScopeProvider(_externalScopeProvider);
             return logger;
         });
@@ -125,8 +126,7 @@ namespace Sanlog
         /// <param name="options">The changed logger options.</param>
         /// <param name="name">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private void OnChangeOptions(SanlogLoggerOptions options, string? name)
-            => _options = options ?? throw new ArgumentNullException(nameof(options));
+        private void OnChangeOptions(SanlogLoggerOptions options, string? name) => _options = options ?? throw new ArgumentNullException(nameof(options));
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider)
         {

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Globalization;
 
-namespace Leviasan.Sanlog.MSTest
+namespace Sanlog.MSTest
 {
     [TestClass]
     public sealed class FormattedLogValuesFormatterUnitTest
@@ -43,10 +43,11 @@ namespace Leviasan.Sanlog.MSTest
         [DataRow("uk-ua", Math.PI, "3,1415926535897931")]
         public void FormatValue(string culture, object value, string expected)
         {
-            CultureInfo? cultureInfo = CultureInfo.GetCultureInfo(culture);
-            var formatter = FormattedLogValuesFormatter.Create(cultureInfo, null, "ToMessage: {FormatValue}.", value);
-            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            var cultureInfo = CultureInfo.GetCultureInfo(culture);
+            var formatter = FormattedLogValuesFormatter.Create("FormatValue: {FormatValue}.", value);
+            formatter.CultureInfo = cultureInfo;
             Assert.AreEqual(cultureInfo, formatter.CultureInfo);
+            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual(expected, formatter.GetObjectAsString("FormatValue", true).Value);
         }
         [TestMethod]
@@ -105,7 +106,7 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("FormatValue", true).Value);
-            formatter.PrimitiveTypeArray = true;
+            formatter.FormatPrimitiveArray = true;
             Assert.AreEqual("[*10 Int64*]", formatter.GetObjectAsString("FormatValue", true).Value);
         }
         [TestMethod]
@@ -118,7 +119,7 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("FormatValue", true).Value);
-            formatter.PrimitiveTypeArray = true;
+            formatter.FormatPrimitiveArray = true;
             Assert.AreEqual("[*10 Byte*]", formatter.GetObjectAsString("FormatValue", true).Value);
         }
         [TestMethod]
@@ -139,7 +140,7 @@ namespace Leviasan.Sanlog.MSTest
             var formatter = new FormattedLogValuesFormatter(dictionary, null);
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual("[[NotNull, 1], [NullValue, (null)], [ShortArray, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]]", formatter.GetObjectAsString("FormatValue", true).Value);
-            formatter.PrimitiveTypeArray = true;
+            formatter.FormatPrimitiveArray = true;
             Assert.AreEqual("[[NotNull, 1], [NullValue, (null)], [ShortArray, [*10 Int16*]]]", formatter.GetObjectAsString("FormatValue", true).Value);
         }
         [TestMethod]
@@ -165,14 +166,15 @@ namespace Leviasan.Sanlog.MSTest
             Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.AreEqual("[1, (null), [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [[Password, some_password]]]", formatter.GetObjectAsString("FormatValue", true).Value);
             Assert.IsTrue(formatter.SensitiveConfiguration.Add(typeof(DictionaryEntry), "Password"));
-            formatter.PrimitiveTypeArray = true;
+            formatter.FormatPrimitiveArray = true;
             Assert.AreEqual("[1, (null), [*10 Int32*], [[Password, [Redacted]]]]", formatter.GetObjectAsString("FormatValue", true).Value);
         }
         [TestMethod]
         public void FormatWithFormatString()
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
-            var formatter = FormattedLogValuesFormatter.Create(CultureInfo.InvariantCulture, null, "DateTime: {DateTime:Y}", datetime);
+            var formatter = FormattedLogValuesFormatter.Create("DateTime: {DateTime:Y}", datetime);
+            formatter.CultureInfo = CultureInfo.InvariantCulture;
             Assert.AreEqual("DateTime: 2024 May", formatter.ToMessage());
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, false).Value);
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, true).Value);
@@ -181,8 +183,22 @@ namespace Leviasan.Sanlog.MSTest
         public void FormatWithDifferentFormatString()
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
-            var formatter = FormattedLogValuesFormatter.Create(CultureInfo.InvariantCulture, null, "Year month: {DateTime,9:Y}. StringComparison: {StringComparison:G}. Sortable date/time: {DateTime:s}.", datetime, StringComparison.Ordinal);
+            var formatter = FormattedLogValuesFormatter.Create("Year month: {DateTime,9:Y}. StringComparison: {StringComparison:G}. Sortable date/time: {DateTime:s}.", datetime, StringComparison.Ordinal, "extended_params");
+            formatter.CultureInfo = CultureInfo.InvariantCulture;
             Assert.AreEqual("Year month:  2024 May. StringComparison: Ordinal. Sortable date/time: 2024-05-22T23:56:18.", formatter.ToMessage());
+        }
+        [TestMethod]
+        public void CreateMinimumArgumentCount()
+        {
+            var formatter = FormattedLogValuesFormatter.Create("Usual string", 1, 2, 3);
+            Assert.AreEqual(1, formatter.GetObject(0, false).Value);
+            Assert.AreEqual("args_0", formatter.GetObject(0, false).Key);
+            Assert.AreEqual(2, formatter.GetObject(1, false).Value);
+            Assert.AreEqual("args_1", formatter.GetObject(1, false).Key);
+            Assert.AreEqual(3, formatter.GetObject(2, false).Value);
+            Assert.AreEqual("args_2", formatter.GetObject(2, false).Key);
+            Assert.AreEqual("Usual string", formatter.GetObject(3, false).Value);
+            Assert.AreEqual("Usual string", formatter.GetObjectAsString(FormattedLogValuesFormatter.OriginalFormat, false).Value);
         }
     }
 }

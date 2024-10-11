@@ -40,8 +40,7 @@ namespace Sanlog
         private IExternalScopeProvider? _externalScopeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service,
-        /// the function to get the current logger configuration, and the function to get the external storage of the common scope data.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, the function to get the current logger configuration.
         /// </summary>
         /// <param name="category">The category for messages produced by the logger.</param>
         /// <param name="tenantService">The service for retrieving details about the tenancy.</param>

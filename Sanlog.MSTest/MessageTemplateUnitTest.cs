@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 
-namespace Leviasan.Sanlog.MSTest
+namespace Sanlog.MSTest
 {
     [TestClass]
     public sealed class MessageTemplateUnitTest

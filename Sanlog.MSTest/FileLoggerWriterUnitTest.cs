@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace Leviasan.Sanlog.MSTest
+namespace Sanlog.MSTest
 {
     /*
     [TestClass]
@@ -24,7 +24,7 @@ namespace Leviasan.Sanlog.MSTest
             string? searchPattern = null;
             await using (var writer = new FileLoggerWriter(directory: FilePath, filePrefix: "DropWrite", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropWrite, encoding: Encoding.Unicode, allowSynchronousContinuations: false))
             {
-                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
+                var logger = new SanlogLogger("Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 3);
                 searchPattern = writer.SearchPattern;
             }
@@ -39,7 +39,7 @@ namespace Leviasan.Sanlog.MSTest
             string? searchPattern = null;
             using (var writer = new FileLoggerWriter(FilePath, filePrefix: "DropNewest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropNewest, encoding: Encoding.UTF8, allowSynchronousContinuations: false))
             {
-                var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
+                var logger = new SanlogLogger("Sanlog.MSTest", writer, () => Options);
                 UserLoggedInvoke(logger, null, 50);
                 searchPattern = writer.SearchPattern;
             }
@@ -52,7 +52,7 @@ namespace Leviasan.Sanlog.MSTest
         public void FileCountLimitDropOldest()
         {
             var writer = new FileLoggerWriter(FilePath, filePrefix: "DropOldest", fileSizeLimit: 1024, fileCountLimit: 2, strategy: FileFullMode.DropOldest, encoding: Encoding.UTF8, allowSynchronousContinuations: false);
-            var logger = new SanlogLogger("Leviasan.Sanlog.MSTest", writer, () => Options);
+            var logger = new SanlogLogger("Sanlog.MSTest", writer, () => Options);
             try
             {
                 UserLoggedInvoke(logger, null, 50);

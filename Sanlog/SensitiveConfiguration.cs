@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace Sanlog
 {
@@ -125,18 +126,18 @@ namespace Sanlog
             return _sensitiveData.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies an array of properties whose values belong to sensitive data from the specified configuration to the current instance.
+        /// Copies an array of properties whose values belong to sensitive data to the specified configuration from the current instance.
         /// </summary>
         /// <param name="configuration">The configuration of the sensitive data.</param>
-        /// <returns>The count of the copied element.</returns>
+        /// <returns>The count of the added element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="configuration"/> is <see langword="null"/>.</exception>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        /// <exception cref="InvalidOperationException">The <paramref name="configuration"/> is read-only.</exception>
         public int CopyTo(SensitiveConfiguration configuration)
         {
             ArgumentNullException.ThrowIfNull(configuration);
             var count = 0;
-            foreach (var arg in configuration._sensitiveData)
-                count += Add(arg.Key, [.. arg.Value]); // InvalidOperationException
+            foreach (var sensitive in _sensitiveData)
+                count += configuration.Add(sensitive.Key, [.. sensitive.Value]); // InvalidOperationException
             return count;
         }
         /// <summary>

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -66,7 +65,7 @@ namespace Sanlog
         /// <summary>
         /// The message format that represents a primitive type array.
         /// </summary>
-        public static readonly CompositeFormat ArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
+        public static readonly CompositeFormat PrimitiveArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// Max cached collection size.
@@ -80,55 +79,45 @@ namespace Sanlog
         private static readonly Dictionary<string, MessageTemplate> CachedMessageTemplates = [];
 
         /// <summary>
-        /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
+        /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on the composite/named format string and an object array that contains zero or more objects to format.
         /// </summary>
-        /// <param name="cultureInfo">An object that supplies culture-specific formatting information.</param>
-        /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <param name="format">A composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
-        /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
+        /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on the composite/named format string and an object array that contains zero or more objects to format.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public static FormattedLogValuesFormatter Create(CultureInfo? cultureInfo, SensitiveConfiguration? configuration, string format, params object?[] args)
+        /// <exception cref="FormatException">A format item in <paramref name="format"/> is invalid.</exception>
+        public static FormattedLogValuesFormatter Create(string format, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(format);
             ArgumentNullException.ThrowIfNull(args);
-
+            var index = 0;
             var dictionary = new Dictionary<string, object?>();
             if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
             {
-                for (int index = 0, segmentId = 0; index < args.Length; ++index, ++segmentId)
+                foreach (var segment in messageTemplate.Segments)
                 {
-                    while (segmentId < messageTemplate.Segments.Count && dictionary.Any(x => x.Key == messageTemplate.Segments[segmentId]))
-                    {
-                        ++segmentId;
-                    }
-                    dictionary.Add(messageTemplate.Segments[segmentId], args[index]);
+                    if (dictionary.ContainsKey(segment)) continue;
+                    dictionary.Add(segment, args[index++]);
                 }
+            }
+            if (index < args.Length)
+            {
+                var extendedParams = args.Select((element, index) => KeyValuePair.Create($"args_{index}", element)).Skip(index);
+                dictionary = dictionary.Concat(extendedParams).ToDictionary();
+            }
+            if (!string.IsNullOrEmpty(format))
+            {
                 dictionary.Add(OriginalFormat, format);
             }
-            else
-            {
-                dictionary = args.Select((element, index) => KeyValuePair.Create(index.ToString(null, cultureInfo), element)).ToDictionary();
-            }
-            return new FormattedLogValuesFormatter(dictionary, configuration) { CultureInfo = cultureInfo };
+            return new FormattedLogValuesFormatter(messageTemplate, dictionary, null);
         }
         /// <summary>
-        /// Creates a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on a message template, and an object array that contains zero or more objects to format.
+        /// Tries to get a message template from the cache or parses composite/named format string and tries to add to cache one.
         /// </summary>
         /// <param name="format">A composite/named format string.</param>
-        /// <param name="args">An object array that contains zero or more objects to format.</param>
-        /// <returns>A new instance of the <see cref="FormattedLogValuesFormatter"/> based on a message template, and an object array that contains zero or more objects to format.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="format"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public static FormattedLogValuesFormatter Create(string format, params object?[] args) => Create(null, null, format, args);
-        /// <summary>
-        /// Tries to get a message template from the cache or parses and tries to add to cache one.
-        /// </summary>
-        /// <param name="format">The original message template value.</param>
         /// <param name="messageTemplate">When this method returns, it contains a message template or the <see langword="null"/> if the operation failed.</param>
         /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
+        /// <exception cref="FormatException">A format item in <paramref name="format"/> is invalid.</exception>
         private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out MessageTemplate? messageTemplate)
         {
             if (!string.IsNullOrEmpty(format))
@@ -136,7 +125,7 @@ namespace Sanlog
                 if (!CachedMessageTemplates.TryGetValue(format, out messageTemplate))
                 {
                     messageTemplate = new MessageTemplate(format); // FormatException
-                    return messageTemplate.CompositeFormat.MinimumArgumentCount <= 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate);
+                    return messageTemplate.CompositeFormat.MinimumArgumentCount == 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate) || true;
                 }
                 return true;
             }
@@ -151,23 +140,33 @@ namespace Sanlog
         private readonly MessageTemplate? _messageTemplate;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified raw values.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified raw values and configuration of the sensitive data.
         /// </summary>
         /// <param name="dictionary">The raw values.</param>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration) : base(dictionary, configuration)
+        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration)
+            : this(null, dictionary ?? throw new ArgumentNullException(nameof(dictionary)), configuration) { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified message template, raw values, and configuration of the sensitive data.
+        /// </summary>
+        /// <param name="messageTemplate">The message template.</param>
+        /// <param name="dictionary">The raw values.</param>
+        /// <param name="configuration">The configuration of the sensitive data.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
+        /// <exception cref="FormatException">A format item in <see cref="OriginalFormat"/> value is invalid.</exception>
+        private FormattedLogValuesFormatter(MessageTemplate? messageTemplate, IReadOnlyDictionary<string, object?> dictionary, SensitiveConfiguration? configuration) : base(dictionary, configuration)
         {
-            _messageTemplate = TryGetOrAdd( // FormatException
+            _messageTemplate = messageTemplate is not null ? messageTemplate : TryGetOrAdd( // FormatException
                 format: dictionary.TryGetValue(OriginalFormat, out var value) ? value as string : null,
-                messageTemplate: out var messageTemplate) ? messageTemplate : null;
+                messageTemplate: out var result) ? result : null;
         }
 
         /// <summary>
         /// Gets or sets a value indicating whether a primitive type array will be formatted.
         /// </summary>
-        public bool ArrayPrimitive { get; set; }
+        public bool FormatPrimitiveArray { get; set; }
 
         #region Override: SensitiveFormatter
         /// <inheritdoc/>
@@ -199,7 +198,7 @@ namespace Sanlog
                 => TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
             string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
-                if (ArrayPrimitive)
+                if (FormatPrimitiveArray)
                 {
                     var type = enumerable.GetType();
                     if (type.IsArray)
@@ -215,7 +214,6 @@ namespace Sanlog
                             return ArrayToFormat(enumerable, elementType, formatProvider);
                     }
                 }
-
                 var first = true;
                 StringBuilder? stringBuilder = null;
                 foreach (var value in enumerable)
@@ -240,7 +238,7 @@ namespace Sanlog
             }
             static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
             {
-                return string.Format(formatProvider, ArrayFormat, IEnumerableCount(enumerable), type.Name);
+                return string.Format(formatProvider, PrimitiveArrayFormat, IEnumerableCount(enumerable), type.Name);
 
                 static int IEnumerableCount(IEnumerable enumerable)
                 {
