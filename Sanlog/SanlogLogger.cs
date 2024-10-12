@@ -19,12 +19,12 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _category;
         /// <summary>
-        /// Provides a mechanism for retrieving details about the tenancy.
+        /// The service retrieving details about the tenancy.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ITenantService _tenantService;
         /// <summary>
-        /// The logging writer service.
+        /// The logging entry writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggingWriter _writer;
@@ -44,7 +44,7 @@ namespace Sanlog
         /// </summary>
         /// <param name="category">The category for messages produced by the logger.</param>
         /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
-        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
+        /// <param name="writer">The logging entry writer service. The caller is responsible for disposing of the writer.</param>
         /// <param name="configure">The function to get the current logger configuration.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="tenantService"/> or <paramref name="writer"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
         public SanlogLogger(string category, ITenantService tenantService, SanlogLoggingWriter writer, Func<SanlogLoggerOptions> configure)

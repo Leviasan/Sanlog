@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Sanlog
 {
     /// <summary>
-    /// Represents a logger provider the can create instances of <see cref="SanlogLogger"/> and can consume external scope information.
+    /// Represents a logger provider that can create instances of<see cref = "SanlogLogger" /> and consume external scope information.
     /// </summary>
     [ProviderAlias(nameof(SanlogLoggerProvider))]
     public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable, IDisposable
@@ -20,7 +20,7 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly object? _serviceKey;
         /// <summary>
-        /// Provides a mechanism for retrieving details about the tenancy.
+        /// The service for retrieving details about the tenancy.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ITenantService _tenantService;
@@ -35,7 +35,7 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
-        /// The logging writer service.
+        /// The logging entry writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggingWriter _writer;
@@ -60,7 +60,7 @@ namespace Sanlog
         /// </summary>
         /// <param name="serviceKey">The <see cref="ServiceDescriptor.ServiceKey"/> of the service.</param>
         /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
-        /// <param name="writer">The writer service. The callee is responsible for disposing of the writer.</param>
+        /// <param name="writer">The logging entry writer service. The callee is responsible for disposing of the writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="tenantService"/> or <paramref name="writer"/> or <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
         [ActivatorUtilitiesConstructor]
@@ -113,7 +113,7 @@ namespace Sanlog
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="categoryName"/> is <see langword="null"/>.</exception>
         /// <exception cref="ObjectDisposedException">The logger provider is disposed.</exception>
-        public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category =>
+        public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
             var logger = new SanlogLogger(category, _tenantService, _writer, () => _options);
@@ -126,7 +126,11 @@ namespace Sanlog
         /// <param name="options">The changed logger options.</param>
         /// <param name="name">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private void OnChangeOptions(SanlogLoggerOptions options, string? name) => _options = options ?? throw new ArgumentNullException(nameof(options));
+        private void OnChangeOptions(SanlogLoggerOptions options, string? name)
+        {
+            if (name != _serviceKey?.ToString()) return;
+            _options = options ?? throw new ArgumentNullException(nameof(options));
+        }
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider)
         {
