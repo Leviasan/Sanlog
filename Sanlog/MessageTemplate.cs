@@ -18,42 +18,41 @@ namespace Sanlog
         private static readonly char[] FormatDelimiters = [',', ':'];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageTemplate"/> class from the specified message template.
+        /// Initializes a new instance of the <see cref="MessageTemplate"/> class from the specified composite/named format string.
         /// </summary>
-        /// <param name="value">The message template to parse.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="value"/> is <see langword="null"/>.</exception>
-        /// <exception cref="FormatException">A format item in template is invalid.</exception>
-        public MessageTemplate(string value)
+        /// <param name="format">The composite/named format string.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="format"/> is <see langword="null"/>.</exception>
+        /// <exception cref="FormatException">A format item in <paramref name="format"/> is invalid.</exception>
+        public MessageTemplate(string format)
         {
-            ArgumentNullException.ThrowIfNull(value);
-
+            ArgumentNullException.ThrowIfNull(format);
             var next = 0;
             var scanIndex = 0;
-            var endIndex = value.Length;
+            var endIndex = format.Length;
             var stringBuilder = new StringBuilder(256);
             var namedFormatStringItems = new List<string>();
             var conventions = new List<SegmentNamingConvention>();
             while (scanIndex < endIndex)
             {
-                var openBraceIndex = FindBraceIndex(value, '{', scanIndex, endIndex);
+                var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
                 if (scanIndex == 0 && openBraceIndex == endIndex)
                 {
-                    _ = stringBuilder.Append(value);
+                    _ = stringBuilder.Append(format);
                     break;
                 }
-                var closeBraceIndex = FindBraceIndex(value, '}', openBraceIndex, endIndex);
+                var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
                 if (closeBraceIndex == endIndex)
                 {
-                    _ = stringBuilder.Append(value.AsSpan(scanIndex, endIndex - scanIndex));
+                    _ = stringBuilder.Append(format.AsSpan(scanIndex, endIndex - scanIndex));
                     scanIndex = endIndex;
                 }
                 else
                 {
                     // Format item syntax: {index[,alignment][:formatString]}
-                    var formatDelimiterIndex = FindIndexOfAny(value, FormatDelimiters, openBraceIndex, closeBraceIndex);
-                    _ = stringBuilder.Append(value.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
+                    var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
+                    _ = stringBuilder.Append(format.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
                     // Evaluate argument name
-                    var name = value.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
+                    var name = format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
                     // Mixed argument name is not supported
                     conventions.Add(EvaluateSegmentNaming(name));
                     if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
@@ -67,7 +66,7 @@ namespace Sanlog
                     index = index == -1 ? next++ : index;
                     _ = stringBuilder.Append(index);
                     // Append lastpart
-                    var lastpart = value.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
+                    var lastpart = format.AsSpan(formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
                     _ = stringBuilder.Append(lastpart);
                     scanIndex = closeBraceIndex + 1;
                     // Add the next format item
@@ -77,13 +76,6 @@ namespace Sanlog
             CompositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
             Segments = [.. namedFormatStringItems];
 
-            // Summary: Reports the zero-based index of the first occurrence in string instance of brace in a specified array of Unicode characters.
-            // The search starts at a specified character position and examines a specified number of character positions.
-            // Param (format): The search string.
-            // Param (brace): The symbol to search.
-            // Param (startIndex): The search starting position.
-            // Param (endIndex): The search finish position.
-            // Returns: The zero-based index position of value if that character is found, or endIndex if it is not.
             static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
             {
                 // Example: {{prefix{{{Argument}}}suffix}}.
@@ -125,21 +117,11 @@ namespace Sanlog
                 }
                 return braceIndex;
             }
-            // Summary: Reports the zero-based index of the first occurrence in string instance of any character in a specified array of Unicode characters.
-            // The search starts at a specified character position and examines a specified number of character positions.
-            // Param (format): The search string.
-            // Param (chars): A Unicode character array containing one or more characters to seek.
-            // Param (startIndex): The search starting position.
-            // Param (endIndex): The search finish position.
-            // Returns: The zero-based index position of the first occurrence in this instance where any character in anyOf was found; endIndex if no character in anyOf was found.
             static int FindIndexOfAny(string format, char[] chars, int startIndex, int endIndex)
             {
                 var findIndex = format.IndexOfAny(chars, startIndex, endIndex - startIndex);
                 return findIndex == -1 ? endIndex : findIndex;
             }
-            // Summary: Evaluates a segment naming convention.
-            // Param (value): The string value to evaluate.
-            // Returns: AsciiDigit if all symbols in the specified string are categorized as an ASCII digit; OtherSymbols if any symbols in the specified string are not categorized as an ASCII digit; otherwise Undefined.
             static SegmentNamingConvention EvaluateSegmentNaming(string value)
             {
                 var naming = SegmentNamingConvention.Undefined;

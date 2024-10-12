@@ -10,7 +10,7 @@ namespace Sanlog
     public sealed record class LoggingScope
     {
         /// <summary>
-        /// The multitenant identifier.
+        /// The tenant identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _tenantId;
@@ -41,8 +41,9 @@ namespace Sanlog
         private readonly Guid _logEntryId;
 
         /// <summary>
-        /// Gets the multitenant identifier.
+        /// Gets the tenant identifier.
         /// </summary>
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid TenantId
         {
             get => _tenantId;
@@ -82,7 +83,7 @@ namespace Sanlog
             }
         }
         /// <summary>
-        /// Gets a message that describes the current scope.
+        /// Gets a message that describes the current scope.    
         /// </summary>
         public string? Message
         {

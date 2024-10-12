@@ -9,7 +9,7 @@ namespace Sanlog
     public sealed record class LoggingApplication
     {
         /// <summary>
-        /// The multitenant identifier.
+        /// The tenant identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _tenantId;
@@ -30,8 +30,9 @@ namespace Sanlog
         private readonly string? _environment;
 
         /// <summary>
-        /// Gets the multitenant identifier.
+        /// Gets the tenant identifier.
         /// </summary>
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid TenantId
         {
             get => _tenantId;

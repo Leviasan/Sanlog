@@ -10,7 +10,7 @@ namespace Sanlog
     public sealed record class LoggingError
     {
         /// <summary>
-        /// The multitenant identifier.
+        /// The tenant identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _tenantId;
@@ -35,12 +35,12 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly int _hResult;
         /// <summary>
-        /// The tring representation of the immediate frames on the call stack.
+        /// The string representation of the immediate frames on the call stack.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _stackTrace;
         /// <summary>
-        /// The name of the application or the object that causes the exception.
+        /// The application's name or the object that causes the exception.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _source;
@@ -71,8 +71,9 @@ namespace Sanlog
         private IReadOnlyList<LoggingError>? _innerException;
 
         /// <summary>
-        /// Gets the multitenant identifier.
+        /// Gets the tenant identifier.
         /// </summary>
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid TenantId
         {
             get => _tenantId;
@@ -136,7 +137,7 @@ namespace Sanlog
             init => _stackTrace = value;
         }
         /// <summary>
-        /// Gets the name of the application or the object that causes the exception.
+        /// Gets the application's name or the object that causes the exception.
         /// </summary>
         public string? Source
         {

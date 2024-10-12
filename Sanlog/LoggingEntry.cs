@@ -12,7 +12,7 @@ namespace Sanlog
     public sealed record class LoggingEntry
     {
         /// <summary>
-        /// The multitenant identifier.
+        /// The tenant identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _tenantId;
@@ -78,8 +78,9 @@ namespace Sanlog
         private readonly IReadOnlyList<LoggingError>? _errors;
 
         /// <summary>
-        /// Gets the multitenant identifier.
+        /// Gets the tenant identifier.
         /// </summary>
+        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
         public Guid TenantId
         {
             get => _tenantId;
@@ -145,7 +146,7 @@ namespace Sanlog
             init
             {
                 if (value == LogLevel.None)
-                    throw new InvalidEnumArgumentException("Not used for writing log messages. Specifies that a logging category should not write any messages.");
+                    throw new ArgumentException("Not used for writing log messages. Specifies that a logging category should not write any messages.");
                 if (!Enum.IsDefined(value))
                     throw new InvalidEnumArgumentException(nameof(LogLevelId), (int)value, typeof(LogLevel));
                 _logLevelId = value;
