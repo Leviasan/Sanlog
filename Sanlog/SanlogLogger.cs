@@ -40,7 +40,7 @@ namespace Sanlog
         private IExternalScopeProvider? _externalScopeProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, the function to get the current logger configuration.
+        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the service for retrieving details about the tenancy, the writer service, and the function to get the current logger configuration.
         /// </summary>
         /// <param name="category">The category for messages produced by the logger.</param>
         /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
@@ -84,7 +84,7 @@ namespace Sanlog
                     EventId = eventId.Id,
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : formatter.Invoke(state, exception),
-                    Properties = formattedLogValuesFormatter.ToDictionary(),
+                    Properties = formattedLogValuesFormatter.GetProperties(),
                     Scopes = GetScopeInformation(_tenantService, CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -94,13 +94,6 @@ namespace Sanlog
                 };
                 _ = _writer.Enqueue(loggingEntry);
             }
-            // Summary: Gets error information.
-            // Param (tenantService): Provides a mechanism for retrieving details about the tenancy.
-            // Param (id): The identifier of the new object.
-            // Param (exception): The exception to get error information.
-            // Param (logEntryId): The parent logging entry identifier.
-            // Param (parentErrorId): The parent error identifier.
-            // Returns: The error information.
             [UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "TargetSite metadata might be incomplete or removed")]
             static LoggingError GetErrorInformation(ITenantService tenantService, Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
             {
@@ -124,14 +117,6 @@ namespace Sanlog
                         : []
                 };
             }
-            // Summary: Gets scope information.
-            // Param (tenantService): Provides a mechanism for retrieving details about the tenancy.
-            // Param (formatProvider): An object that supplies culture-specific formatting information.
-            // Param (state): An object that describes scope.
-            // Param (logEntryId): The parent logging entry identifier.
-            // Param (options): The logger options.
-            // Param (externalScopeProvider): The external storage of the common scope data.
-            // Returns: An array of the scope data.
             static List<LoggingScope> GetScopeInformation(ITenantService tenantService, IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
             {
                 var scopes = new List<LoggingScope>();
@@ -152,7 +137,7 @@ namespace Sanlog
                                 Type = scope.GetType().FullName!,
                                 Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToMessage() : Convert.ToString(scope, formatProvider),
                                 LogEntryId = logEntryId,
-                                Properties = formattedLogValuesFormatter.ToDictionary()
+                                Properties = formattedLogValuesFormatter.GetProperties()
                             };
                             scopes.Add(loggingScope);
                         }

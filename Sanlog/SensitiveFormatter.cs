@@ -161,14 +161,14 @@ namespace Sanlog
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
         /// <returns>A dictionary whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
-        public Dictionary<string, string?> ToDictionary() => ToDictionary(selector => Format(null, selector, this));
+        public Dictionary<string, string?> GetProperties() => GetProperties(selector => Format(null, selector, this));
         /// <summary>
         /// Projects each element processes through the formatter into a new form.
         /// </summary>
         /// <param name="selector">A transform function to apply to each element.</param>
         /// <typeparam name="TResult">The type of the value returned by selector.</typeparam>
         /// <returns>A dictionary whose elements result from invoking the transform function on each element.</returns>
-        private Dictionary<string, TResult?> ToDictionary<TResult>(Func<object?, TResult?> selector)
+        private Dictionary<string, TResult?> GetProperties<TResult>(Func<object?, TResult?> selector)
         {
             Debug.Assert(selector is not null);
             return _dictionary
