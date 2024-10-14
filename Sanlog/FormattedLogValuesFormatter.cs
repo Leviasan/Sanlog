@@ -90,7 +90,7 @@ namespace Sanlog
             var dictionary = new Dictionary<string, object?>();
             if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
             {
-                foreach (var segment in messageTemplate.Segments)
+                foreach (var segment in messageTemplate)
                 {
                     if (dictionary.ContainsKey(segment)) continue;
                     dictionary.Add(segment, args[index++]);
@@ -285,7 +285,7 @@ namespace Sanlog
             object?[] TakeBySegmentOrder(MessageTemplate messageTemplate)
             {
                 var dictionary = new Dictionary<string, object?>();
-                foreach (var segment in messageTemplate.Segments)
+                foreach (var segment in messageTemplate)
                 {
                     if (dictionary.ContainsKey(segment)) continue;
                     dictionary[segment] = GetObject(segment, true).Value;

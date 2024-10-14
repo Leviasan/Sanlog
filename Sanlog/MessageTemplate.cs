@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -9,13 +10,18 @@ namespace Sanlog
     /// <summary>
     /// Represents a message template.
     /// </summary>
-    public sealed class MessageTemplate
+    public sealed class MessageTemplate : IReadOnlyList<string>
     {
         /// <summary>
         /// The delimiters used by composite string.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly char[] FormatDelimiters = [',', ':'];
+        /// <summary>
+        /// The segments that make up the composite format string.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly List<string> _segments = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageTemplate"/> class from the specified composite/named format string.
@@ -30,7 +36,6 @@ namespace Sanlog
             var scanIndex = 0;
             var endIndex = format.Length;
             var stringBuilder = new StringBuilder(256);
-            var namedFormatStringItems = new List<string>();
             var conventions = new List<SegmentNamingConvention>();
             while (scanIndex < endIndex)
             {
@@ -62,7 +67,7 @@ namespace Sanlog
                         ? (int.TryParse(name, null, out var result) && int.IsPositive(result)) || result == -1
                             ? result
                             : throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. Invalid argument index.", openBraceIndex + 1))
-                        : namedFormatStringItems.FindIndex(x => x.Equals(name, StringComparison.Ordinal));
+                        : _segments.FindIndex(x => x.Equals(name, StringComparison.Ordinal));
                     index = index == -1 ? next++ : index;
                     _ = stringBuilder.Append(index);
                     // Append lastpart
@@ -70,11 +75,10 @@ namespace Sanlog
                     _ = stringBuilder.Append(lastpart);
                     scanIndex = closeBraceIndex + 1;
                     // Add the next format item
-                    namedFormatStringItems.Add(name);
+                    _segments.Add(name);
                 }
             }
             CompositeFormat = CompositeFormat.Parse(stringBuilder.ToString()); // FormatException
-            Segments = [.. namedFormatStringItems];
 
             static int FindBraceIndex(string format, char brace, int startIndex, int endIndex)
             {
@@ -135,10 +139,10 @@ namespace Sanlog
         /// Gets the composite format string.
         /// </summary>
         public CompositeFormat CompositeFormat { get; }
-        /// <summary>
-        /// Gets the segments that make up the composite format string.
-        /// </summary>
-        public IReadOnlyList<string> Segments { get; }
+        /// <inheritdoc/>
+        public int Count => _segments.Count;
+        /// <inheritdoc/>
+        public string this[int index] => _segments[index];
 
         /// <summary>
         /// Replaces a format item or items in the current instance with the string representation of the corresponding objects in the specified format.
@@ -149,6 +153,10 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">The index of a format item is greater than or equal to the number of supplied arguments.</exception>
         public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, CompositeFormat, args);
+        /// <inheritdoc/>
+        public IEnumerator<string> GetEnumerator() => _segments.GetEnumerator();
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <inheritdoc/>
         public override string ToString() => CompositeFormat.Format;
 
