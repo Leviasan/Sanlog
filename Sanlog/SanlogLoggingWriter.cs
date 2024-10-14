@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace Sanlog
 {
     /// <summary>
-    /// Provides a mechanism for writing log entries to storage. This class is abstract.
+    /// Provides a mechanism for writing logging entries to storage. This class is abstract.
     /// </summary>
-    public abstract class SanlogLoggingWriter : IDisposable, IAsyncDisposable
+    public abstract class SanlogLoggingWriter : IAsyncDisposable, IDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -33,7 +33,7 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggingWriter"/> class with the specified synchronous or asynchronous state of the channel.
+        /// Initializes a new instance of the <see cref="SanlogLoggingWriter"/> class with the specified state of the channel.
         /// </summary>
         /// <param name="allowSynchronousContinuations"><see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations;
         /// <see langword="false"/> if all continuations should be invoked asynchronously.</param>
