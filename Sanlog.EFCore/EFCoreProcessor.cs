@@ -9,7 +9,6 @@ namespace Sanlog.EFCore
     /// <summary>
     /// Represents a mechanism to write events to the storage in sync mode.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class EFCoreProcessor : SanlogLoggingWriter
     {
         /// <summary>
@@ -23,15 +22,15 @@ namespace Sanlog.EFCore
         /// </summary>
         /// <param name="contextFactory">The factory for creating <see cref="SanlogDbContext"/> instances.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="contextFactory"/> is <see langword="null"/>.</exception>
-        [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures. Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]
+        [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures." +
+            " Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]
         public EFCoreProcessor(IDbContextFactory<SanlogDbContext> contextFactory, bool allowSynchronousContinuations) : base(allowSynchronousContinuations)
-        {
-            _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-        }
+            => _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
 
         /// <inheritdoc/>
         protected override async Task WriteToStorageAsync(LoggingEntry loggingEntry)
         {
+            // Captured context is required for correct work efcore
             using var context = await _contextFactory.CreateDbContextAsync().ConfigureAwait(true);
             var addedItem = await context.LogEntries.AddAsync(loggingEntry).ConfigureAwait(true);
             var changes = await context.SaveChangesAsync().ConfigureAwait(true);

@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq;
 
 namespace Sanlog.EFCore
 {
     /// <summary>
-    /// Defines the snapshotting and comparison actions for <see cref="IReadOnlyDictionary{TKey, TValue}"/> type.
+    /// Defines the snapshotting and comparison actions for <see cref="IReadOnlyDictionary{TKey, TValue}"/> type where TKey is <see cref="string"/> and TValue is <see cref="string"/>.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class StringDictionaryValueComparer : ValueComparer<IReadOnlyDictionary<string, string?>>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="StringDictionaryValueComparer"/> class.
         /// </summary>
-        public StringDictionaryValueComparer() : base((x, y) => ComparisonExpression(x, y), x => HashCodeGenerator(x), x => x.ToDictionary()) { }
+        public StringDictionaryValueComparer() : base(
+            equalsExpression: static (x, y) => ComparisonExpression(x, y),
+            hashCodeExpression: static x => HashCodeGenerator(x),
+            snapshotExpression: static x => x.ToDictionary()) { }
 
         /// <summary>
         /// Indicates whether instances are equal.
@@ -37,7 +38,7 @@ namespace Sanlog.EFCore
             return false;
         }
         /// <summary>
-        /// Hash code generator.
+        /// Generates a hash code of the specified dictionary.
         /// </summary>
         /// <param name="dictionary">The dictionary to generate hash.</param>
         /// <returns>A hash code for the specified dictionary.</returns>

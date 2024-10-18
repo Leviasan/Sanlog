@@ -3,7 +3,7 @@
 namespace Sanlog
 {
     /// <summary>
-    /// Provides a mechanism for retrieving details about the tenancy.
+    /// Provides a mechanism for retrieving details about the tenant.
     /// </summary>
     public interface ITenantService
     {
@@ -12,7 +12,7 @@ namespace Sanlog
         /// </summary>
         public Guid AppId { get; }
         /// <summary>
-        /// Gets the tenancy identifier.
+        /// Gets the tenant identifier.
         /// </summary>
         public Guid TenantId { get; }
     }

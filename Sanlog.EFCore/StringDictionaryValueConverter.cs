@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Sanlog.EFCore
 {
     /// <summary>
-    /// Defines conversions from <see cref="IReadOnlyDictionary{TKey, TValue}"/> object in a model to <see cref="string"/> in the storage.
+    /// Defines conversions from <see cref="IReadOnlyDictionary{TKey, TValue}"/> object in a model where TKey is <see cref="string"/> and TValue is <see cref="string"/> to <see cref="string"/> in the store.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class StringDictionaryValueConverter : ValueConverter<IReadOnlyDictionary<string, string?>?, string?>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="StringDictionaryValueConverter"/> class.
         /// </summary>
-        public StringDictionaryValueConverter() : base(dictionary => Serialize(dictionary), json => Deserialize(json)) { }
+        public StringDictionaryValueConverter() : base(
+            convertToProviderExpression: static dictionary => Serialize(dictionary),
+            convertFromProviderExpression: static json => Deserialize(json)) { }
 
         /// <summary>
         /// Converts objects when writing data to the store.

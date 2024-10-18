@@ -15,12 +15,7 @@ namespace Sanlog
     public sealed class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IAsyncDisposable, IDisposable
     {
         /// <summary>
-        /// The <see cref="ServiceDescriptor.ServiceKey"/> of the service.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly object? _serviceKey;
-        /// <summary>
-        /// The service for retrieving details about the tenancy.
+        /// The service for retrieving details about the tenant.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ITenantService _tenantService;
@@ -58,19 +53,17 @@ namespace Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified writer service and logger options.
         /// </summary>
-        /// <param name="serviceKey">The <see cref="ServiceDescriptor.ServiceKey"/> of the service.</param>
-        /// <param name="tenantService">The service for retrieving details about the tenancy.</param>
+        /// <param name="tenantService">The service for retrieving details about the tenant.</param>
         /// <param name="writer">The logging entry writer service. The callee is responsible for disposing of the writer.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="tenantService"/> or <paramref name="writer"/> or <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
         [ActivatorUtilitiesConstructor]
-        public SanlogLoggerProvider([ServiceKey] object? serviceKey, ITenantService tenantService, SanlogLoggingWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        public SanlogLoggerProvider(ITenantService tenantService, SanlogLoggingWriter writer, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
         {
             ArgumentNullException.ThrowIfNull(tenantService);
             ArgumentNullException.ThrowIfNull(writer);
             ArgumentNullException.ThrowIfNull(optionsMonitor);
 
-            _serviceKey = serviceKey;
             _tenantService = tenantService;
             _writer = writer;
             _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
@@ -128,7 +121,6 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
         private void OnChangeOptions(SanlogLoggerOptions options, string? name)
         {
-            if (name != _serviceKey?.ToString()) return;
             _options = options ?? throw new ArgumentNullException(nameof(options));
         }
         /// <inheritdoc/>

@@ -8,10 +8,10 @@ namespace Sanlog.EFCore
     /// <summary>
     /// Provides metadata about a set of types that is relevant to JSON serialization.
     /// </summary>
+    /// <remarks>Override <see cref="JavaScriptEncoder"/>: <see href="https://github.com/dotnet/runtime/issues/94135"/> espenrl commented on Jul 17.</remarks>
     [JsonSerializable(typeof(IReadOnlyDictionary<string, string?>), GenerationMode = JsonSourceGenerationMode.Metadata)]
     internal sealed partial class SourceGenerationContext : JsonSerializerContext 
     {
-        // https://github.com/dotnet/runtime/issues/94135 espenrl commented on Jul 17
         static SourceGenerationContext()
         {
             Default = new SourceGenerationContext(CreateJsonSerializerOptions(Default));
