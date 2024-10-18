@@ -11,10 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Leviasan.Sanlog.File", "Leviasan.Sanlog.File\Leviasan.Sanlog.File.csproj", "{9CAC35F3-D9AE-486A-982A-7334F4495A46}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Leviasan.Example.WebApplication", "Leviasan.Example.WebApplication\Leviasan.Example.WebApplication.csproj", "{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog", "Sanlog\Sanlog.csproj", "{8DC4655A-F872-405D-B203-7E3905757AFB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.EFCore", "Sanlog.EFCore\Sanlog.EFCore.csproj", "{E8FC1727-FD53-45AA-ADB8-45B8B79D6330}"
@@ -27,14 +23,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9CAC35F3-D9AE-486A-982A-7334F4495A46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9CAC35F3-D9AE-486A-982A-7334F4495A46}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9CAC35F3-D9AE-486A-982A-7334F4495A46}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9CAC35F3-D9AE-486A-982A-7334F4495A46}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8B5C7F08-7B5E-4827-BF54-FCC77A0D5AFC}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8DC4655A-F872-405D-B203-7E3905757AFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8DC4655A-F872-405D-B203-7E3905757AFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DC4655A-F872-405D-B203-7E3905757AFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
