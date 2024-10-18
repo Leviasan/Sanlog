@@ -35,8 +35,9 @@ namespace Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="SanlogLoggingWriter"/> class with the specified state of the channel.
         /// </summary>
-        /// <param name="allowSynchronousContinuations"><see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations;
-        /// <see langword="false"/> if all continuations should be invoked asynchronously.</param>
+        /// <param name="allowSynchronousContinuations">
+        /// <see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations; <see langword="false"/> if all continuations should be invoked asynchronously.
+        /// </param>
         protected SanlogLoggingWriter(bool allowSynchronousContinuations)
         {
             _cancellationTokenSource = new CancellationTokenSource();

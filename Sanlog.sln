@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.EFCore", "Sanlog.EFC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.MSTest", "Sanlog.MSTest\Sanlog.MSTest.csproj", "{6635E84C-96C8-4C4A-8E81-5807EFD80A9B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanlog.MSTest.WebApi", "Sanlog.MSTest.WebApi\Sanlog.MSTest.WebApi.csproj", "{BA528B81-0F72-44EE-A59F-AD3978A4AFAD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{6635E84C-96C8-4C4A-8E81-5807EFD80A9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6635E84C-96C8-4C4A-8E81-5807EFD80A9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6635E84C-96C8-4C4A-8E81-5807EFD80A9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA528B81-0F72-44EE-A59F-AD3978A4AFAD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA528B81-0F72-44EE-A59F-AD3978A4AFAD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA528B81-0F72-44EE-A59F-AD3978A4AFAD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA528B81-0F72-44EE-A59F-AD3978A4AFAD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

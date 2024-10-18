@@ -21,6 +21,9 @@ namespace Sanlog.EFCore
         /// Initializes a new instance of the <see cref="EFCoreProcessor"/> class with the specified factory for creating <see cref="SanlogDbContext"/> instances.
         /// </summary>
         /// <param name="contextFactory">The factory for creating <see cref="SanlogDbContext"/> instances.</param>
+        /// <param name="allowSynchronousContinuations">
+        /// <see langword="true"/> if operations performed on a channel may synchronously invoke continuations subscribed to notifications of pending async operations; <see langword="false"/> if all continuations should be invoked asynchronously.
+        /// </param>
         /// <exception cref="ArgumentNullException">The <paramref name="contextFactory"/> is <see langword="null"/>.</exception>
         [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures." +
             " Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]

@@ -1,0 +1,6 @@
+@Sanlog.MSTest.WebApi_HostAddress = http://localhost:5133
+
+GET {{Sanlog.MSTest.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
