@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sanlog.EFCore
 {
     /// <summary>
     /// Defines the snapshotting and comparison actions for <see cref="IReadOnlyDictionary{TKey, TValue}"/> type where TKey is <see cref="string"/> and TValue is <see cref="string"/>.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class StringDictionaryValueComparer : ValueComparer<IReadOnlyDictionary<string, string?>>
     {
         /// <summary>

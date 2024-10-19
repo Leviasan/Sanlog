@@ -14,6 +14,7 @@ namespace Sanlog.EFCore
     /// By default used overridden logger factory <see cref="NullLoggerFactory.Instance"/>.
     /// By default context use tracking strategy <see cref="QueryTrackingBehavior.NoTrackingWithIdentityResolution"/>.
     /// </remarks>
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class SanlogDbContext : DbContext
     {
         /// <summary>

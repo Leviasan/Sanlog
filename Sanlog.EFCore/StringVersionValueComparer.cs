@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Sanlog.EFCore
@@ -7,6 +8,7 @@ namespace Sanlog.EFCore
     /// <summary>
     /// Defines the snapshotting and comparison actions for <see cref="Version"/> type.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class StringVersionValueComparer : ValueComparer<Version?>
     {
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Sanlog.EFCore
@@ -6,6 +7,7 @@ namespace Sanlog.EFCore
     /// <summary>
     /// Defines conversions from <see cref="Version"/> object in a model to <see cref="string"/> in the store.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
     internal sealed class StringVersionValueConverter : ValueConverter<Version?, string?>
     {
         /// <summary>

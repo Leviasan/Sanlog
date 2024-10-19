@@ -5,9 +5,16 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
+using Sanlog;
+using Sanlog.EFCore;
 
-namespace Sanlog.EFCore
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+namespace Microsoft.Extensions.Logging
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 {
+    /// <summary>
+    /// Provides extension methods for the <see cref="ILoggingBuilder"/> .
+    /// </summary>
     public static class ILoggingBuilderExtensions
     {
         /// <summary>
@@ -25,7 +32,7 @@ namespace Sanlog.EFCore
         [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures." +
             " Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details." +
             " TOptions's dependent types may have their members trimmed. Ensure all required members are preserved.")]
-        public static ILoggingBuilder AddSanlogEFCore(this ILoggingBuilder builder, Guid appId, Guid tenantId, Action<DbContextOptionsBuilder> contextConfigure, bool sync, Action<SanlogLoggerOptions>? loggingConfigure,)
+        public static ILoggingBuilder AddSanlogEFCore(this ILoggingBuilder builder, Guid appId, Guid tenantId, Action<DbContextOptionsBuilder> contextConfigure, Action<SanlogLoggerOptions>? loggingConfigure, bool sync)
         {
             ArgumentNullException.ThrowIfNull(builder);
             if (appId == Guid.Empty)
