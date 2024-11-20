@@ -25,55 +25,10 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _type;
         /// <summary>
-        /// The message that describes the current exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _message;
-        /// <summary>
-        /// The coded numerical value that is assigned to a specific exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly int _hResult;
-        /// <summary>
-        /// The collection that provides additional user-defined information about the exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyDictionary<string, string?>? _data;
-        /// <summary>
-        /// The string representation of the immediate frames on the call stack.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _stackTrace;
-        /// <summary>
-        /// The application's name or the object that causes the exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _source;
-        /// <summary>
-        /// The link to the help file associated with this exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _helpLink;
-        /// <summary>
-        /// The method that throws the current exception.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _targetSite;
-        /// <summary>
         /// The logging entry identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _logEntryId;
-        /// <summary>
-        /// The parent exception identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid? _parentExceptionId;
-        /// <summary>
-        /// The error instances that caused the current error.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private IReadOnlyList<LoggingError>? _innerException;
 
         /// <summary>
         /// Gets the tenant identifier.
@@ -120,60 +75,32 @@ namespace Sanlog
         /// <summary>
         /// Gets a message that describes the current exception.
         /// </summary>
-        public string? Message
-        {
-            get => _message;
-            init => _message = value;
-        }
+        public string? Message { get; init; }
         /// <summary>
         /// Gets the coded numerical value that is assigned to a specific exception.
         /// </summary>
-        public int HResult
-        {
-            get => _hResult;
-            init => _hResult = value;
-        }
+        public int HResult { get; init; }
         /// <summary>
         /// Gets a collection that provides additional user-defined information about the exception.
         /// </summary>
-        public IReadOnlyDictionary<string, string?>? Data
-        {
-            get => _data;
-            init => _data = value;
-        }
+        public IReadOnlyDictionary<string, string?>? Data { get; init; }
         /// <summary>
         /// Gets a string representation of the immediate frames on the call stack.
         /// </summary>
-        public string? StackTrace
-        {
-            get => _stackTrace;
-            init => _stackTrace = value;
-        }
+        public string? StackTrace { get; init; }
         /// <summary>
         /// Gets the application's name or the object that causes the exception.
         /// </summary>
-        public string? Source
-        {
-            get => _source;
-            init => _source = value;
-        }
+        public string? Source { get; init; }
         /// <summary>
         /// Gets a link to the help file associated with this exception.
         /// </summary>
-        public string? HelpLink
-        {
-            get => _helpLink;
-            init => _helpLink = value;
-        }
+        public string? HelpLink { get; init; }
         /// <summary>
         /// Gets the method that throws the current exception.
         /// </summary>
         /// <remarks><see cref="Exception.TargetSite"/> metadata might be incomplete or removed.</remarks>
-        public string? TargetSite
-        {
-            get => _targetSite;
-            init => _targetSite = value;
-        }
+        public string? TargetSite { get; init; }
         /// <summary>
         /// Gets the logging entry identifier.
         /// </summary>
@@ -191,18 +118,10 @@ namespace Sanlog
         /// <summary>
         /// Gets the parent error identifier.
         /// </summary>
-        public Guid? ParentExceptionId
-        {
-            get => _parentExceptionId;
-            init => _parentExceptionId = value;
-        }
+        public Guid? ParentExceptionId { get; init; }
         /// <summary>
         /// Gets the error instances that caused the current error.
         /// </summary>
-        public IReadOnlyList<LoggingError>? InnerException
-        {
-            get => _innerException;
-            init => _innerException = value;
-        }
+        public IReadOnlyList<LoggingError>? InnerException { get; init; }
     }
 }

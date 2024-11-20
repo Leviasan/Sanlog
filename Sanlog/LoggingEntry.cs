@@ -27,16 +27,6 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Guid _appId;
         /// <summary>
-        /// The date and time when the event occurred.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly DateTime _dateTime;
-        /// <summary>
-        /// The application version in which the event occurred.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Version? _version;
-        /// <summary>
         /// The logging level identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -46,36 +36,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _category;
-        /// <summary>
-        /// The event identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly int _eventId;
-        /// <summary>
-        /// The event name.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _eventName;
-        /// <summary>
-        /// The message that describes the current logging entry.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _message;
-        /// <summary>
-        /// The collection that provides logging entry properties.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyDictionary<string, string?>? _properties;
-        /// <summary>
-        /// The collection that provides external scope data.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<LoggingScope>? _scopes;
-        /// <summary>
-        /// The exception list of the current logging entry.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyList<LoggingError>? _errors;
 
         /// <summary>
         /// Gets the tenant identifier.
@@ -122,19 +82,11 @@ namespace Sanlog
         /// <summary>
         /// Gets the date and time when the event occurred.
         /// </summary>
-        public DateTime DateTime
-        {
-            get => _dateTime;
-            init => _dateTime = value;
-        }
+        public DateTime DateTime { get; init; }
         /// <summary>
         /// Gets the application version in which the event occurred.
         /// </summary>
-        public Version? Version
-        {
-            get => _version;
-            init => _version = value;
-        }
+        public Version? Version { get; init; }
         /// <summary>
         /// Gets the logging level identfier.
         /// </summary>
@@ -170,50 +122,26 @@ namespace Sanlog
         /// <summary>
         /// Gets the event identifier.
         /// </summary>
-        public int EventId
-        {
-            get => _eventId;
-            init => _eventId = value;
-        }
+        public int EventId { get; init; }
         /// <summary>
         /// Gets the name of the event.
         /// </summary>
-        public string? EventName
-        {
-            get => _eventName;
-            init => _eventName = value;
-        }
+        public string? EventName { get; init; }
         /// <summary>
         /// Gets a message that describes the current logging entry.
         /// </summary>
-        public string? Message
-        {
-            get => _message;
-            init => _message = value;
-        }
+        public string? Message { get; init; }
         /// <summary>
         /// Gets a collection that provides logging entry properties.
         /// </summary>
-        public IReadOnlyDictionary<string, string?>? Properties
-        {
-            get => _properties;
-            init => _properties = value;
-        }
+        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
         /// <summary>
         /// Gets a collection that provides external scope data.
         /// </summary>
-        public IReadOnlyList<LoggingScope>? Scopes
-        {
-            get => _scopes;
-            init => _scopes = value;
-        }
+        public IReadOnlyList<LoggingScope>? Scopes { get; init; }
         /// <summary>
         /// Gets the exception list of the current logging entry.
         /// </summary>
-        public IReadOnlyList<LoggingError>? Errors
-        {
-            get => _errors;
-            init => _errors = value;
-        }
+        public IReadOnlyList<LoggingError>? Errors { get; init; }
     }
 }

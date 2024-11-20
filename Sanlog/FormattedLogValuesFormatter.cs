@@ -155,6 +155,7 @@ namespace Sanlog
         /// </summary>
         /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Base class validate param to null")]
         public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary) : base(dictionary) // ArgumentNullException
             => _format = dictionary.TryGetValue(OriginalFormat, out var value) ? Convert.ToString(value, null) : null;
         /// <summary>

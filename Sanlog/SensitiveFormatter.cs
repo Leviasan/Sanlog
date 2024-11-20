@@ -10,7 +10,12 @@ namespace Sanlog
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
-    public class SensitiveFormatter : IFormatProvider, ICustomFormatter, IEnumerable<KeyValuePair<string, object?>>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified object array that contains zero or more objects to format. 
+    /// </remarks>
+    /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
+    /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
+    public class SensitiveFormatter(IReadOnlyDictionary<string, object?> dictionary) : IFormatProvider, ICustomFormatter, IEnumerable<KeyValuePair<string, object?>>
     {
         /// <summary>
         /// The message format of the redacted value.
@@ -26,14 +31,8 @@ namespace Sanlog
         /// An object dictionary.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyDictionary<string, object?> _dictionary;
+        private readonly IReadOnlyDictionary<string, object?> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified object array that contains zero or more objects to format. 
-        /// </summary>
-        /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
-        public SensitiveFormatter(IReadOnlyDictionary<string, object?> dictionary) => _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
         /// <summary>
         /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified object array that contains zero or more objects to format.
         /// </summary>

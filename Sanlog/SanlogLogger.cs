@@ -12,42 +12,35 @@ namespace Sanlog
     /// <summary>
     /// Represents a type used to perform logging.
     /// </summary>
-    public sealed class SanlogLogger : ILogger
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
+    /// </remarks>
+    /// <param name="category">The category for messages produced by the logger.</param>
+    /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
+    /// <param name="configure">The function to get the current logger configuration.</param>
+    /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="writer"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+    public sealed class SanlogLogger(string category, SanlogLoggingWriter writer, Func<SanlogLoggerOptions> configure) : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string _category;
+        private readonly string _category = category ?? throw new ArgumentNullException(nameof(category));
         /// <summary>
         /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggingWriter _writer;
+        private readonly SanlogLoggingWriter _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         /// <summary>
         /// The function to get the current logger configuration.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Func<SanlogLoggerOptions> _configure;
+        private readonly Func<SanlogLoggerOptions> _configure = configure ?? throw new ArgumentNullException(nameof(configure));
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private IExternalScopeProvider? _externalScopeProvider;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
-        /// </summary>
-        /// <param name="category">The category for messages produced by the logger.</param>
-        /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
-        /// <param name="configure">The function to get the current logger configuration.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="writer"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-        public SanlogLogger(string category, SanlogLoggingWriter writer, Func<SanlogLoggerOptions> configure)
-        {
-            _category = category ?? throw new ArgumentNullException(nameof(category));
-            _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-            _configure = configure ?? throw new ArgumentNullException(nameof(configure));
-        }
 
         /// <inheritdoc/>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _externalScopeProvider?.Push(state);
@@ -121,7 +114,8 @@ namespace Sanlog
                 static Dictionary<string, string?>? ParseData(IDictionary dictionary)
                 {
                     Debug.Assert(dictionary is not null);
-                    if (dictionary.Count == 0) return null;
+                    if (dictionary.Count == 0)
+                        return null;
                     var index = 0;
                     var userData = new Dictionary<string, string?>(dictionary.Count);
                     var formatter = new FormattedLogValuesFormatter(dictionary.Values.Cast<object?>());

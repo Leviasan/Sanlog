@@ -25,16 +25,6 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _type;
         /// <summary>
-        /// The message that describes the current scope.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _message;
-        /// <summary>
-        /// The collection that provides scope properties.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyDictionary<string, string?>? _properties;
-        /// <summary>
         /// The logging entry identifier.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -85,19 +75,11 @@ namespace Sanlog
         /// <summary>
         /// Gets a message that describes the current scope.    
         /// </summary>
-        public string? Message
-        {
-            get => _message;
-            init => _message = value;
-        }
+        public string? Message { get; init; }
         /// <summary>
         /// Gets a collection that provides scope properties.
         /// </summary>
-        public IReadOnlyDictionary<string, string?>? Properties
-        {
-            get => _properties;
-            init => _properties = value;
-        }
+        public IReadOnlyDictionary<string, string?>? Properties { get; init; }
         /// <summary>
         /// Gets the logging entry identifier.
         /// </summary>

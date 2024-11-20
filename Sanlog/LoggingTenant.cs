@@ -18,11 +18,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _clientName;
-        /// <summary>
-        /// The client description.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _clientDescription;
 
         /// <summary>
         /// Gets the object identifier.
@@ -55,10 +50,6 @@ namespace Sanlog
         /// <summary>
         /// Gets the client description.
         /// </summary>
-        public string? ClientDescription
-        {
-            get => _clientDescription;
-            init => _clientDescription = value;
-        }
+        public string? ClientDescription { get; init; }
     }
 }

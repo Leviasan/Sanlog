@@ -137,20 +137,18 @@ namespace Sanlog.EFCore
         /// <summary>
         /// Represents the <see cref="ISaveChangesInterceptor"/> for validating tenant and application identifiers.
         /// </summary>
-        private sealed class TenantValidatorInterceptor : SaveChangesInterceptor
+        /// <remarks>
+        /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified logger options.
+        /// </remarks>
+        /// <param name="configure">The function to get the current logger configuration.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="configure"/> is <see langword="null"/>.</exception>
+        private sealed class TenantValidatorInterceptor(Func<SanlogLoggerOptions> configure) : SaveChangesInterceptor
         {
             /// <summary>
             /// The function to get the current logger configuration.
             /// </summary>
             [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private readonly Func<SanlogLoggerOptions> _configure;
-
-            /// <summary>
-            /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified logger options.
-            /// </summary>
-            /// <param name="configure">The function to get the current logger configuration.</param>
-            /// <exception cref="ArgumentNullException">The <paramref name="configure"/> is <see langword="null"/>.</exception>
-            public TenantValidatorInterceptor(Func<SanlogLoggerOptions> configure) => _configure = configure ?? throw new ArgumentNullException(nameof(configure));
+            private readonly Func<SanlogLoggerOptions> _configure = configure ?? throw new ArgumentNullException(nameof(configure));
 
             /// <inheritdoc/>
             public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
