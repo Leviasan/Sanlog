@@ -12,7 +12,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
     <Authors>Leviasan</Authors>
-    <Description>Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.</Description>
+    <Description>Provides a logger that supports saving log entries from different applications in one storage, separated by an app and tenant identifiers.</Description>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
