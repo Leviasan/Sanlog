@@ -7,15 +7,15 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-all</AnalysisLevel>
-    <IsTrimmable>false</IsTrimmable>
-    <IsAotCompatible>false</IsAotCompatible>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
-    <Authors>Leviasan</Authors>
-    <Description>Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.</Description>
+    <Authors>Oleksandr Rogozin</Authors>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
+    <IsTrimmable>false</IsTrimmable>
+    <IsAotCompatible>false</IsAotCompatible>
+    <Description>Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.</Description>
     <PackageTags>logger, multitenancy, database</PackageTags>
     <Version>1.0.0</Version>
   </PropertyGroup>
