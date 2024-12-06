@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 
 namespace Sanlog
@@ -14,7 +14,7 @@ namespace Sanlog
         /// The dictionary of the sensitive properties.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<string>> _dictionary = [];
+        private readonly Dictionary<FormatItemType, HashSet<string>> _dictionary = [];
 
         /// <summary>
         /// Gets a value indicating whether the configuration is read-only.
@@ -24,60 +24,37 @@ namespace Sanlog
         /// <summary>
         /// Registers a property whose value belongs to sensitive data.
         /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="object"/></term>
-        ///         <description>The segment name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensitive key type.</param>
+        /// <param name="type">The format item type.</param>
         /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public bool Add(Type type, string property)
+        public bool Add(FormatItemType type, string property)
         {
             CheckReadOnly(); // InvalidOperationException
-            ArgumentNullException.ThrowIfNull(type);
+            if (!Enum.IsDefined(type))
+                throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(FormatItemType));
             ArgumentNullException.ThrowIfNull(property);
             return _dictionary.TryGetValue(type, out var hashset) ? hashset.Add(property) : _dictionary.TryAdd(type, [property]);
         }
         /// <summary>
         /// Registers an array of properties whose values belong to sensitive data.
         /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="object"/></term>
-        ///         <description>The segment name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensitive key type.</param>
+        /// <param name="type">The format item type.</param>
         /// <param name="args">An array of properties whose value belongs to sensitive data.</param>
         /// <returns>The count of the added element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/></exception>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public int Add(Type type, params string[] args)
+        public int Add(FormatItemType type, params string[] args)
         {
             ArgumentNullException.ThrowIfNull(args);
             if (!Array.TrueForAll(args, x => x is not null))
                 throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
             var count = 0;
             foreach (var name in args)
-                count += Convert.ToInt32(Add(type, name)); // InvalidOperationException
+                count += Convert.ToInt32(Add(type, name)); // InvalidEnumArgumentException + InvalidOperationException
             return count;
         }
         /// <summary>
@@ -99,33 +76,22 @@ namespace Sanlog
             _dictionary.Clear();
         }
         /// <summary>
-        /// Checks whether the property of the specified type belongs to sensitive data.
+        /// Checks whether the property of the specified format item type belongs to sensitive data.
         /// </summary>
-        /// <remarks>
-        /// Table of the supported types:
-        /// <list type="table">
-        ///     <item>
-        ///         <term><see cref="object"/></term>
-        ///         <description>The segment name of the message template.</description>
-        ///     </item>
-        ///     <item>
-        ///         <term><see cref="DictionaryEntry"/></term>
-        ///         <description>The string representation of the dictionary entry key.</description>
-        ///     </item>
-        /// </list>
-        /// </remarks>
-        /// <param name="type">The sensitive key type.</param>
+        /// <param name="type">The format item type.</param>
         /// <param name="property">The property whose value belongs to sensitive data.</param>
-        /// <returns><see langword="true"/> if property of the specified type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> or <paramref name="property"/> is <see langword="null"/>.</exception>
-        public bool Contains(Type type, string property)
+        /// <returns><see langword="true"/> if property of the specified format item type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
+        public bool Contains(FormatItemType type, string property)
         {
-            ArgumentNullException.ThrowIfNull(type);
+            if (!Enum.IsDefined(type))
+                throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(FormatItemType));
             ArgumentNullException.ThrowIfNull(property);
             return _dictionary.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies all the elements to the specified configuration.
+        /// Copies all elements to the specified configuration.
         /// </summary>
         /// <param name="configuration">The configuration of the sensitive data.</param>
         /// <returns>The count of the added element.</returns>
@@ -146,27 +112,32 @@ namespace Sanlog
         /// <summary>
         /// Removes all properties with the specified key.
         /// </summary>
-        /// <param name="type">The key of the element to remove.</param>
+        /// <param name="type">The format item type.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>. This method returns <see langword="false"/> if key is not found.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public bool Remove(Type type)
+        public bool Remove(FormatItemType type)
         {
             CheckReadOnly(); // InvalidOperationException
-            return _dictionary.Remove(type);
+            return Enum.IsDefined(type)
+                ? _dictionary.Remove(type)
+                : throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(FormatItemType));
         }
         /// <summary>
         /// Removes the specified property whose value belongs to sensitive data.
         /// </summary>
-        /// <param name="type">The key of the element to remove.</param>
+        /// <param name="type">The format item type.</param>
         /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>.
         /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found.</returns>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public bool Remove(Type type, string property)
+        public bool Remove(FormatItemType type, string property)
         {
             CheckReadOnly(); // InvalidOperationException
-            return _dictionary.TryGetValue(type, out var hashset) && hashset.Remove(property);
+            return Enum.IsDefined(type)
+                ? _dictionary.TryGetValue(type, out var hashset) && hashset.Remove(property)
+                : throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(FormatItemType));
         }
     }
 }
