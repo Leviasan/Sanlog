@@ -47,7 +47,9 @@ namespace Sanlog
                 SingleWriter = false,
                 AllowSynchronousContinuations = allowSynchronousContinuations
             });
-            _completion = Task.Run(async () =>
+            _completion = Task.Run(WaitToWriteAsync, CancellationToken.None);
+
+            async Task WaitToWriteAsync()
             {
                 while (!_cancellationTokenSource.IsCancellationRequested && await _channel.Reader.WaitToReadAsync(_cancellationTokenSource.Token).ConfigureAwait(false))
                 {
@@ -56,8 +58,7 @@ namespace Sanlog
                         _ = await WriteAsync(loggingEntry).ConfigureAwait(false);
                     }
                 }
-            },
-            CancellationToken.None);
+            }
         }
 
         /// <inheritdoc/>
