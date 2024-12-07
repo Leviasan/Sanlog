@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -72,7 +73,7 @@ namespace Sanlog
         /// The cache of the message templates.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly Dictionary<string, MessageTemplate> CachedMessageTemplates = [];
+        private static readonly ConcurrentDictionary<string, MessageTemplate> CachedMessageTemplates = [];
 
         /// <summary>
         /// Tries to get a message template from the cache or parses composite/named format string and tries to add to cache one.

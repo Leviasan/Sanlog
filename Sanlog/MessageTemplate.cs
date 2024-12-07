@@ -58,7 +58,7 @@ namespace Sanlog
                     _ = stringBuilder.Append(format.AsSpan(scanIndex, openBraceIndex - scanIndex + 1));
                     // Evaluate argument name
                     var name = format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1);
-                    // Mixed argument name is not supported
+                    // Mixed SegmentNamingConvention is not supported
                     conventions.Add(EvaluateSegmentNaming(name));
                     if (conventions.Any(x => x == SegmentNamingConvention.AsciiDigit) && conventions.Any(x => x != SegmentNamingConvention.AsciiDigit))
                         throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. The mixed argument names are not supported.", openBraceIndex + 1));
