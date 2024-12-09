@@ -137,7 +137,7 @@ namespace Sanlog
                 var scopes = new List<LoggingScope>();
                 if (options.IncludeScopes && externalScopeProvider is not null)
                 {
-                    externalScopeProvider.ForEachScope((scope, state) =>
+                    externalScopeProvider.ForEachScope((scope, scopes) =>
                     {
                         if (scope is not null)
                         {
@@ -156,7 +156,7 @@ namespace Sanlog
                             };
                             scopes.Add(loggingScope);
                         }
-                    }, state);
+                    }, scopes);
                 }
                 return scopes;
             }
