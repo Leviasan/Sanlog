@@ -9,19 +9,19 @@ namespace Sanlog
     public sealed class SanlogLoggerOptions
     {
         /// <summary>
-        /// Gets the application identifier.
+        /// Gets or sets the application identifier.
         /// </summary>
         public Guid AppId { get; set; }
         /// <summary>
-        /// Gets the tenant identifier.
+        /// Gets or sets the tenant identifier.
         /// </summary>
         public Guid TenantId { get; set; }
         /// <summary>
-        /// Indicates whether need to include external scope data. By default <see langword="false"/>.
+        /// Gets or sets a value indicating whether scopes should be included in the message. By default <see langword="false"/>.
         /// </summary>
         public bool IncludeScopes { get; set; }
         /// <summary>
-        /// Gets the callback function to retrieve the application version. By default the assembly version of the executable process.
+        /// Gets or sets the callback function to retrieve the application version. By default the assembly version of the executable process.
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
         /// <summary>
