@@ -23,10 +23,13 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
-        /// The writer service.
+        /// 
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggingWriter _writer;
+        private readonly MessageHandler<LoggingEntry> _handler;
+
+
+
         /// <summary>
         /// The external storage of the common scope data.
         /// </summary>
