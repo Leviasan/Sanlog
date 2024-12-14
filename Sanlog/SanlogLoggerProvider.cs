@@ -64,7 +64,7 @@ namespace Sanlog
 
             _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            _handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync);
+            _handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
             _options = optionsMonitor.CurrentValue;
         }
 
@@ -97,7 +97,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _handler.TryWrite, () => _options);
+            var logger = new SanlogLogger(category, _handler.TryWrite, OnGetOptions);
             logger.SetScopeProvider(_externalScopeProvider);
             return logger;
         });
@@ -126,15 +126,18 @@ namespace Sanlog
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns>A <see cref="ValueTask"/> that represents the asynchronous operation.</returns>
         protected abstract ValueTask WriteAsync(LoggingEntry item, CancellationToken cancellationToken);
+
+
         /// <summary>
         /// The action to be invoked when <see cref="SanlogLoggerOptions"/> has changed.
         /// </summary>
         /// <param name="options">The changed logger options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
         private void OnChangeOptions(SanlogLoggerOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
-
-
-
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private SanlogLoggerOptions OnGetOptions() => _options;
     }
 }
