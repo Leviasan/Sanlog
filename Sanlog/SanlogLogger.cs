@@ -161,7 +161,10 @@ namespace Sanlog
                 return scopes;
             }
         }
-        /// <inheritdoc/>
+        /// <summary>
+        /// Sets external scope information source for logger provider.
+        /// </summary>
+        /// <param name="scopeProvider">The provider of scope data.</param>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => _externalScopeProvider = scopeProvider;
     }
 }

@@ -118,7 +118,6 @@ namespace Sanlog
 
 
 
-
         /// <summary>
         /// Asynchronously writes the message to the storage.
         /// </summary>
