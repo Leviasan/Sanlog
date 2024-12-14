@@ -35,20 +35,20 @@ namespace Sanlog
         /// </summary>
         /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
         /// <param name="fullMode">The behavior incurred by write operations when the channel is ful</param>
-        /// <param name="callback">The method that defines how to handle the input message.</param>
+        /// <param name="handler">The method that defines how to handle the input message.</param>
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an unsupported <paramref name="fullMode"/>.</exception>
-        public MessageHandler(int capacity, BoundedChannelFullMode fullMode, HandleMessage<T> callback, Action<T>? itemDropped)
+        public MessageHandler(int capacity, BoundedChannelFullMode fullMode, HandleMessage<T> handler, Action<T>? itemDropped)
         {
-            ArgumentNullException.ThrowIfNull(callback);
+            ArgumentNullException.ThrowIfNull(handler);
             _channel = Channel.CreateBounded<T>(new BoundedChannelOptions(capacity) // ArgumentOutOfRangeException
             {
                 SingleReader = true,
                 FullMode = fullMode // ArgumentOutOfRangeException
             }, itemDropped);
             _cancellationTokenSource = new CancellationTokenSource();
-            Completion = HandleMessage(callback, _cancellationTokenSource.Token);
+            Completion = HandleMessage(handler, _cancellationTokenSource.Token);
         }
 
         /// <summary>
