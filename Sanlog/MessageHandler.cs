@@ -30,23 +30,28 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageHandler{T}"/> class with the specified options that guide the behavior of the channel and method that defines how to handle the input message.
+        /// Initializes a new instance of the <see cref="MessageHandler{T}"/> class with the specified maximum number of items the bounded channel may store,
+        /// the behavior incurred by write operations when the channel is full and method that defines how to handle the input message.
         /// </summary>
-        /// <param name="options">The options that guide the behavior of the channel.</param>
+        /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
+        /// <param name="fullMode">The behavior incurred by write operations when the channel is ful</param>
         /// <param name="callback">The method that defines how to handle the input message.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public MessageHandler(BoundedChannelOptions options, HandleMessage<T> callback)
+        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an unsupported <paramref name="fullMode"/>.</exception>
+        public MessageHandler(int capacity, BoundedChannelFullMode fullMode, HandleMessage<T> callback)
         {
-            ArgumentNullException.ThrowIfNull(options);
             ArgumentNullException.ThrowIfNull(callback);
-
-            _channel = Channel.CreateBounded<T>(options);
+            _channel = Channel.CreateBounded<T>(new BoundedChannelOptions(capacity) // ArgumentOutOfRangeException
+            {
+                SingleReader = true,
+                FullMode = fullMode // ArgumentOutOfRangeException
+            });
             _cancellationTokenSource = new CancellationTokenSource();
             Completion = HandleMessage(callback, _cancellationTokenSource.Token);
         }
 
         /// <summary>
-        /// Gets a <see cref="Task"/> that completes when no more data to be handle.
+        /// Gets a <see cref="Task"/> that completes when no more data is to be handled or the operation is canceled.
         /// </summary>
         public Task Completion { get; }
 

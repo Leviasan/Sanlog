@@ -16,10 +16,10 @@ namespace Sanlog
     /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
-    /// <param name="writer">The writer service. The caller is responsible for disposing of the writer.</param>
+    /// <param name="enqueue">The writer service. The caller is responsible for disposing of the writer.</param>
     /// <param name="configure">The function to get the current logger configuration.</param>
-    /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="writer"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-    public sealed class SanlogLogger(string category, SanlogLoggingWriter writer, Func<SanlogLoggerOptions> configure) : ILogger
+    /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="enqueue"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+    public sealed class SanlogLogger(string category, Func<LoggingEntry, bool> enqueue, Func<SanlogLoggerOptions> configure) : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
@@ -30,7 +30,7 @@ namespace Sanlog
         /// The writer service.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogLoggingWriter _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        private readonly Func<LoggingEntry, bool> _enqueue = enqueue ?? throw new ArgumentNullException(nameof(enqueue));
         /// <summary>
         /// The function to get the current logger configuration.
         /// </summary>
@@ -83,7 +83,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _ = _writer.Enqueue(loggingEntry);
+                _ = _enqueue.Invoke(loggingEntry);
             }
             [UnconditionalSuppressMessage("Trimming",
                 "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
