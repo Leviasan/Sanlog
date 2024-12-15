@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Sanlog
 {
     /// <summary>
-    /// Represents a logger provider that can create instances of<see cref = "SanlogLogger" /> and consume external scope information.
+    /// Represents a logger provider that can create instances of <see cref = "SanlogLogger" /> and consume external scope information.
     /// </summary>
     public abstract class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope, IDisposable
     {
@@ -47,7 +47,8 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified moninor of the logger options.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified maximum number of items the bounded channel may store,
+        /// behavior incurred by write operations when the channel is full and moninor of the logger options.
         /// </summary>
         /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
         /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
@@ -62,7 +63,7 @@ namespace Sanlog
                 throw new InvalidEnumArgumentException(nameof(fullMode), (int)fullMode, typeof(BoundedChannelFullMode));
             ArgumentNullException.ThrowIfNull(optionsMonitor);
 
-            _changeTokenRegistration = optionsMonitor.OnChange(OnChangeOptions);
+            _changeTokenRegistration = optionsMonitor.OnChange((options) => _options = options);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
             _handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
             _options = optionsMonitor.CurrentValue;
@@ -97,7 +98,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _handler.TryWrite, OnGetOptions);
+            var logger = new SanlogLogger(category, _handler.TryWrite, () => _options);
             logger.SetScopeProvider(_externalScopeProvider);
             return logger;
         });
@@ -108,16 +109,6 @@ namespace Sanlog
             foreach (var logger in _loggers.Values)
                 logger.SetScopeProvider(_externalScopeProvider);
         }
-
-
-
-
-
-
-
-
-
-
         /// <summary>
         /// Asynchronously writes the message to the storage.
         /// </summary>
@@ -125,18 +116,5 @@ namespace Sanlog
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns>A <see cref="ValueTask"/> that represents the asynchronous operation.</returns>
         protected abstract ValueTask WriteAsync(LoggingEntry item, CancellationToken cancellationToken);
-
-
-        /// <summary>
-        /// The action to be invoked when <see cref="SanlogLoggerOptions"/> has changed.
-        /// </summary>
-        /// <param name="options">The changed logger options.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private void OnChangeOptions(SanlogLoggerOptions options) => _options = options ?? throw new ArgumentNullException(nameof(options));
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        private SanlogLoggerOptions OnGetOptions() => _options;
     }
 }
