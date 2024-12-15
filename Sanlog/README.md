@@ -3,6 +3,7 @@ Provides a logger that supports saving log entries from different applications i
 
 ### Helper classes
 - `MessageTemplate` - Represents a composite/named message template.
+- `MessageHandler` - Represents the handler that defines how to handle the input message.
 - `SensitiveFormatter` - Represents a formatter that supports the concealment of confidential data. It depends on `SensitiveConfiguration` and `FormatItemType`.
 - `FormattedLogValuesFormatter` - Represents the formatter that supports custom formatting of `Microsoft.Extensions.Logging.FormattedLogValues` object. It depends on `MessageTemplate` and is inherited from `SensitiveFormatter`.
 
