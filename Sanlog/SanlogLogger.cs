@@ -13,10 +13,10 @@ namespace Sanlog
     /// Represents a type used to perform logging.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the writer service, and the function to get the current logger configuration.
+    /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the function to transfer log entry, and the function to get the current logger configuration.
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
-    /// <param name="enqueue">The writer service. The caller is responsible for disposing of the writer.</param>
+    /// <param name="enqueue">The function to transfer log entry.</param>
     /// <param name="configure">The function to get the current logger configuration.</param>
     /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="enqueue"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
     public sealed class SanlogLogger(string category, Func<LoggingEntry, bool> enqueue, Func<SanlogLoggerOptions> configure) : ILogger
@@ -27,7 +27,7 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _category = category ?? throw new ArgumentNullException(nameof(category));
         /// <summary>
-        /// The writer service.
+        /// The function to transfer log entry.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Func<LoggingEntry, bool> _enqueue = enqueue ?? throw new ArgumentNullException(nameof(enqueue));
@@ -162,7 +162,7 @@ namespace Sanlog
             }
         }
         /// <summary>
-        /// Sets external scope information source for logger provider.
+        /// Sets external scope information source.
         /// </summary>
         /// <param name="scopeProvider">The provider of scope data.</param>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => _externalScopeProvider = scopeProvider;
