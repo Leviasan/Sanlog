@@ -49,15 +49,15 @@ namespace Sanlog
                 var options = _provider.Options;
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
                 {
-                    SensitiveConfiguration = options.SensitiveConfiguration
+                    SensitiveConfiguration = _provider.Options.SensitiveConfiguration
                 };
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
-                    TenantId = options.TenantId,
+                    TenantId = _provider.Options.TenantId,
                     Id = logEntryId,
-                    AppId = options.AppId,
-                    Version = options.OnRetrieveVersion?.Invoke(),
+                    AppId = _provider.Options.AppId,
+                    Version = _provider.Options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
@@ -68,8 +68,8 @@ namespace Sanlog
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(options, Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(_provider.Options, Guid.NewGuid(), exception, logEntryId, null)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
                 _provider.AddMessage(loggingEntry);
