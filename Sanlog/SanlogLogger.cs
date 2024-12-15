@@ -16,10 +16,9 @@ namespace Sanlog
     /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the function to transfer log entry, and the function to get the current logger configuration.
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
-    /// <param name="enqueue">The function to transfer log entry.</param>
-    /// <param name="configure">The function to get the current logger configuration.</param>
-    /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="enqueue"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-    public sealed class SanlogLogger(string category, Func<LoggingEntry, bool> enqueue, Func<SanlogLoggerOptions> configure) : ILogger
+    /// <param name="provider">The function to transfer log entry.</param>
+    /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="provider"/> is <see langword="null"/>.</exception>
+    internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider) : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
@@ -27,29 +26,15 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string _category = category ?? throw new ArgumentNullException(nameof(category));
         /// <summary>
-        /// The function to transfer log entry.
+        /// The logger provider.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Func<LoggingEntry, bool> _enqueue = enqueue ?? throw new ArgumentNullException(nameof(enqueue));
-        /// <summary>
-        /// The function to get the current logger configuration.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Func<SanlogLoggerOptions> _configure = configure ?? throw new ArgumentNullException(nameof(configure));
-        /// <summary>
-        /// The external storage of the common scope data.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private IExternalScopeProvider? _externalScopeProvider;
+        private readonly SanlogLoggerProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
         /// <inheritdoc/>
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _externalScopeProvider?.Push(state);
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _provider.ExternalScopeProvider?.Push(state);
         /// <inheritdoc/>
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            var options = _configure.Invoke();
-            return logLevel != LogLevel.None && options.AppId != Guid.Empty && options.TenantId != Guid.Empty;
-        }
+        public bool IsEnabled(LogLevel logLevel) => logLevel != LogLevel.None && _provider.Options.AppId != Guid.Empty && _provider.Options.TenantId != Guid.Empty;
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -57,18 +42,17 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var options = _configure.Invoke();
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
                 {
-                    SensitiveConfiguration = options.SensitiveConfiguration
+                    SensitiveConfiguration = _provider.Options.SensitiveConfiguration
                 };
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
-                    TenantId = options.TenantId,
+                    TenantId = _provider.Options.TenantId,
                     Id = logEntryId,
-                    AppId = options.AppId,
-                    Version = options.OnRetrieveVersion?.Invoke(),
+                    AppId = _provider.Options.AppId,
+                    Version = _provider.Options.OnRetrieveVersion?.Invoke(),
                     DateTime = DateTime.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
@@ -76,14 +60,14 @@ namespace Sanlog
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
                     Properties = formattedLogValuesFormatter.ToStringDictionary(),
-                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _externalScopeProvider),
+                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _provider.Options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(options, Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(_provider.Options, Guid.NewGuid(), exception, logEntryId, null)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _ = _enqueue.Invoke(loggingEntry);
+                _provider.AddMessage(loggingEntry);
             }
             [UnconditionalSuppressMessage("Trimming",
                 "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
@@ -161,10 +145,5 @@ namespace Sanlog
                 return scopes;
             }
         }
-        /// <summary>
-        /// Sets external scope information source.
-        /// </summary>
-        /// <param name="scopeProvider">The provider of scope data.</param>
-        public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => _externalScopeProvider = scopeProvider;
     }
 }

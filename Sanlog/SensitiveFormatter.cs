@@ -153,7 +153,7 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            return redacted && SensitiveConfiguration.Contains(FormatItemType.Segment, key) ? RedactedValue : SensitiveObject(value, redacted);
+            return redacted && SensitiveConfiguration.Contains(SensitiveItemType.Segment, key) ? RedactedValue : SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
@@ -170,7 +170,7 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && SensitiveConfiguration.Contains(FormatItemType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
+                        var newvalue = redacted && SensitiveConfiguration.Contains(SensitiveItemType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
                         newdict.Add(newkey, newvalue);
                     }
                     return newdict;

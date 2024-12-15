@@ -22,8 +22,8 @@ namespace Sanlog.MSTest
             Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
             Assert.IsNull(formatter.CultureInfo);
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(FormatItemType.Segment, "Password"));
-            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(FormatItemType.Segment, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.Segment, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(SensitiveItemType.Segment, "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
 
             Assert.AreEqual("some_password", formatter.GetObjectAsString(1, false).Value);
@@ -101,7 +101,7 @@ namespace Sanlog.MSTest
             Assert.AreEqual("[[Password, some_password]]", formatter.GetObjectAsString("DictionaryValue", false).Value);
             formatter.FormatPrimitiveArray = true;
             Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", false).Value);
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(FormatItemType.DictionaryEntry, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.DictionaryEntry, "Password"));
             Assert.AreEqual("[[Password, [Redacted]]]", formatter.GetObjectAsString("DictionaryValue", true).Value);
         }
         [TestMethod]
