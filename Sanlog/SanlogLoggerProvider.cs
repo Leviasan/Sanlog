@@ -31,16 +31,6 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly MessageHandler<LoggingEntry> _handler;
         /// <summary>
-        /// The external storage of the common scope data.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private IExternalScopeProvider? _externalScopeProvider;
-        /// <summary>
-        /// The logger options.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SanlogLoggerOptions _options;
-        /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -63,11 +53,20 @@ namespace Sanlog
                 throw new InvalidEnumArgumentException(nameof(fullMode), (int)fullMode, typeof(BoundedChannelFullMode));
             ArgumentNullException.ThrowIfNull(optionsMonitor);
 
-            _changeTokenRegistration = optionsMonitor.OnChange((options) => _options = options);
+            _changeTokenRegistration = optionsMonitor.OnChange((options) => Options = options);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
             _handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
-            _options = optionsMonitor.CurrentValue;
+            Options = optionsMonitor.CurrentValue;
         }
+
+        /// <summary>
+        /// Gets the external storage of the common scope data.
+        /// </summary>
+        internal IExternalScopeProvider? ExternalScopeProvider { get; private set; }
+        /// <summary>
+        /// Gets the logger options.
+        /// </summary>
+        internal SanlogLoggerOptions Options { get; private set; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -98,17 +97,16 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, _handler.TryWrite, () => _options);
-            logger.SetScopeProvider(_externalScopeProvider);
+            var logger = new SanlogLogger(category, this);
             return logger;
         });
         /// <inheritdoc/>
-        public void SetScopeProvider(IExternalScopeProvider? scopeProvider)
-        {
-            _externalScopeProvider = scopeProvider;
-            foreach (var logger in _loggers.Values)
-                logger.SetScopeProvider(_externalScopeProvider);
-        }
+        public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
+        /// <summary>
+        /// Attempts to write the specified item to the channel.
+        /// </summary>
+        /// <param name="item">The item to write.</param>
+        internal void AddMessage(LoggingEntry item) => _handler.TryWrite(item);
         /// <summary>
         /// Asynchronously writes the message to the storage.
         /// </summary>
