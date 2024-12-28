@@ -157,12 +157,11 @@ namespace Sanlog
         [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Base class validate param to null")]
         public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary) : base(dictionary) // ArgumentNullException
             => _format = dictionary.TryGetValue(OriginalFormat, out var value) ? Convert.ToString(value, null) : null;
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format.
-        /// </summary>
-        /// <param name="enumerable">An object array that contains zero or more objects to format.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="enumerable"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IEnumerable<object?> enumerable) : base(enumerable) { } // ArgumentNullException
+
+
+
+
+
 
         /// <summary>
         /// Gets or sets a value indicating whether a primitive type array will be formatted.

@@ -11,7 +11,7 @@ namespace Sanlog
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified key value pair collection to format. 
+    /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified key value pair collection to format.
     /// </remarks>
     /// <param name="collection">The key value pair collection to format.</param>
     /// <exception cref="ArgumentNullException">The <paramref name="collection"/> is <see langword="null"/>.</exception>
