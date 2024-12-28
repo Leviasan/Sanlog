@@ -11,11 +11,11 @@ namespace Sanlog
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified object array that contains zero or more objects to format. 
+    /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified key value pair collection to format. 
     /// </remarks>
-    /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
-    /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
-    public class SensitiveFormatter(IReadOnlyDictionary<string, object?> dictionary) : IFormatProvider, ICustomFormatter, IEnumerable<KeyValuePair<string, object?>>
+    /// <param name="collection">The key value pair collection to format.</param>
+    /// <exception cref="ArgumentNullException">The <paramref name="collection"/> is <see langword="null"/>.</exception>
+    public class SensitiveFormatter(IReadOnlyCollection<KeyValuePair<string, object?>> collection) : IFormatProvider, ICustomFormatter, IEnumerable<KeyValuePair<string, object?>>
     {
         /// <summary>
         /// The message format of the redacted value.
@@ -23,36 +23,19 @@ namespace Sanlog
         public const string RedactedValue = "[Redacted]";
 
         /// <summary>
-        /// The configuration of the sensitive data.
+        /// The key value pair collection to format.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SensitiveConfiguration _configuration = new();
-        /// <summary>
-        /// An object dictionary.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IReadOnlyDictionary<string, object?> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class with the specified object array that contains zero or more objects to format.
-        /// </summary>
-        /// <param name="enumerable">An object array that contains zero or more objects to format.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="enumerable"/> is <see langword="null"/>.</exception>
-        public SensitiveFormatter(IEnumerable<object?> enumerable)
-            : this(enumerable?.Select((element, index) => KeyValuePair.Create($"args[{index}]", element)).ToDictionary() ?? throw new ArgumentNullException(nameof(enumerable))) { }
+        private readonly IReadOnlyCollection<KeyValuePair<string, object?>> _collection = collection ?? throw new ArgumentNullException(nameof(collection));
 
         /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
         public CultureInfo? CultureInfo { get; set; }
         /// <summary>
-        /// Gets the configuration of the sensitive data.
+        /// Gets or sets the configuration of the sensitive data.
         /// </summary>
-        public SensitiveConfiguration SensitiveConfiguration
-        {
-            get => _configuration;
-            set => _configuration = value ?? throw new ArgumentNullException(nameof(SensitiveConfiguration));
-        }
+        public SensitiveConfiguration? SensitiveConfiguration { get; set; }
 
         #region Interface: ICustomFormatter
         /// <inheritdoc/>
@@ -71,7 +54,7 @@ namespace Sanlog
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
         {
-            for (var index = 0; index < _dictionary.Count; ++index)
+            for (var index = 0; index < _collection.Count; ++index)
                 yield return GetObject(index, true);
         }
         /// <inheritdoc/>
@@ -89,7 +72,7 @@ namespace Sanlog
         /// <param name="key">The key to locate.</param>
         /// <returns><see langword="true"/> if the formatter contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
+        public bool ContainsKey(string key) => _collection.Any(x => x.Key == key);
         /// <summary>
         /// Returns the element at a specified index in the sequence.
         /// </summary>
@@ -99,7 +82,7 @@ namespace Sanlog
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
-            var kvp = _dictionary.ElementAt(index); // ArgumentOutOfRangeException
+            var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
             var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(kvp.Key, newvalue);
         }
@@ -110,12 +93,13 @@ namespace Sanlog
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The element with the specified name in the source sequence.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> does not exist in the dictionary.</exception>
+        /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
         {
-            var value = _dictionary[key]; // ArgumentNullException + KeyNotFoundException
-            var newvalue = ProcessSensitiveObject(key, value, redacted);
-            return KeyValuePair.Create(key, newvalue);
+            ArgumentNullException.ThrowIfNull(key);
+            var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
+            var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+            return KeyValuePair.Create(kvp.Key, newvalue);
         }
         /// <summary>
         /// Returns the string representation of the element at a specified index in a sequence.
@@ -137,10 +121,10 @@ namespace Sanlog
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The string representation of the element with the specified key in a sequence.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        /// <exception cref="KeyNotFoundException">The <paramref name="key"/> is not found.</exception>
+        /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
         public KeyValuePair<string, string> GetObjectAsString(string key, bool redacted)
         {
-            var pair = GetObject(key, redacted); // ArgumentNullException + KeyNotFoundException
+            var pair = GetObject(key, redacted); // ArgumentNullException + InvalidOperationException
             var stringRepresentation = Format(null, pair.Value, this);
             return KeyValuePair.Create(pair.Key, stringRepresentation);
         }
@@ -153,7 +137,8 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            return redacted && SensitiveConfiguration.Contains(SensitiveItemType.Segment, key) ? RedactedValue : SensitiveObject(value, redacted);
+            var configuration = SensitiveConfiguration ?? new SensitiveConfiguration();
+            return redacted && configuration.Contains(SensitiveItemType.Segment, key) ? RedactedValue : SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
@@ -170,7 +155,7 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && SensitiveConfiguration.Contains(SensitiveItemType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
+                        var newvalue = redacted && configuration.Contains(SensitiveItemType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
                         newdict.Add(newkey, newvalue);
                     }
                     return newdict;

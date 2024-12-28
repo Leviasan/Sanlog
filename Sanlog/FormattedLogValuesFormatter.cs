@@ -124,11 +124,6 @@ namespace Sanlog
                     dictionary.Add(segment, args[index++]);
                 }
             }
-            if (index < args.Length)
-            {
-                var extendedParams = args.Select((element, index) => KeyValuePair.Create($"args[{index}]", element)).Skip(index);
-                dictionary = dictionary.Concat(extendedParams).ToDictionary();
-            }
             if (!string.IsNullOrEmpty(format))
             {
                 dictionary.Add(OriginalFormat, format);
@@ -151,6 +146,9 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
         public FormattedLogValuesFormatter(string? format, params object?[] args) : base(ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
             => _format = !string.IsNullOrEmpty(format) ? format : null;
+
+
+
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format.
         /// </summary>
