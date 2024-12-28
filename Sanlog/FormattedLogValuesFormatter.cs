@@ -56,7 +56,7 @@ namespace Sanlog
         /// </summary>
         public const string NullFormat = "[null]";
         /// <summary>
-        /// The message format that represents a structured logging message.
+        /// The element key that represents a structured logging message.
         /// </summary>
         public const string OriginalFormat = "{OriginalFormat}";
         /// <summary>
