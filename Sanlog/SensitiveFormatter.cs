@@ -67,12 +67,23 @@ namespace Sanlog
         #endregion
 
         /// <summary>
-        /// Determines whether the formatter contains an element that has the specified key.
+        /// Searches for the specified key and returns the zero-based index of the first occurrence.
         /// </summary>
         /// <param name="key">The key to locate.</param>
-        /// <returns><see langword="true"/> if the formatter contains an element that has the specified key; otherwise, <see langword="false"/>.</returns>
+        /// <returns>The zero-based index of the first occurrence of item if found; otherwise, -1.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        public bool ContainsKey(string key) => _collection.Any(x => x.Key == key);
+        public int IndexOf(string key)
+        {
+            ArgumentNullException.ThrowIfNull(key);
+            for (var index = 0; index <= _collection.Count; ++index)
+            {
+                if (_collection.ElementAt(index).Key == key)
+                {
+                    return index;
+                }
+            }
+            return -1;
+        }
         /// <summary>
         /// Returns the element at a specified index in the sequence.
         /// </summary>

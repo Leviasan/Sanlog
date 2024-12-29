@@ -47,7 +47,7 @@ namespace Sanlog
             if (IsEnabled(logLevel))
             {
                 var options = _provider.Options;
-                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
+                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
                 {
                     SensitiveConfiguration = _provider.Options.SensitiveConfiguration
                 };
@@ -63,8 +63,12 @@ namespace Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
-                    Properties = formattedLogValuesFormatter.ToStringDictionary(),
+                    Message = formattedLogValuesFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) != -1 ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
+
+
+
+                    Properties = formattedLogValuesFormatter.SelectToString(),
+
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -74,6 +78,7 @@ namespace Sanlog
                 };
                 _provider.AddMessage(loggingEntry);
             }
+
             [UnconditionalSuppressMessage("Trimming",
                 "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
                 Justification = "TargetSite metadata might be incomplete or removed")]

@@ -45,7 +45,12 @@ namespace Sanlog
     ///     </item>
     /// </list>
     /// </remarks>
-    public sealed class FormattedLogValuesFormatter : SensitiveFormatter
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format.
+    /// </remarks>
+    /// <param name="collection">An object array that contains zero or more objects to format.</param>
+    /// <exception cref="ArgumentNullException">The <paramref name="collection"/> is <see langword="null"/>.</exception>
+    public sealed class FormattedLogValuesFormatter(IReadOnlyCollection<KeyValuePair<string, object?>> collection) : SensitiveFormatter(collection) // ArgumentNullException
     {
         /// <summary>
         /// The message format that represents a null value.
@@ -135,7 +140,7 @@ namespace Sanlog
         /// The composite/named format string.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _format;
+        private readonly string? _format = Convert.ToString(collection.SingleOrDefault(x => x.Key == OriginalFormat), null);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on the composite/named format string and an object array that contains zero or more objects to format.
@@ -144,24 +149,8 @@ namespace Sanlog
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(string? format, params object?[] args) : base(ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
+        public FormattedLogValuesFormatter(string? format, params object?[] args) : this(ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
             => _format = !string.IsNullOrEmpty(format) ? format : null;
-
-
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format.
-        /// </summary>
-        /// <param name="dictionary">An object array that contains zero or more objects to format.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="dictionary"/> is <see langword="null"/>.</exception>
-        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "Base class validate param to null")]
-        public FormattedLogValuesFormatter(IReadOnlyDictionary<string, object?> dictionary) : base(dictionary) // ArgumentNullException
-            => _format = dictionary.TryGetValue(OriginalFormat, out var value) ? Convert.ToString(value, null) : null;
-
-
-
-
-
 
         /// <summary>
         /// Gets or sets a value indicating whether a primitive type array will be formatted.
@@ -266,7 +255,8 @@ namespace Sanlog
                     {
                         continue;
                     }
-                    dictionary[segment] = GetObject(segment, true).Value;
+                    var index = IndexOf(segment); // Defines the first occurrence of the key instead of directly using GetObject(string, bool) to prevent InvalidOperationException
+                    dictionary[segment] = GetObject(index, true).Value;
                 }
                 return [.. dictionary.Values];
             }
@@ -276,7 +266,7 @@ namespace Sanlog
         /// <summary>
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
-        /// <returns>A dictionary whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
-        public Dictionary<string, string?> ToStringDictionary() => this.ToDictionary(ks => ks.Key, es => (string?)Format(null, es.Value, this));
+        /// <returns>An enumerable whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
+        public IEnumerable<KeyValuePair<string, string?>> SelectToString() => this.Select(x => KeyValuePair.Create(x.Key, (string?)Format(null, x.Value, this)));
     }
 }
