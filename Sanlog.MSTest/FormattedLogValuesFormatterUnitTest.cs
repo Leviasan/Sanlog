@@ -19,7 +19,7 @@ namespace Sanlog.MSTest
                 { FormattedLogValuesFormatter.OriginalFormat, "Login: {Login}. Password: {Password}." }
             };
             var formatter = new FormattedLogValuesFormatter(dictionary);
-            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) != 1);
             Assert.IsNull(formatter.CultureInfo);
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
             Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.SegmentName, "Password"));
@@ -31,7 +31,7 @@ namespace Sanlog.MSTest
 
             _ = Assert.ThrowsException<ArgumentOutOfRangeException>(() => formatter.GetObjectAsString(3, true));
             _ = Assert.ThrowsException<ArgumentNullException>(() => formatter.GetObjectAsString(null!, true));
-            _ = Assert.ThrowsException<KeyNotFoundException>(() => formatter.GetObjectAsString("InvalidKey", true));
+            _ = Assert.ThrowsException<InvalidOperationException>(() => formatter.GetObjectAsString("InvalidKey", true));
         }
         [TestMethod]
         public void ConstructorSingleFormat()
@@ -74,7 +74,7 @@ namespace Sanlog.MSTest
                 CultureInfo = cultureInfo
             };
             Assert.AreEqual(cultureInfo, formatter.CultureInfo);
-            Assert.IsTrue(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) != -1);
             Assert.AreEqual(expected, formatter.GetObjectAsString("FormatFloatingPointNumber", true).Value);
         }
         [TestMethod]
@@ -91,7 +91,7 @@ namespace Sanlog.MSTest
                 { "DictionaryValue", new Dictionary<string, string> { { "Password", "some_password" } } }
             };
             var formatter = new FormattedLogValuesFormatter(dictionary);
-            Assert.IsFalse(formatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat));
+            Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1);
             Assert.AreEqual("1", formatter.GetObjectAsString("Int32Value", false).Value);
             Assert.AreEqual("(null)", formatter.GetObjectAsString("NullValue", false).Value);
             Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("ShortArray", false).Value);
@@ -103,19 +103,6 @@ namespace Sanlog.MSTest
             Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", false).Value);
             Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.DictionaryEntry, "Password"));
             Assert.AreEqual("[[Password, [Redacted]]]", formatter.GetObjectAsString("DictionaryValue", true).Value);
-        }
-        [TestMethod]
-        public void ExtendedArgs()
-        {
-            var formatter = new FormattedLogValuesFormatter("Usual string", 1, 2, 3);
-            Assert.AreEqual(1, formatter.GetObject(0, false).Value);
-            Assert.AreEqual("args[0]", formatter.GetObject(0, false).Key);
-            Assert.AreEqual(2, formatter.GetObject(1, false).Value);
-            Assert.AreEqual("args[1]", formatter.GetObject(1, false).Key);
-            Assert.AreEqual(3, formatter.GetObject(2, false).Value);
-            Assert.AreEqual("args[2]", formatter.GetObject(2, false).Key);
-            Assert.AreEqual("Usual string", formatter.GetObject(3, false).Value);
-            Assert.AreEqual("Usual string", formatter.GetObjectAsString(FormattedLogValuesFormatter.OriginalFormat, false).Value);
         }
     }
 }

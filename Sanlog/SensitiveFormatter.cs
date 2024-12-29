@@ -27,6 +27,11 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IReadOnlyCollection<KeyValuePair<string, object?>> _collection = collection ?? throw new ArgumentNullException(nameof(collection));
+        /// <summary>
+        /// The configuration of the sensitive data.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private SensitiveConfiguration? _configuration;
 
         /// <summary>
         /// Gets or sets the formatting culture.
@@ -35,7 +40,11 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the configuration of the sensitive data.
         /// </summary>
-        public SensitiveConfiguration? SensitiveConfiguration { get; set; }
+        public SensitiveConfiguration SensitiveConfiguration
+        {
+            get => _configuration ??= new SensitiveConfiguration();
+            set => _configuration = value;
+        }
 
         #region Interface: ICustomFormatter
         /// <inheritdoc/>
@@ -75,7 +84,7 @@ namespace Sanlog
         public int IndexOf(string key)
         {
             ArgumentNullException.ThrowIfNull(key);
-            for (var index = 0; index <= _collection.Count; ++index)
+            for (var index = 0; index < _collection.Count; ++index)
             {
                 if (_collection.ElementAt(index).Key == key)
                 {

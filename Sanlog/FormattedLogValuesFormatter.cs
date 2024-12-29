@@ -140,7 +140,7 @@ namespace Sanlog
         /// The composite/named format string.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _format = Convert.ToString(collection.SingleOrDefault(x => x.Key == OriginalFormat), null);
+        private readonly string? _format = Convert.ToString(collection.SingleOrDefault(x => x.Key == OriginalFormat).Value, null);
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on the composite/named format string and an object array that contains zero or more objects to format.
