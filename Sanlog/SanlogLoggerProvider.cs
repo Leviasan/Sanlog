@@ -106,7 +106,7 @@ namespace Sanlog
         /// Attempts to write the specified item to the channel.
         /// </summary>
         /// <param name="item">The item to write.</param>
-        internal void AddMessage(LoggingEntry item) => _handler.TryWrite(item);
+        internal void RegisterMessage(LoggingEntry item) => _handler.TryWrite(item);
         /// <summary>
         /// Asynchronously writes the message to the storage.
         /// </summary>

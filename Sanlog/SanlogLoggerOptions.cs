@@ -28,5 +28,9 @@ namespace Sanlog
         /// The list of the sensitive data.
         /// </summary>
         public SensitiveConfiguration SensitiveConfiguration { get; } = new();
+        /// <summary>
+        /// Gets or sets a value indicating whether a primitive type array will be formatted.
+        /// </summary>
+        public bool FormatPrimitiveArray { get; set; }
     }
 }

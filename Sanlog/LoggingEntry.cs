@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 
 namespace Sanlog
 {
@@ -12,73 +9,17 @@ namespace Sanlog
     public sealed record class LoggingEntry
     {
         /// <summary>
-        /// The tenant identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid _tenantId;
-        /// <summary>
-        /// The object identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid _id;
-        /// <summary>
-        /// The application identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Guid _appId;
-        /// <summary>
-        /// The logging level identifier.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly int _loggingLevelId;
-        /// <summary>
-        /// The logging category.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly string? _category;
-
-        /// <summary>
         /// Gets the tenant identifier.
         /// </summary>
-        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
-        public Guid TenantId
-        {
-            get => _tenantId;
-            init
-            {
-                if (value == Guid.Empty)
-                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(TenantId));
-                _tenantId = value;
-            }
-        }
+        public Guid TenantId { get; init; }
         /// <summary>
         /// Gets the object identifier.
         /// </summary>
-        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
-        public Guid Id
-        {
-            get => _id;
-            init
-            {
-                if (value == Guid.Empty)
-                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(Id));
-                _id = value;
-            }
-        }
+        public Guid Id { get; init; }
         /// <summary>
         /// Gets the application identifier.
         /// </summary>
-        /// <exception cref="ArgumentException">The setter value is <see cref="Guid.Empty"/>.</exception>
-        public Guid AppId
-        {
-            get => _appId;
-            init
-            {
-                if (value == Guid.Empty)
-                    throw new ArgumentException("The value is 00000000-0000-0000-0000-000000000000.", nameof(AppId));
-                _appId = value;
-            }
-        }
+        public Guid AppId { get; init; }
         /// <summary>
         /// Gets the date and time when the event occurred.
         /// </summary>
@@ -90,35 +31,11 @@ namespace Sanlog
         /// <summary>
         /// Gets the logging level identfier.
         /// </summary>
-        /// <exception cref="ArgumentException">Passed <see cref="LogLevel.None"/> value that is not used for writing log messages. Specifies that a logging category should not write any messages.</exception>
-        /// <exception cref="InvalidEnumArgumentException">The setter value is invalid enum.</exception>
-        public int LoggingLevelId
-        {
-            get => _loggingLevelId;
-            init
-            {
-                var objValue = (LogLevel)Enum.ToObject(typeof(LogLevel), value);
-                if (objValue == LogLevel.None)
-                    throw new ArgumentException("Not used for writing log messages. Specifies that a logging category should not write any messages.");
-                if (!Enum.IsDefined(objValue))
-                    throw new InvalidEnumArgumentException(nameof(LoggingLevelId), value, typeof(LogLevel));
-                _loggingLevelId = value;
-            }
-        }
+        public int LoggingLevelId { get; init; }
         /// <summary>
         /// Gets the logging category.
         /// </summary>
-        /// <exception cref="ArgumentException">The setter value is empty string.</exception>
-        /// <exception cref="ArgumentNullException">The setter value is <see langword="null"/>.</exception>
-        public string Category
-        {
-            get => _category ?? string.Empty;
-            init
-            {
-                ArgumentException.ThrowIfNullOrEmpty(value, nameof(Category));
-                _category = value;
-            }
-        }
+        public string? Category { get; init; }
         /// <summary>
         /// Gets the event identifier.
         /// </summary>
@@ -134,7 +51,7 @@ namespace Sanlog
         /// <summary>
         /// Gets a collection that provides logging entry properties.
         /// </summary>
-        public IEnumerable<KeyValuePair<string, string?>>? Properties { get; init; }
+        public IReadOnlyList<KeyValuePair<string, string?>>? Properties { get; init; }
         /// <summary>
         /// Gets a collection that provides external scope data.
         /// </summary>

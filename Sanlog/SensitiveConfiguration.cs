@@ -148,7 +148,7 @@ namespace Sanlog
         /// <summary>
         /// The segment name of the message template.
         /// </summary>
-        Segment = 0,
+        SegmentName = 0,
         /// <summary>
         /// The string representation of the dictionary entry key.
         /// </summary>

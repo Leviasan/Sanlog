@@ -13,10 +13,10 @@ namespace Sanlog
     /// Represents a type used to perform logging.
     /// </summary>
     /// <remarks>
-    /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger, the function to transfer log entry, and the function to get the current logger configuration.
+    /// Initializes a new instance of the <see cref="SanlogLogger"/> class with the specified category for messages produced by the logger and logger provider.
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
-    /// <param name="provider">The function to transfer log entry.</param>
+    /// <param name="provider">The logger provider.</param>
     /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="provider"/> is <see langword="null"/>.</exception>
     internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider) : ILogger
     {
@@ -49,7 +49,8 @@ namespace Sanlog
                 var options = _provider.Options;
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
                 {
-                    SensitiveConfiguration = _provider.Options.SensitiveConfiguration
+                    SensitiveConfiguration = _provider.Options.SensitiveConfiguration,
+                    FormatPrimitiveArray = _provider.Options.FormatPrimitiveArray
                 };
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -63,12 +64,8 @@ namespace Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) != -1 ? formattedLogValuesFormatter.ToString() : formatter.Invoke(state, exception),
-
-
-
-                    Properties = formattedLogValuesFormatter.SelectToString(),
-
+                    Message = formattedLogValuesFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? formatter.Invoke(state, exception) : formattedLogValuesFormatter.ToString(),
+                    Properties = formattedLogValuesFormatter.Process(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -76,7 +73,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _provider.AddMessage(loggingEntry);
+                _provider.RegisterMessage(loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",
@@ -88,10 +85,10 @@ namespace Sanlog
                 {
                     TenantId = options.TenantId,
                     Id = id,
-                    Type = exception.GetType().FullName!,
+                    Type = exception.GetType().FullName,
                     Message = exception.Message,
                     HResult = exception.HResult,
-                    Data = ParseDictionary(exception.Data),
+                    Data = ParseDictionary(exception.Data, options),
                     StackTrace = exception.StackTrace,
                     Source = exception.Source,
                     HelpLink = exception.HelpLink,
@@ -105,25 +102,25 @@ namespace Sanlog
                         : []
                 };
 
-                static Dictionary<string, string?>? ParseDictionary(IDictionary dictionary)
+                static IReadOnlyList<KeyValuePair<string, string?>>? ParseDictionary(IDictionary dictionary, SanlogLoggerOptions options)
                 {
-                    Debug.Assert(dictionary is not null);
                     if (dictionary.Count == 0)
+                    {
                         return null;
-                    var index = 0;
-                    var userData = new Dictionary<string, string?>(dictionary.Count);
-                    var formatter = new FormattedLogValuesFormatter(dictionary.Values.Cast<object?>());
+                    }
+                    var generic = new List<KeyValuePair<string, object?>>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newKey = entry.Key.ToString();
                         if (!string.IsNullOrEmpty(newKey))
-                        {
-                            var newValue = formatter.GetObjectAsString(index, true).Value;
-                            userData.Add(newKey, newValue);
-                        }
-                        ++index;
+                            generic.Add(KeyValuePair.Create(newKey, entry.Value));
                     }
-                    return userData;
+                    var formatter = new FormattedLogValuesFormatter(generic)
+                    {
+                        SensitiveConfiguration = options.SensitiveConfiguration,
+                        FormatPrimitiveArray = options.FormatPrimitiveArray
+                    };
+                    return formatter.Process();
                 }
             }
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
@@ -135,18 +132,19 @@ namespace Sanlog
                     {
                         if (scope is not null)
                         {
-                            var formattedLogValuesFormatter = new FormattedLogValuesFormatter(scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
+                            var formatter = new FormattedLogValuesFormatter(scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
                             {
-                                SensitiveConfiguration = options.SensitiveConfiguration
+                                SensitiveConfiguration = options.SensitiveConfiguration,
+                                FormatPrimitiveArray = options.FormatPrimitiveArray
                             };
                             var loggingScope = new LoggingScope
                             {
                                 TenantId = options.TenantId,
                                 Id = Guid.NewGuid(),
-                                Type = scope.GetType().FullName!,
-                                Message = formattedLogValuesFormatter.ContainsKey(FormattedLogValuesFormatter.OriginalFormat) ? formattedLogValuesFormatter.ToString() : Convert.ToString(scope, formatProvider),
+                                Type = scope.GetType().FullName,
+                                Message = formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? Convert.ToString(scope, formatProvider) : formatter.ToString(),
                                 LogEntryId = logEntryId,
-                                Properties = formattedLogValuesFormatter.ToStringDictionary()
+                                Properties = formatter.Process()
                             };
                             scopes.Add(loggingScope);
                         }

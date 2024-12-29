@@ -24,6 +24,11 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly CancellationTokenSource _cancellationTokenSource;
         /// <summary>
+        /// The <see cref="Task"/> that completes when no more data is to be handled or the operation is canceled.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Task _completion;
+        /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -48,13 +53,8 @@ namespace Sanlog
                 FullMode = fullMode // ArgumentOutOfRangeException
             }, itemDropped);
             _cancellationTokenSource = new CancellationTokenSource();
-            Completion = HandleMessage(handler, _cancellationTokenSource.Token);
+            _completion = HandleMessage(handler, _cancellationTokenSource.Token);
         }
-
-        /// <summary>
-        /// Gets a <see cref="Task"/> that completes when no more data is to be handled or the operation is canceled.
-        /// </summary>
-        public Task Completion { get; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -73,7 +73,7 @@ namespace Sanlog
                 if (disposing)
                 {
                     _cancellationTokenSource.Cancel();
-                    _channel.Writer.Complete(Completion.Exception);
+                    _channel.Writer.Complete(_completion.Exception);
                     _cancellationTokenSource.Dispose();
                 }
                 _disposedValue = true;
@@ -91,11 +91,11 @@ namespace Sanlog
         /// <summary>
         /// Processes messages through the handler.
         /// </summary>
-        /// <param name="callback">The method that defines how to handle the input message.</param>
+        /// <param name="handler">The method that defines how to handle the input message.</param>
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle message")]
-        private async Task HandleMessage(HandleMessage<T> callback, CancellationToken cancellationToken)
+        private async Task HandleMessage(HandleMessage<T> handler, CancellationToken cancellationToken)
         {
             while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -103,7 +103,7 @@ namespace Sanlog
                 {
                     try
                     {
-                        await callback.Invoke(item, cancellationToken).ConfigureAwait(false);
+                        await handler.Invoke(item, cancellationToken).ConfigureAwait(false);
                     }
                     catch
                     {

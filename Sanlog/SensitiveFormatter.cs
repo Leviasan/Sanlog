@@ -149,7 +149,7 @@ namespace Sanlog
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
             var configuration = SensitiveConfiguration ?? new SensitiveConfiguration();
-            return redacted && configuration.Contains(SensitiveItemType.Segment, key) ? RedactedValue : SensitiveObject(value, redacted);
+            return redacted && configuration.Contains(SensitiveItemType.SegmentName, key) ? RedactedValue : SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
