@@ -88,7 +88,7 @@ namespace Sanlog
                     Type = exception.GetType().FullName,
                     Message = exception.Message,
                     HResult = exception.HResult,
-                    Data = ParseDictionary(exception.Data, options),
+                    Data = ProcessIDictionary(exception.Data, options),
                     StackTrace = exception.StackTrace,
                     Source = exception.Source,
                     HelpLink = exception.HelpLink,
@@ -102,7 +102,7 @@ namespace Sanlog
                         : []
                 };
 
-                static IReadOnlyList<KeyValuePair<string, string?>>? ParseDictionary(IDictionary dictionary, SanlogLoggerOptions options)
+                static IReadOnlyList<KeyValuePair<string, string?>>? ProcessIDictionary(IDictionary dictionary, SanlogLoggerOptions options)
                 {
                     if (dictionary.Count == 0)
                     {
