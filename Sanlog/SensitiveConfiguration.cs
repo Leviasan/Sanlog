@@ -139,19 +139,20 @@ namespace Sanlog
                 ? _dictionary.TryGetValue(type, out var hashset) && hashset.Remove(property)
                 : throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(SensitiveItemType));
         }
-    }
-    /// <summary>
-    /// Represents the format item type.
-    /// </summary>
-    public enum SensitiveItemType
-    {
+
         /// <summary>
-        /// The segment name of the message template.
+        /// Represents the format item type.
         /// </summary>
-        SegmentName = 0,
-        /// <summary>
-        /// The string representation of the dictionary entry key.
-        /// </summary>
-        DictionaryEntry = 1
+        public enum SensitiveItemType
+        {
+            /// <summary>
+            /// The segment name of the message template.
+            /// </summary>
+            SegmentName = 0,
+            /// <summary>
+            /// The string representation of the dictionary entry key.
+            /// </summary>
+            DictionaryEntry = 1
+        }
     }
 }
