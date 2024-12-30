@@ -150,11 +150,11 @@ namespace Sanlog
             {
                 stringValue = value switch
                 {
-                    DateTime dateTime => dateTime.ToString("O", formatProvider),
-                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O", formatProvider),
-                    Enum @enum => @enum.ToString("D"),
-                    float binary32 => binary32.ToString("G9", formatProvider),
-                    double binary64 => binary64.ToString("G17", formatProvider),
+                    DateTime dateTime => dateTime.ToString(FormattedConfiguration.DateTimeFormat, formatProvider),
+                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString(FormattedConfiguration.DateTimeOffsetFormat, formatProvider),
+                    Enum @enum => @enum.ToString(FormattedConfiguration.EnumFormat),
+                    float binary32 => binary32.ToString(FormattedConfiguration.SingleFormat, formatProvider),
+                    double binary64 => binary64.ToString(FormattedConfiguration.DoubleFormat, formatProvider),
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => IDictionaryToString(dictionary, formatProvider, formatter), // IDictionary implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider, formatter),

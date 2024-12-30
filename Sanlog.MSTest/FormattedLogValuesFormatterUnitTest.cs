@@ -105,5 +105,28 @@ namespace Sanlog.MSTest
             Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", true).Value);
             Assert.AreEqual("[[Password, [Redacted]]]", formatter.GetObjectAsString("DictionaryValue", true).Value);
         }
+        [TestMethod]
+        public void OverrideFormatString()
+        {
+            var dictionary = new Dictionary<string, object?>
+            {
+                { "EnumValue", StringComparison.Ordinal },
+                { "DateTimeValue", new DateTime(2024, 12, 3, 18, 42, 32, DateTimeKind.Utc) },
+                { "DateTimeOffsetValue", new DateTimeOffset(2024, 12, 3, 18, 42, 32, TimeSpan.Zero) },
+                { "SingleValue", 3.14159274F },
+                { "DoubleValue", 3.1415926535897931D },
+            };
+            var formatter = new FormattedLogValuesFormatter(dictionary);
+            formatter.FormattedConfiguration.EnumFormat = "G";
+            Assert.AreEqual("Ordinal", formatter.GetObjectAsString("EnumValue", false).Value);
+            formatter.FormattedConfiguration.DateTimeFormat = "R";
+            Assert.AreEqual("Tue, 03 Dec 2024 18:42:32 GMT", formatter.GetObjectAsString("DateTimeValue", false).Value);
+            formatter.FormattedConfiguration.DateTimeOffsetFormat = "R";
+            Assert.AreEqual("Tue, 03 Dec 2024 18:42:32 GMT", formatter.GetObjectAsString("DateTimeOffsetValue", false).Value);
+            formatter.FormattedConfiguration.SingleFormat = "E";
+            Assert.AreEqual("3,141593E+000", formatter.GetObjectAsString("SingleValue", false).Value);
+            formatter.FormattedConfiguration.DoubleFormat = "E";
+            Assert.AreEqual("3,141593E+000", formatter.GetObjectAsString("DoubleValue", false).Value);
+        }
     }
 }

@@ -30,7 +30,7 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string? _singleFormat;
         /// <summary>
-        /// The <see cref="float"/> format string.
+        /// The <see cref="double"/> format string.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string? _doubleFormat;
@@ -45,7 +45,7 @@ namespace Sanlog
         [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
         public string? DateTimeFormat
         {
-            get => _dateTimeFormat ?? "O";
+            get => _dateTimeFormat;
             set
             {
                 CheckReadOnly();
@@ -58,7 +58,7 @@ namespace Sanlog
         [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
         public string? DateTimeOffsetFormat
         {
-            get => _dateTimeOffsetFormat ?? "O";
+            get => _dateTimeOffsetFormat;
             set
             {
                 CheckReadOnly();
@@ -71,7 +71,7 @@ namespace Sanlog
         [StringSyntax(StringSyntaxAttribute.EnumFormat)]
         public string? EnumFormat
         {
-            get => _enumFormat ?? "D";
+            get => _enumFormat;
             set
             {
                 CheckReadOnly();
@@ -84,7 +84,7 @@ namespace Sanlog
         [StringSyntax(StringSyntaxAttribute.NumericFormat)]
         public string? SingleFormat
         {
-            get => _singleFormat ?? "G9";
+            get => _singleFormat;
             set
             {
                 CheckReadOnly();
@@ -97,7 +97,7 @@ namespace Sanlog
         [StringSyntax(StringSyntaxAttribute.NumericFormat)]
         public string? DoubleFormat
         {
-            get => _doubleFormat ?? "G17";
+            get => _doubleFormat;
             set
             {
                 CheckReadOnly();
