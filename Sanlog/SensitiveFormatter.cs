@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 
 namespace Sanlog
 {
@@ -22,6 +23,10 @@ namespace Sanlog
         /// The message format of the redacted value.
         /// </summary>
         public const string RedactedValue = "[Redacted]";
+        /// <summary>
+        /// The message format that represents a primitive type array.
+        /// </summary>
+        public static readonly CompositeFormat PrimitiveArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// The key value pair collection to format.
@@ -177,7 +182,7 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
+                        var newvalue = redacted && configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : SensitiveObject(entry.Value, redacted);
                         newdict.Add(newkey, newvalue);
                     }
                     return newdict;
@@ -189,18 +194,38 @@ namespace Sanlog
                     {
                         var elementType = type.GetElementType();
                         if (elementType is not null && elementType.IsPrimitive)
-                            return enumerable;
+                        {
+                            return redacted && configuration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
+                                ? ArrayToFormat(enumerable, elementType, this)
+                                : enumerable;
+                        }
                     }
                     else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
                     {
                         var elementType = type.GenericTypeArguments.First();
                         if (elementType.IsPrimitive)
-                            return enumerable;
+                        {
+                            return redacted && configuration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
+                                ? ArrayToFormat(enumerable, elementType, this)
+                                : enumerable;
+                        }
                     }
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
                         _ = newlist.Add(SensitiveObject(value, redacted));
                     return newlist;
+                }
+                static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
+                {
+                    return string.Format(formatProvider, PrimitiveArrayFormat, IEnumerableCount(enumerable), type.Name);
+
+                    static int IEnumerableCount(IEnumerable enumerable)
+                    {
+                        var count = 0;
+                        foreach (var item in enumerable)
+                            ++count;
+                        return count;
+                    }
                 }
             }
         }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -10,11 +9,6 @@ namespace Sanlog
     /// </summary>
     public sealed class FormattedLogValuesFormatterOptions
     {
-        /// <summary>
-        /// Indicating whether a primitive type array will be collapsed.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _collapsePrimitiveArray;
         /// <summary>
         /// The <see cref="DateTime"/> format string.
         /// </summary>
@@ -45,19 +39,6 @@ namespace Sanlog
         /// Gets a value indicating whether the configuration is read-only.
         /// </summary>
         public bool IsReadOnly { get; private set; }
-        /// <summary>
-        /// Gets or sets a value indicating whether a primitive type array will be collapsed.
-        /// Formats <see cref="IEnumerable"/> value as [object, object2, ..., objectN] or [*{ElementCount} {Type.Name}*] if <see cref="Type.IsPrimitive"/> and if set <see langword="true"/>.
-        /// </summary>
-        public bool CollapsePrimitiveArray
-        {
-            get => _collapsePrimitiveArray;
-            set
-            {
-                CheckReadOnly();
-                _collapsePrimitiveArray = value;
-            }
-        }
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format string.
         /// </summary>

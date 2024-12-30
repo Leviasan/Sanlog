@@ -31,10 +31,6 @@ namespace Sanlog
         /// The element key that represents a structured logging message.
         /// </summary>
         public const string OriginalFormat = "{OriginalFormat}";
-        /// <summary>
-        /// The message format that represents a primitive type array.
-        /// </summary>
-        public static readonly CompositeFormat PrimitiveArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// Max cached collection size.
@@ -164,22 +160,6 @@ namespace Sanlog
                 => TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
             string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
-                if (FormattedConfiguration.CollapsePrimitiveArray)
-                {
-                    var type = enumerable.GetType();
-                    if (type.IsArray)
-                    {
-                        var elementType = type.GetElementType();
-                        if (elementType is not null && elementType.IsPrimitive)
-                            return ArrayToFormat(enumerable, elementType, formatProvider);
-                    }
-                    else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
-                    {
-                        var elementType = type.GenericTypeArguments.First();
-                        if (elementType.IsPrimitive)
-                            return ArrayToFormat(enumerable, elementType, formatProvider);
-                    }
-                }
                 var first = true;
                 StringBuilder? stringBuilder = null;
                 foreach (var value in enumerable)
@@ -201,18 +181,6 @@ namespace Sanlog
                     first = false;
                 }
                 return stringBuilder?.Append(']').ToString() ?? EmptyArray;
-            }
-            static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
-            {
-                return string.Format(formatProvider, PrimitiveArrayFormat, IEnumerableCount(enumerable), type.Name);
-
-                static int IEnumerableCount(IEnumerable enumerable)
-                {
-                    var count = 0;
-                    foreach (var item in enumerable)
-                        ++count;
-                    return count;
-                }
             }
         }
         #endregion

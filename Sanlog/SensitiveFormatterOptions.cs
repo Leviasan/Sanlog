@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -146,12 +147,16 @@ namespace Sanlog
     public enum SensitiveKeyType
     {
         /// <summary>
-        /// The segment name of the message template.
+        /// The segment name of the message template to redact.
         /// </summary>
         SegmentName = 0,
         /// <summary>
-        /// The string representation of the dictionary entry key.
+        /// The string representation of the dictionary entry key to redact.
         /// </summary>
-        DictionaryEntry = 1
+        DictionaryEntry = 1,
+        /// <summary>
+        /// Formats <see cref="IEnumerable"/> instance as [*{ElementCount} {Type.Name}*]. Supported if <see cref="Type.IsPrimitive"/>.
+        /// </summary>
+        CollapsePrimitive = 2
     }
 }

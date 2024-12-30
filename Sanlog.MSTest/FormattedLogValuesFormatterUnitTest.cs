@@ -91,6 +91,9 @@ namespace Sanlog.MSTest
             };
             var formatter = new FormattedLogValuesFormatter(dictionary);
             Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1);
+            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.CollapsePrimitive, "ShortArray"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.DictionaryEntry, "Password"));
+            // Non-redacted
             Assert.AreEqual("1", formatter.GetObjectAsString("Int32Value", false).Value);
             Assert.AreEqual("(null)", formatter.GetObjectAsString("NullValue", false).Value);
             Assert.AreEqual("[0, 0, 0, 0, 0, 0, 0, 0, 0, 0]", formatter.GetObjectAsString("ShortArray", false).Value);
@@ -98,9 +101,8 @@ namespace Sanlog.MSTest
             Assert.AreEqual("2024-12-03T18:42:32.0000000Z", formatter.GetObjectAsString("DateTimeValue", false).Value);
             Assert.AreEqual("2024-12-03T18:42:32.0000000+00:00", formatter.GetObjectAsString("DateTimeOffsetValue", false).Value);
             Assert.AreEqual("[[Password, some_password]]", formatter.GetObjectAsString("DictionaryValue", false).Value);
-            formatter.FormattedConfiguration.CollapsePrimitiveArray = true;
-            Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", false).Value);
-            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.DictionaryEntry, "Password"));
+            // Redacted
+            Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", true).Value);
             Assert.AreEqual("[[Password, [Redacted]]]", formatter.GetObjectAsString("DictionaryValue", true).Value);
         }
     }
