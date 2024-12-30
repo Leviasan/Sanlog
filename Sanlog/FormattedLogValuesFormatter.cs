@@ -126,7 +126,14 @@ namespace Sanlog
         [AllowNull]
         public FormattedLogValuesFormatterOptions FormattedConfiguration
         {
-            get => _configuration ??= new FormattedLogValuesFormatterOptions();
+            get => _configuration ??= new FormattedLogValuesFormatterOptions
+            {
+                DateTimeFormat = "O",
+                DateTimeOffsetFormat = "O",
+                EnumFormat = "D",
+                SingleFormat = "G9",
+                DoubleFormat = "G17"
+            };
             set => _configuration = value;
         }
 
