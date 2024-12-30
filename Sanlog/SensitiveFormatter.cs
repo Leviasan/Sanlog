@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 
@@ -28,21 +29,22 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IReadOnlyCollection<KeyValuePair<string, object?>> _collection = collection ?? throw new ArgumentNullException(nameof(collection));
         /// <summary>
-        /// The configuration of the sensitive data.
+        /// The configuration of the formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SensitiveConfiguration? _configuration;
+        private SensitiveFormatterOptions? _configuration;
 
         /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
         public CultureInfo? CultureInfo { get; set; }
         /// <summary>
-        /// Gets or sets the configuration of the sensitive data.
+        /// Gets or sets the configuration of the formatter.
         /// </summary>
-        public SensitiveConfiguration SensitiveConfiguration
+        [AllowNull]
+        public SensitiveFormatterOptions SensitiveConfiguration
         {
-            get => _configuration ??= new SensitiveConfiguration();
+            get => _configuration ??= new SensitiveFormatterOptions();
             set => _configuration = value;
         }
 
@@ -157,8 +159,8 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            var configuration = SensitiveConfiguration ?? new SensitiveConfiguration();
-            return redacted && configuration.Contains(SensitiveItemType.SegmentName, key) ? RedactedValue : SensitiveObject(value, redacted);
+            var configuration = SensitiveConfiguration ?? new SensitiveFormatterOptions();
+            return redacted && configuration.IsSensitive(SensitiveKeyType.SegmentName, key) ? RedactedValue : SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
@@ -175,7 +177,7 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && configuration.Contains(SensitiveItemType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
+                        var newvalue = redacted && configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : entry.Value;
                         newdict.Add(newkey, newvalue);
                     }
                     return newdict;

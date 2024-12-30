@@ -13,39 +13,6 @@ namespace Sanlog
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
     /// <remarks>
-    /// Overrides standard behavior of the format string component:
-    /// <list type="table">
-    ///     <item>
-    ///         <term><see cref="DateTime"/></term>
-    ///         <description>Uses a round-trip date/time pattern "O" defined in ISO 8601 to format to a string representation.</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="DateTimeOffset"/></term>
-    ///         <description>Uses a round-trip date/time pattern "O" defined in ISO 8601 to format to a string representation.</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="Enum"/></term>
-    ///         <description>Uses a decimal pattern "D" to display the enumeration entry as an integer value in the shortest representation possible.</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="float"/></term>
-    ///         <description>Uses the "G9" format specifier to ensure that the original value successfully round-trips (IEEE 754-2008-compliant).</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="double"/></term>
-    ///         <description>Uses the "G17" format specifier to ensure that the original value successfully round-trips (IEEE 754-2008-compliant).</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="IEnumerable"/></term>
-    ///         <description>Formats value as [object, object2, ..., objectN] or [*{ElementCount} {Type.Name}*] if <see cref="Type.IsPrimitive"/> and <see cref="FormatPrimitiveArray"/> is <see langword="true"/>.</description>
-    ///     </item>
-    ///     <item>
-    ///         <term><see cref="IDictionary"/></term>
-    ///         <description>Formats value as [[Key1, Value1], [Key2, Value2]].</description>
-    ///     </item>
-    /// </list>
-    /// </remarks>
-    /// <remarks>
     /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified object array that contains zero or more objects to format.
     /// </remarks>
     /// <param name="collection">An object array that contains zero or more objects to format.</param>
@@ -141,6 +108,11 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly string? _format = Convert.ToString(collection.SingleOrDefault(x => x.Key == OriginalFormat).Value, null);
+        /// <summary>
+        /// The configuration of the formatter.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private FormattedLogValuesFormatterOptions? _configuration;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class based on the composite/named format string and an object array that contains zero or more objects to format.
@@ -153,9 +125,14 @@ namespace Sanlog
             => _format = !string.IsNullOrEmpty(format) ? format : null;
 
         /// <summary>
-        /// Gets or sets a value indicating whether a primitive type array will be formatted.
+        /// Gets or sets the configuration of the formatter.
         /// </summary>
-        public bool FormatPrimitiveArray { get; set; }
+        [AllowNull]
+        public FormattedLogValuesFormatterOptions FormattedConfiguration
+        {
+            get => _configuration ??= new FormattedLogValuesFormatterOptions();
+            set => _configuration = value;
+        }
 
         #region Override: SensitiveFormatter
         /// <inheritdoc/>
@@ -187,7 +164,7 @@ namespace Sanlog
                 => TryCustomFormat(value, formatProvider, formatter, out var stringValue) ? stringValue : formatter.Invoke(null, value, formatProvider);
             string IEnumerableToString(IEnumerable enumerable, IFormatProvider? formatProvider, Func<string?, object?, IFormatProvider?, string> formatter)
             {
-                if (FormatPrimitiveArray)
+                if (FormattedConfiguration.CollapsePrimitiveArray)
                 {
                     var type = enumerable.GetType();
                     if (type.IsArray)

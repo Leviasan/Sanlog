@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -22,8 +21,8 @@ namespace Sanlog.MSTest
             Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) != 1);
             Assert.IsNull(formatter.CultureInfo);
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.SegmentName, "Password"));
-            Assert.IsTrue(formatter.SensitiveConfiguration.Contains(SensitiveItemType.SegmentName, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.SegmentName, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
 
             Assert.AreEqual("some_password", formatter.GetObjectAsString(1, false).Value);
@@ -99,9 +98,9 @@ namespace Sanlog.MSTest
             Assert.AreEqual("2024-12-03T18:42:32.0000000Z", formatter.GetObjectAsString("DateTimeValue", false).Value);
             Assert.AreEqual("2024-12-03T18:42:32.0000000+00:00", formatter.GetObjectAsString("DateTimeOffsetValue", false).Value);
             Assert.AreEqual("[[Password, some_password]]", formatter.GetObjectAsString("DictionaryValue", false).Value);
-            formatter.FormatPrimitiveArray = true;
+            formatter.FormattedConfiguration.CollapsePrimitiveArray = true;
             Assert.AreEqual("[*10 Int16*]", formatter.GetObjectAsString("ShortArray", false).Value);
-            Assert.IsTrue(formatter.SensitiveConfiguration.Add(SensitiveItemType.DictionaryEntry, "Password"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.DictionaryEntry, "Password"));
             Assert.AreEqual("[[Password, [Redacted]]]", formatter.GetObjectAsString("DictionaryValue", true).Value);
         }
     }

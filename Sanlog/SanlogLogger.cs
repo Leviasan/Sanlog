@@ -50,7 +50,7 @@ namespace Sanlog
                 var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
                 {
                     SensitiveConfiguration = _provider.Options.SensitiveConfiguration,
-                    FormatPrimitiveArray = _provider.Options.FormatPrimitiveArray
+                    FormattedConfiguration = _provider.Options.FormattedConfiguration
                 };
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
@@ -118,7 +118,7 @@ namespace Sanlog
                     var formatter = new FormattedLogValuesFormatter(generic)
                     {
                         SensitiveConfiguration = options.SensitiveConfiguration,
-                        FormatPrimitiveArray = options.FormatPrimitiveArray
+                        FormattedConfiguration = options.FormattedConfiguration
                     };
                     return formatter.Process();
                 }
@@ -135,7 +135,7 @@ namespace Sanlog
                             var formatter = new FormattedLogValuesFormatter(scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
                             {
                                 SensitiveConfiguration = options.SensitiveConfiguration,
-                                FormatPrimitiveArray = options.FormatPrimitiveArray
+                                FormattedConfiguration = options.FormattedConfiguration
                             };
                             var loggingScope = new LoggingScope
                             {

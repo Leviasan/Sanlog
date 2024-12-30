@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Sanlog
@@ -26,12 +25,12 @@ namespace Sanlog
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
         /// <summary>
-        /// The list of the sensitive data.
+        /// Gets or sets the configuration of the <see cref="SensitiveFormatter"/>.
         /// </summary>
-        public SensitiveConfiguration SensitiveConfiguration { get; } = new();
+        public SensitiveFormatterOptions? SensitiveConfiguration { get; set; }
         /// <summary>
-        /// Gets or sets a value indicating whether a primitive type array will be formatted.
+        /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
         /// </summary>
-        public bool FormatPrimitiveArray { get; set; }
+        public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
     }
 }
