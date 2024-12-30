@@ -14,34 +14,34 @@ namespace Sanlog.MSTest
         [TestMethod]
         public void FormatEmpty()
         {
-            var messageTemplate = new MessageTemplate("DateTime: {DateTime}");
-            Assert.AreEqual("DateTime", messageTemplate[0]);
-            Assert.AreEqual("DateTime: {0}", messageTemplate.CompositeFormat.Format);
-            Assert.AreEqual("DateTime: 05/22/2024 23:56:18", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
+            var messageTemplate = new MessageTemplate("TimeStamp: {TimeStamp}");
+            Assert.AreEqual("TimeStamp", messageTemplate[0]);
+            Assert.AreEqual("TimeStamp: {0}", messageTemplate.CompositeFormat.Format);
+            Assert.AreEqual("TimeStamp: 05/22/2024 23:56:18", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
         [TestMethod]
         public void FormatFormatString()
         {
-            var messageTemplate = new MessageTemplate("DateTime: {DateTime:Y}");
-            Assert.AreEqual("DateTime", messageTemplate[0]);
-            Assert.AreEqual("DateTime: {0:Y}", messageTemplate.CompositeFormat.Format);
-            Assert.AreEqual("DateTime: 2024 May", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
+            var messageTemplate = new MessageTemplate("TimeStamp: {TimeStamp:Y}");
+            Assert.AreEqual("TimeStamp", messageTemplate[0]);
+            Assert.AreEqual("TimeStamp: {0:Y}", messageTemplate.CompositeFormat.Format);
+            Assert.AreEqual("TimeStamp: 2024 May", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
         [TestMethod]
         public void FormatAlignmentAndFormatString()
         {
-            var messageTemplate = new MessageTemplate("DateTime: {DateTime,-22:Y}");
-            Assert.AreEqual("DateTime", messageTemplate[0]);
-            Assert.AreEqual("DateTime: {0,-22:Y}", messageTemplate.CompositeFormat.Format);
-            Assert.AreEqual("DateTime: 2024 May              ", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
+            var messageTemplate = new MessageTemplate("TimeStamp: {TimeStamp,-22:Y}");
+            Assert.AreEqual("TimeStamp", messageTemplate[0]);
+            Assert.AreEqual("TimeStamp: {0,-22:Y}", messageTemplate.CompositeFormat.Format);
+            Assert.AreEqual("TimeStamp: 2024 May              ", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
         [TestMethod]
         public void FormatThreeItemsWithTwoEqualsAndDifferentFormats()
         {
-            var messageTemplate = new MessageTemplate("Year month: {DateTime:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {DateTime:s}.");
-            Assert.AreEqual("DateTime", messageTemplate[0]);
+            var messageTemplate = new MessageTemplate("Year month: {TimeStamp:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {TimeStamp:s}.");
+            Assert.AreEqual("TimeStamp", messageTemplate[0]);
             Assert.AreEqual("StringComparison", messageTemplate[1]);
-            Assert.AreEqual("DateTime", messageTemplate[2]);
+            Assert.AreEqual("TimeStamp", messageTemplate[2]);
             Assert.AreEqual("Year month: {0:Y}. StringComparison: {1:D}. Sortable date/time: {0:s}.", messageTemplate.CompositeFormat.Format);
             Assert.AreEqual("Year month: 2024 May. StringComparison: 4. Sortable date/time: 2024-05-22T23:56:18.", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue, StringComparisonValue));
         }
@@ -50,7 +50,7 @@ namespace Sanlog.MSTest
         {
             var messageTemplate = new MessageTemplate("0x{0:X} {0:E} {0:N}");
             Assert.AreEqual("0x7FFFFFFFFFFFFFFF 9.223372E+018 9,223,372,036,854,775,807.00", messageTemplate.Format(CultureInfo.InvariantCulture, long.MaxValue));
-            messageTemplate = new MessageTemplate("{DateTime:dddd MMMM}");
+            messageTemplate = new MessageTemplate("{TimeStamp:dddd MMMM}");
             Assert.AreEqual(DateTime.Now.ToString("dddd MMMM", CultureInfo.InvariantCulture), messageTemplate.Format(CultureInfo.InvariantCulture, DateTime.Now));
         }
         [TestMethod]

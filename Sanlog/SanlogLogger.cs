@@ -59,7 +59,7 @@ namespace Sanlog
                     Id = logEntryId,
                     AppId = _provider.Options.AppId,
                     Version = _provider.Options.OnRetrieveVersion?.Invoke(),
-                    DateTime = DateTime.Now,
+                    TimeStamp = DateTime.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
                     EventId = eventId.Id,

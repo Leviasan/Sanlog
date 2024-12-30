@@ -36,11 +36,11 @@ namespace Sanlog.MSTest
         public void ConstructorSingleFormat()
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
-            var formatter = new FormattedLogValuesFormatter("DateTime: {DateTime:Y}", datetime)
+            var formatter = new FormattedLogValuesFormatter("TimeStamp: {TimeStamp:Y}", datetime)
             {
                 CultureInfo = CultureInfo.InvariantCulture
             };
-            Assert.AreEqual("DateTime: 2024 May", formatter.ToString());
+            Assert.AreEqual("TimeStamp: 2024 May", formatter.ToString());
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, false).Value);
             Assert.AreEqual(datetime.ToString("O", CultureInfo.InvariantCulture), formatter.GetObjectAsString(0, true).Value);
         }
@@ -48,7 +48,7 @@ namespace Sanlog.MSTest
         public void ConstructorMultiFormat()
         {
             var datetime = new DateTime(2024, 05, 22, 23, 56, 18);
-            var formatter = new FormattedLogValuesFormatter("Year month: {DateTime,9:Y}. StringComparison: {StringComparison:G}. Sortable date/time: {DateTime:s}.", datetime, StringComparison.Ordinal, "extended_params")
+            var formatter = new FormattedLogValuesFormatter("Year month: {TimeStamp,9:Y}. StringComparison: {StringComparison:G}. Sortable date/time: {TimeStamp:s}.", datetime, StringComparison.Ordinal, "extended_params")
             {
                 CultureInfo = CultureInfo.InvariantCulture
             };

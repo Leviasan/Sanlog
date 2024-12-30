@@ -23,7 +23,7 @@ namespace Sanlog
         /// <summary>
         /// Gets the date and time when the event occurred.
         /// </summary>
-        public DateTime DateTime { get; init; }
+        public DateTime TimeStamp { get; init; }
         /// <summary>
         /// Gets the application version in which the event occurred.
         /// </summary>
