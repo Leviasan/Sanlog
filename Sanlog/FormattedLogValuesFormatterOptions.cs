@@ -109,7 +109,11 @@ namespace Sanlog
         /// Makes the configuration read-only.
         /// </summary>
         /// <returns>Returns the current instance.</returns>
-        public void MakeReadOnly() => IsReadOnly = true;
+        public FormattedLogValuesFormatterOptions MakeReadOnly()
+        {
+            IsReadOnly = true;
+            return this;
+        }
         /// <summary>
         /// Throws an exception if the configuration is read-only.
         /// </summary>

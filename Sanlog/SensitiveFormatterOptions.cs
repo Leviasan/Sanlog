@@ -100,7 +100,12 @@ namespace Sanlog
         /// <summary>
         /// Makes the configuration read-only.
         /// </summary>
-        public void MakeReadOnly() => IsReadOnly = true;
+        /// <returns>Returns the current instance.</returns>
+        public SensitiveFormatterOptions MakeReadOnly()
+        {
+            IsReadOnly = true;
+            return this;
+        }
         /// <summary>
         /// Removes all properties with the specified sensitive key type.
         /// </summary>
