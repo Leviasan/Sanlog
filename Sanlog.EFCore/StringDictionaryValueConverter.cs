@@ -9,7 +9,7 @@ namespace Sanlog.EFCore
     /// Defines conversions from <see cref="IReadOnlyDictionary{TKey, TValue}"/> object in a model where TKey is <see cref="string"/> and TValue is <see cref="string"/> to <see cref="string"/> in the store.
     /// </summary>
     [SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "The class is registered in an inversion of control container as part of the dependency injection pattern")]
-    internal sealed class StringDictionaryValueConverter : ValueConverter<IReadOnlyDictionary<string, string?>?, string?>
+    internal sealed class StringDictionaryValueConverter : ValueConverter<IReadOnlyList<KeyValuePair<string, string?>>?, string?>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="StringDictionaryValueConverter"/> class.
@@ -22,14 +22,16 @@ namespace Sanlog.EFCore
         /// <summary>
         /// Converts objects when writing data to the store.
         /// </summary>
-        /// <param name="dictionary">The object to convert.</param>
+        /// <param name="collection">The object to convert.</param>
         /// <returns>The string representation of the dictionary.</returns>
-        private static string? Serialize(IReadOnlyDictionary<string, string?>? dictionary) => JsonSerializer.Serialize(dictionary, typeof(IReadOnlyDictionary<string, string?>), SourceGenerationContext.Default) is string json && json != "{}" ? json : null;
+        private static string? Serialize(IReadOnlyList<KeyValuePair<string, string?>>? collection)
+            => JsonSerializer.Serialize(collection, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default) is string json && json != "[]" ? json : null;
         /// <summary>
         /// Converts objects when reading data from the store.
         /// </summary>
         /// <param name="json">The object to convert.</param>
         /// <returns>The <see cref="Dictionary{TKey, TValue}"/> that represents json string.</returns>
-        private static IReadOnlyDictionary<string, string?>? Deserialize(string? json) => json is not null ? (IReadOnlyDictionary<string, string?>)JsonSerializer.Deserialize(json, typeof(IReadOnlyDictionary<string, string?>), SourceGenerationContext.Default)! : null;
+        private static IReadOnlyList<KeyValuePair<string, string?>>? Deserialize(string? json)
+            => json is not null ? (IReadOnlyList<KeyValuePair<string, string?>>)JsonSerializer.Deserialize(json, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default)! : null;
     }
 }

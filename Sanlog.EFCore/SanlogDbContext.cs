@@ -87,12 +87,6 @@ namespace Sanlog.EFCore
             base.Dispose();
         }
         /// <inheritdoc/>
-        public override ValueTask DisposeAsync()
-        {
-            _changeTokenRegistration?.Dispose();
-            return base.DisposeAsync();
-        }
-        /// <inheritdoc/>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             Debug.Assert(optionsBuilder is not null);
@@ -130,9 +124,8 @@ namespace Sanlog.EFCore
         /// The action to be invoked when <see cref="SanlogLoggerOptions"/> has changed.
         /// </summary>
         /// <param name="options">The changed logger options.</param>
-        /// <param name="_">The name of the options.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private void OnChangeOptions(SanlogLoggerOptions options, string? _) => _loggerOptions = options ?? throw new ArgumentNullException(nameof(options));
+        private void OnChangeOptions(SanlogLoggerOptions options) => _loggerOptions = options ?? throw new ArgumentNullException(nameof(options));
 
         /// <summary>
         /// Represents the <see cref="ISaveChangesInterceptor"/> for validating tenant and application identifiers.
