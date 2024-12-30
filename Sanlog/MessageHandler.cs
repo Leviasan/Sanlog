@@ -49,9 +49,9 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(handler);
             _channel = Channel.CreateBounded<T>(new BoundedChannelOptions(capacity) // ArgumentOutOfRangeException
             {
-                SingleReader = true,
                 FullMode = fullMode // ArgumentOutOfRangeException
-            }, itemDropped);
+            }, 
+            itemDropped);
             _cancellationTokenSource = new CancellationTokenSource();
             _completion = HandleMessage(handler, _cancellationTokenSource.Token);
         }
