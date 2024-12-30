@@ -26,7 +26,7 @@ namespace Sanlog
         /// <summary>
         /// The message format that represents a primitive type array.
         /// </summary>
-        public static readonly CompositeFormat PrimitiveArrayFormat = CompositeFormat.Parse("[*{0} {1}*]");
+        public static readonly CompositeFormat CollapsePrimitiveFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// The key value pair collection to format.
@@ -217,7 +217,7 @@ namespace Sanlog
                 }
                 static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
                 {
-                    return string.Format(formatProvider, PrimitiveArrayFormat, IEnumerableCount(enumerable), type.Name);
+                    return string.Format(formatProvider, CollapsePrimitiveFormat, IEnumerableCount(enumerable), type.Name);
 
                     static int IEnumerableCount(IEnumerable enumerable)
                     {
