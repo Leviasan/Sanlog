@@ -26,11 +26,6 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
-        /// The message handler.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly MessageHandler<LoggingEntry> _handler;
-        /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -55,7 +50,7 @@ namespace Sanlog
 
             _changeTokenRegistration = optionsMonitor.OnChange((options) => Options = options);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            _handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
+            Handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
             Options = optionsMonitor.CurrentValue;
         }
 
@@ -67,6 +62,10 @@ namespace Sanlog
         /// Gets the logger options.
         /// </summary>
         internal SanlogLoggerOptions Options { get; private set; }
+        /// <summary>
+        /// Gets the message handler.
+        /// </summary>
+        internal MessageHandler<LoggingEntry> Handler { get; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -86,7 +85,7 @@ namespace Sanlog
                 {
                     _loggers.Clear();
                     _changeTokenRegistration?.Dispose();
-                    _handler.Dispose();
+                    Handler.Dispose();
                 }
                 _disposedValue = true;
             }
@@ -102,11 +101,6 @@ namespace Sanlog
         });
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
-        /// <summary>
-        /// Attempts to write the specified item to the channel.
-        /// </summary>
-        /// <param name="item">The item to write.</param>
-        internal void RegisterMessage(LoggingEntry item) => _handler.TryWrite(item);
         /// <summary>
         /// Asynchronously writes the message to the storage.
         /// </summary>
