@@ -41,7 +41,7 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1.</exception>
         /// <exception cref="InvalidEnumArgumentException">Passed an invalid <paramref name="fullMode"/> value.</exception>
-        protected SanlogLoggerProvider(int capacity, BoundedChannelFullMode fullMode, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        protected SanlogLoggerProvider(IMessageBroker<LoggingEntry> messageBroker, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
         {
             ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
             if (!Enum.IsDefined(fullMode))
@@ -52,6 +52,12 @@ namespace Sanlog
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
             Handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
             Options = optionsMonitor.CurrentValue;
+
+            _channel = Channel.CreateUnbounded<LoggingEntry>();
+            _producer = new ChannelProducerMessageHandler(_channel);
+            _consumer = new ChannelConsumerMessageWorker(_channel);
+
+            MessageBroker = messageBroker;
         }
 
         /// <summary>
@@ -63,9 +69,9 @@ namespace Sanlog
         /// </summary>
         internal SanlogLoggerOptions Options { get; private set; }
         /// <summary>
-        /// Gets the message handler.
+        /// Gets the message broker.
         /// </summary>
-        internal MessageHandler<LoggingEntry> Handler { get; }
+        internal IMessageBroker<LoggingEntry> MessageBroker { get; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -96,8 +102,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            var logger = new SanlogLogger(category, this);
-            return logger;
+            return new SanlogLogger(category, this, _producer);
         });
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;

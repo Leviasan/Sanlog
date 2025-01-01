@@ -5,10 +5,107 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 
 namespace Sanlog
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    public interface IMessageHandler<TMessage>
+    {
+        void Handle(TMessage message);
+    }
+    public interface IAsyncMessageHandler<TMessage> : IMessageHandler<TMessage>
+    {
+        Task HandleAsync(TMessage message, CancellationToken cancellationToken);
+    }
+    public interface IMessageWorker<TMessage>
+    {
+        Task RunAsync(IAsyncMessageHandler<TMessage> handler, CancellationToken cancellationToken);
+    }
+    public interface IMessageBroker<TMessage> : IDisposable
+    {
+        IAsyncMessageHandler<TMessage> Producer { get; }
+    }
+    public sealed class ChannelMessageBroker : IMessageBroker<LoggingEntry>
+    {
+        private readonly CancellationTokenSource _cancellationTokenSource;
+        private readonly Channel<LoggingEntry> _channel;
+        private readonly ConsumerMessageWorker _worker;
+        private bool _disposedValue;
+
+        public ChannelMessageBroker(Channel<LoggingEntry> channel, IAsyncMessageHandler<LoggingEntry> consumer)
+        {
+            ArgumentNullException.ThrowIfNull(channel);
+            ArgumentNullException.ThrowIfNull(consumer);
+
+            _channel = channel;
+            _worker = new ConsumerMessageWorker(_channel);
+            _cancellationTokenSource = new CancellationTokenSource();
+            _ = _worker.RunAsync(consumer, _cancellationTokenSource.Token);
+            Producer = new ProducerMessageHandler(_channel);
+        }
+
+        public IAsyncMessageHandler<LoggingEntry> Producer { get; }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+        private void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _channel.Writer.Complete();
+                    _cancellationTokenSource.Cancel();
+                    _cancellationTokenSource.Dispose();
+                }
+                _disposedValue = true;
+            }
+        }
+
+        private sealed class ConsumerMessageWorker(ChannelReader<LoggingEntry> reader) : IMessageWorker<LoggingEntry>
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private readonly ChannelReader<LoggingEntry> _reader = reader ?? throw new ArgumentNullException(nameof(reader));
+
+            [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle message")]
+            public async Task RunAsync(IAsyncMessageHandler<LoggingEntry> handler, CancellationToken cancellationToken)
+            {
+                ArgumentNullException.ThrowIfNull(handler);
+                while (await _reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+                {
+                    while (_reader.TryRead(out var message))
+                    {
+                        try
+                        {
+                            await handler.HandleAsync(message, cancellationToken).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+                    }
+                }
+            }
+        }
+        private sealed class ProducerMessageHandler(ChannelWriter<LoggingEntry> writer) : IAsyncMessageHandler<LoggingEntry>
+        {
+            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+            private readonly ChannelWriter<LoggingEntry> _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+
+            public void Handle(LoggingEntry message) => _writer.TryWrite(message);
+            public Task HandleAsync(LoggingEntry message, CancellationToken cancellationToken) => _writer.WriteAsync(message, cancellationToken).AsTask();
+        }
+    }
+
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
     /// <summary>
     /// Represents a type used to perform logging.
     /// </summary>
@@ -73,7 +170,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _ = _provider.Handler.TryWrite(loggingEntry);
+                _provider.MessageBroker.Producer.Handle(loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",
