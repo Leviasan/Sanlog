@@ -9,10 +9,92 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Sanlog
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    public interface IMessageHandler
+    {
+        Task HandleAsync(object? message, CancellationToken cancellationToken);
+    }
+    public interface IMessageBroker : IServiceProvider, IDisposable
+    {
+        void Register(Type serviceType, IMessageHandler handler);
+        bool SendMessage<TMessage>(TMessage? message);
+        bool SendMessage<TMessage>(Type serviceType, TMessage? message);
+    }
+    public sealed class MessageBroker : IMessageBroker
+    {
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Channel<MessageContext> _channel;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly IServiceCollection _services = new ServiceCollection();
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _disposedValue;
+
+        public MessageBroker() => _channel = Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+        private void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _channel.Writer.Complete();
+                }
+                _disposedValue = true;
+            }
+        }
+
+        public void Register(Type serviceType, IMessageHandler handler)
+        {
+            _ = _services.AddScoped(serviceType, (sp) => handler);
+
+            var provider = ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(_services);
+            provider.
+        }
+
+
+
+        public object? GetService(Type serviceType) => throw new NotImplementedException();
+
+        public bool SendMessage<TMessage>(TMessage? message) => message is not null && SendMessage(message.GetType(), message);
+        public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
+        {
+            ArgumentNullException.ThrowIfNull(serviceType);
+            return _channel.Writer.TryWrite(new MessageContext(serviceType, message));
+        }
+        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                while (_channel.Reader.TryRead(out var context))
+                {
+                    try
+                    {
+                        if (GetService(context.ServiceType) is IMessageHandler handler)
+                            await handler.HandleAsync(context.Message, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+            }
+        }
+
+        private sealed record class MessageContext(Type ServiceType, object? Message);
+    }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
+    /*
     public interface IMessageHandler<TMessage>
     {
         void Handle(TMessage message);
@@ -104,7 +186,7 @@ namespace Sanlog
         }
     }
 
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+    */
 
     /// <summary>
     /// Represents a type used to perform logging.
@@ -114,8 +196,9 @@ namespace Sanlog
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
     /// <param name="provider">The logger provider.</param>
+    /// <param name="messageBroker">The logger provider.</param>
     /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="provider"/> is <see langword="null"/>.</exception>
-    internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider) : ILogger
+    internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider, IMessageBroker messageBroker) : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
@@ -127,6 +210,11 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggerProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
+        /// <summary>
+        /// The logger provider.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly IMessageBroker _messageBroker = messageBroker ?? throw new ArgumentNullException(nameof(messageBroker));
 
         /// <inheritdoc/>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _provider.ExternalScopeProvider?.Push(state);
@@ -170,7 +258,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _provider.MessageBroker.Producer.Handle(loggingEntry);
+                _ = _messageBroker.SendMessage(provider.GetType(), loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",
