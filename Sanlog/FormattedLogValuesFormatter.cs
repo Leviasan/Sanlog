@@ -219,6 +219,6 @@ namespace Sanlog
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
         /// <returns>An enumerable whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
-        public IReadOnlyList<KeyValuePair<string, string?>> Process() => this.Select(x => KeyValuePair.Create(x.Key, (string?)Format(null, x.Value, this))).ToList();
+        public IReadOnlyList<KeyValuePair<string, string?>> SelectFormat() => this.Select(x => KeyValuePair.Create(x.Key, (string?)Format(null, x.Value, this))).ToList();
     }
 }

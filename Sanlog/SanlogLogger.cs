@@ -65,7 +65,7 @@ namespace Sanlog
                     EventId = eventId.Id,
                     EventName = eventId.Name,
                     Message = formattedLogValuesFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? formatter.Invoke(state, exception) : formattedLogValuesFormatter.ToString(),
-                    Properties = formattedLogValuesFormatter.Process(),
+                    Properties = formattedLogValuesFormatter.SelectFormat(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -120,7 +120,7 @@ namespace Sanlog
                         SensitiveConfiguration = options.SensitiveConfiguration,
                         FormattedConfiguration = options.FormattedConfiguration
                     };
-                    return formatter.Process();
+                    return formatter.SelectFormat();
                 }
             }
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
@@ -144,7 +144,7 @@ namespace Sanlog
                                 Type = scope.GetType().FullName,
                                 Message = formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? Convert.ToString(scope, formatProvider) : formatter.ToString(),
                                 LogEntryId = logEntryId,
-                                Properties = formatter.Process()
+                                Properties = formatter.SelectFormat()
                             };
                             scopes.Add(loggingScope);
                         }
