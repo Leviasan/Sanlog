@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -24,55 +22,47 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IDisposable? _changeTokenRegistration;
         /// <summary>
+        /// The message broker.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly IMessageBroker _messageBroker;
+        /// <summary>
+        /// The cache value of the current type to prevent multi-call <see cref="object.GetType()"/> method.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Type _type;
+        /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposedValue;
-        /// <summary>
-        /// 
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IMessageBroker _messageBroker;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified maximum number of items the bounded channel may store,
-        /// behavior incurred by write operations when the channel is full and moninor of the logger options.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker and logger options monitor.
         /// </summary>
-        /// <param name="messageBroker">...</param>
+        /// <param name="messageBroker">The message broker. The caller is responsible for the release.</param>
         /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="messageBroker"/> or <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
         protected SanlogLoggerProvider(IMessageBroker messageBroker, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
         {
-           // ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
-           // if (!Enum.IsDefined(fullMode))
-            //    throw new InvalidEnumArgumentException(nameof(fullMode), (int)fullMode, typeof(BoundedChannelFullMode));
+            ArgumentNullException.ThrowIfNull(messageBroker);
             ArgumentNullException.ThrowIfNull(optionsMonitor);
 
+            _type = GetType();
+            _messageBroker = messageBroker;
             _changeTokenRegistration = optionsMonitor.OnChange((options) => Options = options);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            //Handler = new MessageHandler<LoggingEntry>(capacity, fullMode, WriteAsync, null);
             Options = optionsMonitor.CurrentValue;
-
-            //_channel = Channel.CreateUnbounded<LoggingEntry>();
-            //_producer = new ChannelProducerMessageHandler(_channel);
-            //_consumer = new ChannelConsumerMessageWorker(_channel);
-            MessageBroker = messageBroker;
         }
 
         /// <summary>
         /// Gets the external storage of the common scope data.
         /// </summary>
-        internal IExternalScopeProvider? ExternalScopeProvider { get; private set; }
+        public IExternalScopeProvider? ExternalScopeProvider { get; private set; }
         /// <summary>
         /// Gets the logger options.
         /// </summary>
-        internal SanlogLoggerOptions Options { get; private set; }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        internal readonly IMessageBroker MessageBroker { get; private set; }
+        public SanlogLoggerOptions Options { get; private set; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -92,7 +82,6 @@ namespace Sanlog
                 {
                     _loggers.Clear();
                     _changeTokenRegistration?.Dispose();
-                    // Handler.Dispose();
                 }
                 _disposedValue = true;
             }
@@ -108,17 +97,10 @@ namespace Sanlog
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
         /// <summary>
-        /// Asynchronously writes the message to the storage.
+        /// Sends a message to handle.
         /// </summary>
-        /// <param name="item">The message to store.</param>
-        /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
-        /// <returns>A <see cref="ValueTask"/> that represents the asynchronous operation.</returns>
-        protected abstract ValueTask WriteAsync(LoggingEntry item, CancellationToken cancellationToken);
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="message"></param>
-        /// <returns></returns>
-        internal bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(GetType(), message);
+        /// <param name="message">The message to handle.</param>
+        /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
+        public bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(_type, message);
     }
 }

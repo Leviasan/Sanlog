@@ -46,7 +46,7 @@ namespace Sanlog
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
         public ChannelMessageBroker(int capacity, BoundedChannelFullMode fullMode, Action<object?>? itemDropped)
-            : this(Channel.CreateBounded<MessageContext>(\
+            : this(Channel.CreateBounded<MessageContext>(
                 options: new BoundedChannelOptions(capacity) { FullMode = fullMode, SingleReader = true },
                 itemDropped: itemDropped is not null ? (context) => itemDropped?.Invoke(context.Message) : null))
         { }

@@ -5,6 +5,7 @@ Provides a logger that supports saving log entries from different applications i
 - `MessageTemplate` - Represents a composite/named message template.
 - `SensitiveFormatter` - Represents a formatter that supports the concealment of confidential data. It depends on `SensitiveFormatterOptions`.
 - `FormattedLogValuesFormatter` - Represents the formatter that supports custom formatting of `Microsoft.Extensions.Logging.FormattedLogValues` object. It depends on `MessageTemplate`, `FormattedLogValuesFormatterOptions`, and is inherited from `SensitiveFormatter`.
+- `ChannelMessageBroker` - Represents a service to send/deliver messages to handlers based on `Channel`. It depends on `IMessageBroker` and `IMessageHandler`.
 
 ### Miscellaneous
 - Multi-tenancy (https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy).
