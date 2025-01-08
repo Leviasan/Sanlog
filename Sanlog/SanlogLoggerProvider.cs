@@ -28,7 +28,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposedValue;
-
         /// <summary>
         /// 
         /// </summary>
@@ -57,8 +56,7 @@ namespace Sanlog
             //_channel = Channel.CreateUnbounded<LoggingEntry>();
             //_producer = new ChannelProducerMessageHandler(_channel);
             //_consumer = new ChannelConsumerMessageWorker(_channel);
-
-            _messageBroker = messageBroker;
+            MessageBroker = messageBroker;
         }
 
         /// <summary>
@@ -69,6 +67,12 @@ namespace Sanlog
         /// Gets the logger options.
         /// </summary>
         internal SanlogLoggerOptions Options { get; private set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        internal readonly IMessageBroker MessageBroker { get; private set; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -99,7 +103,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            return new SanlogLogger(category, this, _messageBroker);
+            return new SanlogLogger(category, this);
         });
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
@@ -110,5 +114,11 @@ namespace Sanlog
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns>A <see cref="ValueTask"/> that represents the asynchronous operation.</returns>
         protected abstract ValueTask WriteAsync(LoggingEntry item, CancellationToken cancellationToken);
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
+        internal bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(GetType(), message);
     }
 }

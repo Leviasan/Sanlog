@@ -5,189 +5,10 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using System.Threading.Channels;
-using System.Threading.Tasks;
-using System.Threading;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Sanlog
 {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    public interface IMessageHandler
-    {
-        Task HandleAsync(object? message, CancellationToken cancellationToken);
-    }
-    public interface IMessageBroker : IServiceProvider, IDisposable
-    {
-        void Register(Type serviceType, IMessageHandler handler);
-        bool SendMessage<TMessage>(TMessage? message);
-        bool SendMessage<TMessage>(Type serviceType, TMessage? message);
-    }
-    public sealed class MessageBroker : IMessageBroker
-    {
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Channel<MessageContext> _channel;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IServiceCollection _services = new ServiceCollection();
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private bool _disposedValue;
-
-        public MessageBroker() => _channel = Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
-
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-        private void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _channel.Writer.Complete();
-                }
-                _disposedValue = true;
-            }
-        }
-
-        public void Register(Type serviceType, IMessageHandler handler)
-        {
-            _ = _services.AddScoped(serviceType, (sp) => handler);
-
-            var provider = ServiceCollectionContainerBuilderExtensions.BuildServiceProvider(_services);
-            provider.
-        }
-
-
-
-        public object? GetService(Type serviceType) => throw new NotImplementedException();
-
-        public bool SendMessage<TMessage>(TMessage? message) => message is not null && SendMessage(message.GetType(), message);
-        public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
-        {
-            ArgumentNullException.ThrowIfNull(serviceType);
-            return _channel.Writer.TryWrite(new MessageContext(serviceType, message));
-        }
-        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                while (_channel.Reader.TryRead(out var context))
-                {
-                    try
-                    {
-                        if (GetService(context.ServiceType) is IMessageHandler handler)
-                            await handler.HandleAsync(context.Message, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // ignored
-                    }
-                }
-            }
-        }
-
-        private sealed record class MessageContext(Type ServiceType, object? Message);
-    }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-
-    /*
-    public interface IMessageHandler<TMessage>
-    {
-        void Handle(TMessage message);
-    }
-    public interface IAsyncMessageHandler<TMessage> : IMessageHandler<TMessage>
-    {
-        Task HandleAsync(TMessage message, CancellationToken cancellationToken);
-    }
-    public interface IMessageWorker<TMessage>
-    {
-        Task RunAsync(IAsyncMessageHandler<TMessage> handler, CancellationToken cancellationToken);
-    }
-    public interface IMessageBroker<TMessage> : IDisposable
-    {
-        IAsyncMessageHandler<TMessage> Producer { get; }
-    }
-    public sealed class ChannelMessageBroker : IMessageBroker<LoggingEntry>
-    {
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly Channel<LoggingEntry> _channel;
-        private readonly ConsumerMessageWorker _worker;
-        private bool _disposedValue;
-
-        public ChannelMessageBroker(Channel<LoggingEntry> channel, IAsyncMessageHandler<LoggingEntry> consumer)
-        {
-            ArgumentNullException.ThrowIfNull(channel);
-            ArgumentNullException.ThrowIfNull(consumer);
-
-            _channel = channel;
-            _worker = new ConsumerMessageWorker(_channel);
-            _cancellationTokenSource = new CancellationTokenSource();
-            _ = _worker.RunAsync(consumer, _cancellationTokenSource.Token);
-            Producer = new ProducerMessageHandler(_channel);
-        }
-
-        public IAsyncMessageHandler<LoggingEntry> Producer { get; }
-
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-        private void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _channel.Writer.Complete();
-                    _cancellationTokenSource.Cancel();
-                    _cancellationTokenSource.Dispose();
-                }
-                _disposedValue = true;
-            }
-        }
-
-        private sealed class ConsumerMessageWorker(ChannelReader<LoggingEntry> reader) : IMessageWorker<LoggingEntry>
-        {
-            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private readonly ChannelReader<LoggingEntry> _reader = reader ?? throw new ArgumentNullException(nameof(reader));
-
-            [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle message")]
-            public async Task RunAsync(IAsyncMessageHandler<LoggingEntry> handler, CancellationToken cancellationToken)
-            {
-                ArgumentNullException.ThrowIfNull(handler);
-                while (await _reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
-                {
-                    while (_reader.TryRead(out var message))
-                    {
-                        try
-                        {
-                            await handler.HandleAsync(message, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
-                    }
-                }
-            }
-        }
-        private sealed class ProducerMessageHandler(ChannelWriter<LoggingEntry> writer) : IAsyncMessageHandler<LoggingEntry>
-        {
-            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private readonly ChannelWriter<LoggingEntry> _writer = writer ?? throw new ArgumentNullException(nameof(writer));
-
-            public void Handle(LoggingEntry message) => _writer.TryWrite(message);
-            public Task HandleAsync(LoggingEntry message, CancellationToken cancellationToken) => _writer.WriteAsync(message, cancellationToken).AsTask();
-        }
-    }
-
-    */
-
     /// <summary>
     /// Represents a type used to perform logging.
     /// </summary>
@@ -196,9 +17,8 @@ namespace Sanlog
     /// </remarks>
     /// <param name="category">The category for messages produced by the logger.</param>
     /// <param name="provider">The logger provider.</param>
-    /// <param name="messageBroker">The logger provider.</param>
     /// <exception cref="ArgumentNullException">The <paramref name="category"/> or <paramref name="provider"/> is <see langword="null"/>.</exception>
-    internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider, IMessageBroker messageBroker) : ILogger
+    internal sealed class SanlogLogger(string category, SanlogLoggerProvider provider) : ILogger
     {
         /// <summary>
         /// The category for messages produced by the logger.
@@ -210,11 +30,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly SanlogLoggerProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
-        /// <summary>
-        /// The logger provider.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IMessageBroker _messageBroker = messageBroker ?? throw new ArgumentNullException(nameof(messageBroker));
 
         /// <inheritdoc/>
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _provider.ExternalScopeProvider?.Push(state);
@@ -258,7 +73,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
-                _ = _messageBroker.SendMessage(provider.GetType(), loggingEntry);
+                _ = _provider.SendMessage(loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",
