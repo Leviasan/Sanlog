@@ -16,7 +16,6 @@ namespace Sanlog
         /// <param name="handler">The handler of the message.</param>
         /// <returns><see langword="true"/> if the element is registered; <see langword="false"/> if the element is already present.</returns>
         bool Register(Type serviceType, IMessageHandler handler);
-
         /// <summary>
         /// Sends a message to handle.
         /// </summary>
