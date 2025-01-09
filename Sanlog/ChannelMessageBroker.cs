@@ -102,10 +102,13 @@ namespace Sanlog
             => message is not null && SendMessage(message.GetType(), message);
         /// <inheritdoc/>
         public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
-        {
-            ArgumentNullException.ThrowIfNull(serviceType);
-            return _channel.Writer.TryWrite(new MessageContext(serviceType, message));
-        }
+            => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
+        /// <inheritdoc/>
+        public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
+            => message is not null && await SendMessageAsync(message.GetType(), message, cancellationToken).ConfigureAwait(false);
+        /// <inheritdoc/>
+        public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
+            => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message);
         /// <inheritdoc/>
         /// <exception cref="InvalidOperationException">The service is started.</exception>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
