@@ -112,32 +112,37 @@ namespace Sanlog
         /// <inheritdoc/>
         /// <exception cref="InvalidOperationException">The service is started.</exception>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             if (_tokenSource is not null)
                 throw new InvalidOperationException("The service is started.");
 
             _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            while (await _channel.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
+            var task = new Task(async (state) =>
             {
-                while (_channel.Reader.TryRead(out var context))
+                while (await _channel.Reader.WaitToReadAsync(_tokenSource.Token).ConfigureAwait(false))
                 {
-                    try
+                    while (_channel.Reader.TryRead(out var context))
                     {
-                        if (_consumers.TryGetValue(context.ServiceType, out var handlers))
+                        try
                         {
-                            foreach (var handler in handlers)
+                            if (_consumers.TryGetValue(context.ServiceType, out var handlers))
                             {
-                                await handler.HandleAsync(context.Message, cancellationToken).ConfigureAwait(false);
+                                foreach (var handler in handlers)
+                                {
+                                    await handler.HandleAsync(context.Message, _tokenSource.Token).ConfigureAwait(false);
+                                }
                             }
                         }
-                    }
-                    catch
-                    {
-                        // ignored
+                        catch
+                        {
+                            // ignored
+                        }
                     }
                 }
-            }
+            }, cancellationToken);
+            task.Start();
+            return task;
         }
         /// <inheritdoc/>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="delay"/> represents a negative time interval other than <see cref="Timeout.InfiniteTimeSpan"/>.
