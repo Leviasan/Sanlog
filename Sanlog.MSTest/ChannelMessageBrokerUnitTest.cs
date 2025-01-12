@@ -9,7 +9,7 @@ namespace Sanlog.MSTest
     public sealed class ChannelMessageBrokerUnitTest
     {
         [TestMethod]
-        public void RegisterDuplicate()
+        public void RegisterDuplicateHandler()
         {
             var handler = new ObjectHandler();
             using var broker = new ChannelMessageBroker();
@@ -18,7 +18,20 @@ namespace Sanlog.MSTest
             Assert.IsTrue(broker.Register(typeof(object), new ObjectHandler()));
         }
         [TestMethod]
-        public async Task StartStop()
+        public async Task StartAndCancel()
+        {
+            using var cts = new CancellationTokenSource();
+            using var broker = new ChannelMessageBroker();
+            var task = broker.StartAsync(cts.Token);
+            await task.ConfigureAwait(false);
+
+            var handler = new ObjectHandler();
+            _ = broker.Register(typeof(object), handler);
+            Assert.IsTrue(broker.SendMessage(new object()));
+            await cts.CancelAsync().ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task StartAndStop()
         {
             using var cts = new CancellationTokenSource();
             using var broker = new ChannelMessageBroker();
@@ -27,13 +40,14 @@ namespace Sanlog.MSTest
             var handler = new ObjectHandler();
             _ = broker.Register(typeof(object), handler);
             Assert.IsTrue(broker.SendMessage(new object()));
-            await cts.CancelAsync().ConfigureAwait(false);
+            await broker.StopAsync(TimeSpan.FromSeconds(1), cts.Token).ConfigureAwait(false);
         }
 
         private sealed class ObjectHandler : IMessageHandler
         {
             public Task HandleAsync(object? message, CancellationToken cancellationToken)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 Assert.IsNotNull(message);
                 Assert.AreEqual(typeof(object), message.GetType());
                 return Task.CompletedTask;

@@ -114,35 +114,44 @@ namespace Sanlog
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
         public Task StartAsync(CancellationToken cancellationToken)
         {
+            // Releases cancellation token source
             if (_tokenSource is not null)
-                throw new InvalidOperationException("The service is started.");
-
+            {
+                if (_tokenSource.IsCancellationRequested == false)
+                {
+                    throw new InvalidOperationException("The message broker is started.");
+                }
+                else
+                {
+                    _tokenSource.Dispose();
+                }
+            }
+            // Creates new linked cancellation token source
             _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            var task = new Task(async (state) =>
+            // Starts listening to messages as a long-running operation
+            return Task.Factory.StartNew(async delegate
             {
                 while (await _channel.Reader.WaitToReadAsync(_tokenSource.Token).ConfigureAwait(false))
                 {
                     while (_channel.Reader.TryRead(out var context))
                     {
-                        try
+                        if (_consumers.TryGetValue(context.ServiceType, out var handlers))
                         {
-                            if (_consumers.TryGetValue(context.ServiceType, out var handlers))
+                            foreach (var handler in handlers)
                             {
-                                foreach (var handler in handlers)
+                                try
                                 {
                                     await handler.HandleAsync(context.Message, _tokenSource.Token).ConfigureAwait(false);
                                 }
+                                catch
+                                {
+                                    // ignored
+                                }
                             }
-                        }
-                        catch
-                        {
-                            // ignored
                         }
                     }
                 }
-            }, cancellationToken);
-            task.Start();
-            return task;
+            }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
         /// <inheritdoc/>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="delay"/> represents a negative time interval other than <see cref="Timeout.InfiniteTimeSpan"/>.
@@ -152,13 +161,12 @@ namespace Sanlog
         /// <exception cref="ObjectDisposedException">The provided <paramref name="cancellationToken"/> has already been disposed.</exception>
         public async Task StopAsync(TimeSpan delay, CancellationToken cancellationToken)
         {
-            if (_tokenSource is null)
+            if (_tokenSource is null || _tokenSource.IsCancellationRequested)
+            {
                 throw new InvalidOperationException("The service is not started.");
-
+            }
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             await _tokenSource.CancelAsync().ConfigureAwait(false);
-            _tokenSource.Dispose();
-            _tokenSource = null;
         }
 
         /// <summary>
