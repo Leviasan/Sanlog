@@ -40,7 +40,7 @@ namespace Sanlog.MSTest
             var handler = new ObjectHandler();
             _ = broker.Register(typeof(object), handler);
             Assert.IsTrue(broker.SendMessage(new object()));
-            await broker.StopAsync(TimeSpan.FromSeconds(1), cts.Token).ConfigureAwait(false);
+            await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);
         }
 
         private sealed class ObjectHandler : IMessageHandler
