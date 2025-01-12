@@ -26,7 +26,7 @@ namespace Sanlog.MSTest
             await task.ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            _ = broker.Register(typeof(object), handler);
+            Assert.IsTrue(broker.Register(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await cts.CancelAsync().ConfigureAwait(false);
         }
@@ -38,9 +38,24 @@ namespace Sanlog.MSTest
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            _ = broker.Register(typeof(object), handler);
+            Assert.IsTrue(broker.Register(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);
+        }
+        [TestMethod]
+        public async Task BoundedChannelBroker()
+        {
+            var counter = 0;
+            using var cts = new CancellationTokenSource();
+            using var broker = new ChannelMessageBroker(1, System.Threading.Channels.BoundedChannelFullMode.DropWrite, (obj) => ++counter);
+            await broker.StartAsync(cts.Token).ConfigureAwait(false);
+
+            var handler = new ObjectHandler();
+            Assert.IsTrue(broker.Register(typeof(object), handler));
+            for (var i = 0; i < 10; ++i)
+                Assert.IsTrue(broker.SendMessage(new object()));
+            await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);
+            Assert.AreNotEqual(0, counter);
         }
 
         private sealed class ObjectHandler : IMessageHandler
