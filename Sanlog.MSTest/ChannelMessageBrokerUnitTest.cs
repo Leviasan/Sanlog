@@ -13,9 +13,9 @@ namespace Sanlog.MSTest
         {
             var handler = new ObjectHandler();
             using var broker = new ChannelMessageBroker();
-            Assert.IsTrue(broker.Register(typeof(object), handler));
-            Assert.IsFalse(broker.Register(typeof(object), handler));
-            Assert.IsTrue(broker.Register(typeof(object), new ObjectHandler()));
+            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
+            Assert.IsFalse(broker.Subscribe(typeof(object), handler));
+            Assert.IsTrue(broker.Subscribe(typeof(object), new ObjectHandler()));
         }
         [TestMethod]
         public async Task StartAndCancel()
@@ -26,7 +26,7 @@ namespace Sanlog.MSTest
             await task.ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            Assert.IsTrue(broker.Register(typeof(object), handler));
+            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await cts.CancelAsync().ConfigureAwait(false);
         }
@@ -38,7 +38,7 @@ namespace Sanlog.MSTest
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            Assert.IsTrue(broker.Register(typeof(object), handler));
+            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);
         }
@@ -51,7 +51,7 @@ namespace Sanlog.MSTest
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            Assert.IsTrue(broker.Register(typeof(object), handler));
+            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
             for (var i = 0; i < 10; ++i)
                 Assert.IsTrue(broker.SendMessage(new object()));
             await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);

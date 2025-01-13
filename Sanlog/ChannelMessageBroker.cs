@@ -22,7 +22,7 @@ namespace Sanlog
         /// The dictionary of mappings between a message type and its handlers.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<IMessageHandler>> _consumers = [];
+        private readonly Dictionary<Type, HashSet<IMessageHandler>> _consumers;
         /// <summary>
         /// The source of the start operation cancellation token.
         /// </summary>
@@ -37,7 +37,8 @@ namespace Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelMessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
-        public ChannelMessageBroker() : this(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true })) { }
+        public ChannelMessageBroker()
+            : this(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true })) { }
         /// <summary>
         /// Initializes a new instance of the <see cref="ChannelMessageBroker"/> class based on a channel with the specified maximum capacity.
         /// </summary>
@@ -55,7 +56,11 @@ namespace Sanlog
         /// </summary>
         /// <param name="channel">The underlying channel.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="channel"/>is <see langword="null"/>.</exception>
-        private ChannelMessageBroker(Channel<MessageContext> channel) => _channel = channel ?? throw new ArgumentNullException(nameof(channel));
+        private ChannelMessageBroker(Channel<MessageContext> channel)
+        {
+            _channel = channel ?? throw new ArgumentNullException(nameof(channel));
+            _consumers = [];
+        }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -82,12 +87,11 @@ namespace Sanlog
         }
 
         /// <inheritdoc/>
-        public bool Register(Type serviceType, IMessageHandler handler)
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        public bool Subscribe(Type serviceType, IMessageHandler handler)
         {
-            ArgumentNullException.ThrowIfNull(serviceType);
             ArgumentNullException.ThrowIfNull(handler);
-
-            if (_consumers.TryGetValue(serviceType, out var handlers))
+            if (_consumers.TryGetValue(serviceType, out var handlers)) // ArgumentNullException
             {
                 return handlers.Add(handler);
             }
@@ -97,6 +101,17 @@ namespace Sanlog
                 return _consumers[serviceType].Add(handler);
             }
         }
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        public bool Unsubscribe(Type serviceType, IMessageHandler handler)
+        {
+            ArgumentNullException.ThrowIfNull(handler);
+            return _consumers.TryGetValue(serviceType, out var handlers) && handlers.Remove(handler); // ArgumentNullException
+        }
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
+        public bool Unsubscribe(Type serviceType)
+            => _consumers.Remove(serviceType); // ArgumentNullException
         /// <inheritdoc/>
         public bool SendMessage<TMessage>(TMessage? message)
             => message is not null && SendMessage(message.GetType(), message);
@@ -163,7 +178,7 @@ namespace Sanlog
         {
             if (_tokenSource is null || _tokenSource.IsCancellationRequested)
             {
-                throw new InvalidOperationException("The service is not started.");
+                throw new InvalidOperationException("The message broker is not started.");
             }
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             await _tokenSource.CancelAsync().ConfigureAwait(false);

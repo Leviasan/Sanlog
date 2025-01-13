@@ -14,8 +14,21 @@ namespace Sanlog
         /// </summary>
         /// <param name="serviceType">The message type to handle.</param>
         /// <param name="handler">The handler of the message.</param>
-        /// <returns><see langword="true"/> if the element is registered; <see langword="false"/> if the element is already present.</returns>
-        bool Register(Type serviceType, IMessageHandler handler);
+        /// <returns><see langword="true"/> if the handler is registered; <see langword="false"/> if the handler is already present.</returns>
+        bool Subscribe(Type serviceType, IMessageHandler handler);
+        /// <summary>
+        /// Unsubscribes a service from listen to messages of the <paramref name="serviceType"/>.
+        /// </summary>
+        /// <param name="serviceType">The message type to handle.</param>
+        /// <param name="handler">The handler of the message.</param>
+        /// <returns><see langword="true"/> if operation to remove handler is successful; <see langword="false"/> if the handler is not found.</returns>
+        bool Unsubscribe(Type serviceType, IMessageHandler handler);
+        /// <summary>
+        /// Unsubscribes all services from listen to messages of the <paramref name="serviceType"/>.
+        /// </summary>
+        /// <param name="serviceType">The message type to handle.</param>
+        /// <returns><see langword="true"/> if all handlers are unsubscribe; otherwise <see langword="false"/>.</returns>
+        bool Unsubscribe(Type serviceType);
         /// <summary>
         /// Sends a message to handle.
         /// </summary>
