@@ -1,8 +1,11 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Sanlog.MSTest
 {
     [TestClass]
+    [SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "Unit-test class must be public")]
     public sealed class FormattedLogValuesFormatterUnitTest
     {
         [TestMethod]
