@@ -8,7 +8,7 @@
         {
             var counter = 0;
             using var cts = new CancellationTokenSource();
-            using var broker = new ChannelMessageBroker(1, System.Threading.Channels.BoundedChannelFullMode.DropWrite, (obj) => ++counter);
+            using var broker = new MessageBroker(1, System.Threading.Channels.BoundedChannelFullMode.DropWrite, (obj) => ++counter);
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();

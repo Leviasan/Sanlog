@@ -11,7 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.
     /// </summary>
-    public sealed class ChannelMessageBroker : IMessageBroker, IDisposable
+    public sealed class MessageBroker : IMessageBroker, IDisposable
     {
         /// <summary>
         /// The underlying channel.
@@ -35,28 +35,28 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelMessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
+        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
-        public ChannelMessageBroker()
+        public MessageBroker()
             : this(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true })) { }
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelMessageBroker"/> class based on a channel with the specified maximum capacity.
+        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a channel with the specified maximum capacity.
         /// </summary>
         /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
         /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
-        public ChannelMessageBroker(int capacity, BoundedChannelFullMode fullMode, Action<object?>? itemDropped)
+        public MessageBroker(int capacity, BoundedChannelFullMode fullMode, Action<object?>? itemDropped)
             : this(Channel.CreateBounded<MessageContext>(
                 options: new BoundedChannelOptions(capacity) { FullMode = fullMode, SingleReader = true },
                 itemDropped: itemDropped is not null ? (context) => itemDropped?.Invoke(context.Message) : null))
         { }
         /// <summary>
-        /// Initializes a new instance of the <see cref="ChannelMessageBroker"/> class with the specified channel.
+        /// Initializes a new instance of the <see cref="MessageBroker"/> class with the specified channel.
         /// </summary>
         /// <param name="channel">The underlying channel.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="channel"/>is <see langword="null"/>.</exception>
-        private ChannelMessageBroker(Channel<MessageContext> channel)
+        private MessageBroker(Channel<MessageContext> channel)
         {
             _channel = channel ?? throw new ArgumentNullException(nameof(channel));
             _consumers = [];

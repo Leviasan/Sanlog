@@ -9,7 +9,7 @@ namespace Sanlog.MSTest
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
         private ObjectHandler _objectHandler;
         private CancellationTokenSource _cts;
-        private ChannelMessageBroker _broker;
+        private MessageBroker _broker;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [TestInitialize]
@@ -17,7 +17,7 @@ namespace Sanlog.MSTest
         {
             _objectHandler = new ObjectHandler();
             _cts = new CancellationTokenSource();
-            _broker = new ChannelMessageBroker();
+            _broker = new MessageBroker();
         }
 
         [TestCleanup]
@@ -51,7 +51,7 @@ namespace Sanlog.MSTest
         public async Task StartAndStop()
         {
             using var cts = new CancellationTokenSource();
-            using var broker = new ChannelMessageBroker();
+            using var broker = new MessageBroker();
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
