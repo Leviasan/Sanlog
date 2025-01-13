@@ -20,6 +20,10 @@ namespace Sanlog
     public class SensitiveFormatter(IReadOnlyCollection<KeyValuePair<string, object?>> collection) : IFormatProvider, ICustomFormatter, IEnumerable<KeyValuePair<string, object?>>
     {
         /// <summary>
+        /// The operator in front of the argument name tells the formatter to serialize the object passed in, rather than convert it using ToString().
+        /// </summary>
+        public const string SerializeOperator = "@";
+        /// <summary>
         /// The message format of the redacted value.
         /// </summary>
         public const string RedactedValue = "[Redacted]";
@@ -58,6 +62,22 @@ namespace Sanlog
         public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             var provider = Equals(formatProvider) ? CultureInfo : formatProvider;
+            if (format is not null && format.Length == 1 && format.Equals(SerializeOperator, StringComparison.Ordinal) && arg is not null)
+            {
+                var props = arg.GetType().GetProperties();
+                var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
+                var stringBuilder = new StringBuilder(256).Append('{');
+                for (var index = 0; index < nodes.Length; ++index)
+                {
+                    var node = nodes.ElementAt(index);
+                    stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
+                    if (index < nodes.Length - 1)
+                        stringBuilder.Append(',');
+                    else
+                        stringBuilder.Append(' ');
+                }
+                return stringBuilder.Append('}').ToString();
+            }
             return arg switch
             {
                 IFormattable formattable => formattable.ToString(format, provider),
@@ -93,12 +113,17 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(key);
             for (var index = 0; index < _collection.Count; ++index)
             {
-                if (_collection.ElementAt(index).Key == key)
+                if (EqualOrdinal(_collection.ElementAt(index).Key, key))
                 {
                     return index;
                 }
             }
             return -1;
+
+            static bool EqualOrdinal(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
+            {
+                return left.Equals(rigth, StringComparison.Ordinal) || left.Length > 1 && left.StartsWith(SerializeOperator, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal);
+            }
         }
         /// <summary>
         /// Returns the element at a specified index in the sequence.
@@ -110,8 +135,9 @@ namespace Sanlog
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
             var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
+            var newkey = kvp.Key[(kvp.Key.StartsWith(SerializeOperator, StringComparison.Ordinal) ? 1 : 0)..];
             var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
-            return KeyValuePair.Create(kvp.Key, newvalue);
+            return KeyValuePair.Create(newkey, newvalue);
         }
         /// <summary>
         /// Returns the element with the specified key in a sequence.
@@ -125,8 +151,9 @@ namespace Sanlog
         {
             ArgumentNullException.ThrowIfNull(key);
             var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
+            var newkey = kvp.Key[(kvp.Key.StartsWith(SerializeOperator, StringComparison.Ordinal) ? 1 : 0)..];
             var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
-            return KeyValuePair.Create(kvp.Key, newvalue);
+            return KeyValuePair.Create(newkey, newvalue);
         }
         /// <summary>
         /// Returns the string representation of the element at a specified index in a sequence.
@@ -164,8 +191,15 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            var configuration = SensitiveConfiguration ?? new SensitiveFormatterOptions();
-            return redacted && configuration.IsSensitive(SensitiveKeyType.SegmentName, key) ? RedactedValue : SensitiveObject(value, redacted);
+            if (redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, key))
+            {
+                return RedactedValue;
+            }
+            else if (key.StartsWith(SerializeOperator, StringComparison.Ordinal) && value is not null)
+            {
+                return Format(SerializeOperator, value, this);
+            }
+            return SensitiveObject(value, redacted);
 
             object? SensitiveObject(object? value, bool redacted)
             {
@@ -182,7 +216,7 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : SensitiveObject(entry.Value, redacted);
+                        var newvalue = redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : SensitiveObject(entry.Value, redacted);
                         newdict.Add(newkey, newvalue);
                     }
                     return newdict;
@@ -195,7 +229,7 @@ namespace Sanlog
                         var elementType = type.GetElementType();
                         if (elementType is not null && elementType.IsPrimitive)
                         {
-                            return redacted && configuration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
+                            return redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
                                 ? ArrayToFormat(enumerable, elementType, this)
                                 : enumerable;
                         }
@@ -205,7 +239,7 @@ namespace Sanlog
                         var elementType = type.GenericTypeArguments.First();
                         if (elementType.IsPrimitive)
                         {
-                            return redacted && configuration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
+                            return redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
                                 ? ArrayToFormat(enumerable, elementType, this)
                                 : enumerable;
                         }

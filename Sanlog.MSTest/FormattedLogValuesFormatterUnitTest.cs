@@ -125,5 +125,23 @@ namespace Sanlog.MSTest
             formatter.FormattedConfiguration.DoubleFormat = "E";
             Assert.AreEqual("3,141593E+000", formatter.GetObjectAsString("DoubleValue", false).Value);
         }
+        [TestMethod]
+        public void SerilogSerializeOperator()
+        {
+            var elapsedMs = 34;
+            // Standard NET behavior for anonymous type https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/types/anonymous-types
+            var formatter = new FormattedLogValuesFormatter("Processed {Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, elapsedMs);
+            Assert.AreEqual("Processed { Latitude = 25, Longitude = 134 } in 034 ms.", formatter.ToString());
+            // Serilog feature @
+            var serilogFormatter = new FormattedLogValuesFormatter("Processed {@Position} in {Elapsed:000} ms.", new Position(25, 134), elapsedMs);
+            Assert.AreEqual(0, serilogFormatter.IndexOf("Position"));
+            Assert.AreEqual(0, serilogFormatter.IndexOf("@Position"));
+            Assert.AreEqual("Processed { Latitude = 25, Longitude = 134 } in 034 ms.", serilogFormatter.ToString());
+
+            Assert.AreEqual("Position", formatter.GetObject(0, false).Key);
+            Assert.AreEqual("Position", serilogFormatter.GetObject(0, false).Key);
+        }
+
+        private sealed record class Position(int Latitude, int Longitude);
     }
 }
