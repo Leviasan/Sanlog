@@ -47,7 +47,7 @@ namespace Sanlog
             if (IsEnabled(logLevel))
             {
                 var options = _provider.Options;
-                var formattedLogValuesFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
+                var customFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
                 {
                     SensitiveConfiguration = _provider.Options.SensitiveConfiguration,
                     FormattedConfiguration = _provider.Options.FormattedConfiguration
@@ -64,8 +64,8 @@ namespace Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = formattedLogValuesFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? formatter.Invoke(state, exception) : formattedLogValuesFormatter.ToString(),
-                    Properties = formattedLogValuesFormatter.SelectFormat(),
+                    Message = customFormatter.ToString(() => formatter.Invoke(state, exception)),
+                    Properties = customFormatter.SelectFormat(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -142,7 +142,7 @@ namespace Sanlog
                                 TenantId = options.TenantId,
                                 Id = Guid.NewGuid(),
                                 Type = scope.GetType().FullName,
-                                Message = formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 ? Convert.ToString(scope, formatProvider) : formatter.ToString(),
+                                Message = formatter.ToString(() => Convert.ToString(scope, formatProvider)),
                                 LogEntryId = logEntryId,
                                 Properties = formatter.SelectFormat()
                             };
