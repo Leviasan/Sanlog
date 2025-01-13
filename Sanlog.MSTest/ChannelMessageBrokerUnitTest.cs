@@ -16,6 +16,8 @@ namespace Sanlog.MSTest
             Assert.IsTrue(broker.Subscribe(typeof(object), handler));
             Assert.IsFalse(broker.Subscribe(typeof(object), handler));
             Assert.IsTrue(broker.Subscribe(typeof(object), new ObjectHandler()));
+            Assert.IsTrue(broker.Unsubscribe(typeof(object), handler));
+            Assert.IsFalse(broker.Unsubscribe(typeof(object), handler));
         }
         [TestMethod]
         public async Task StartAndCancel()
@@ -29,6 +31,7 @@ namespace Sanlog.MSTest
             Assert.IsTrue(broker.Subscribe(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await cts.CancelAsync().ConfigureAwait(false);
+            Assert.IsTrue(broker.Unsubscribe(typeof(object)));
         }
         [TestMethod]
         public async Task StartAndStop()
