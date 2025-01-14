@@ -216,18 +216,6 @@ namespace Sanlog
         #endregion
 
         /// <summary>
-        /// Returns a string that represents the current object.
-        /// </summary>
-        /// <param name="formatter">Функция обратного вызова, которая вызывается, если <see cref="OriginalFormat"/> не определен.</param>
-        /// <returns>A string that represents the current object.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
-        public string? ToString(Func<string?> formatter)
-        {
-            ArgumentNullException.ThrowIfNull(formatter);
-            return IndexOf(OriginalFormat) == -1 ? formatter.Invoke() : ToString();
-        }
-
-        /// <summary>
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
         /// </summary>
         /// <returns>An enumerable whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>

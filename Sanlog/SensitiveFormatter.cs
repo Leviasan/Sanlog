@@ -69,12 +69,9 @@ namespace Sanlog
                 var stringBuilder = new StringBuilder(256).Append('{');
                 for (var index = 0; index < nodes.Length; ++index)
                 {
-                    var node = nodes.ElementAt(index);
-                    stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
-                    if (index < nodes.Length - 1)
-                        stringBuilder.Append(',');
-                    else
-                        stringBuilder.Append(' ');
+                    var node = nodes[index];
+                    _ = stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
+                    _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
                 }
                 return stringBuilder.Append('}').ToString();
             }
@@ -121,9 +118,7 @@ namespace Sanlog
             return -1;
 
             static bool EqualOrdinal(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
-            {
-                return left.Equals(rigth, StringComparison.Ordinal) || left.Length > 1 && left.StartsWith(SerializeOperator, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal);
-            }
+                => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(SerializeOperator, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
         }
         /// <summary>
         /// Returns the element at a specified index in the sequence.
