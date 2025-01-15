@@ -12,14 +12,16 @@ namespace Sanlog
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable IDE0290 // Use primary constructor
 #pragma warning disable IDE0021 // Use expression body for constructor
-    public sealed class SensitiveDictionary : Dictionary<string, object?>
+    public sealed class SensitiveKeyedCollection : System.Collections.ObjectModel.KeyedCollection<string, object?>
     {
-        public SensitiveDictionary(ICustomFormatter formatter)
+        public SensitiveKeyedCollection(ICustomFormatter formatter)
         {
             Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
         }
 
         public ICustomFormatter Formatter { get; }
+
+        protected override string GetKeyForItem(object? item) => throw new NotImplementedException();
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning restore IDE0290 // Use primary constructor
@@ -39,20 +41,6 @@ namespace Sanlog
         /// The operator in front of the argument name tells the formatter to serialize the object passed in, rather than convert it using ToString().
         /// </summary>
         public const string OperatorSerialize = "@";
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public const string FormatProperty = "P";
-        /// <summary>
-        /// 
-        /// </summary>
-        public const string FormatRedactedValue = "R";
-        /// <summary>
-        /// 
-        /// </summary>
-        public const string FormatArrayCollapse = "C";
-
         /// <summary>
         /// The message format of the redacted value.
         /// </summary>
@@ -94,7 +82,7 @@ namespace Sanlog
         {
             if (Equals(formatProvider) && format is not null && arg is not null)
             {
-                if (format.Equals(FormatProperty, StringComparison.Ordinal))
+                if (format.Equals("P", StringComparison.Ordinal))
                 {
                     var props = arg.GetType().GetProperties();
                     var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
@@ -107,11 +95,11 @@ namespace Sanlog
                     }
                     return stringBuilder.Append('}').ToString();
                 }
-                else if (format.Equals(FormatRedactedValue, StringComparison.Ordinal))
+                else if (format.Equals("R", StringComparison.Ordinal))
                 {
                     return RedactedValue;
                 }
-                else if (format.Equals(FormatArrayCollapse, StringComparison.Ordinal) && arg is IEnumerable enumerable)
+                else if (format.Equals("C", StringComparison.Ordinal) && arg is IEnumerable enumerable)
                 {
                     var type = enumerable.GetType();
                     if (type.IsArray)
@@ -122,7 +110,7 @@ namespace Sanlog
                     }
                     else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
                     {
-                        var elementType = type.GenericTypeArguments.First();
+                        var elementType = type.GenericTypeArguments[0];
                         return ArrayToFormat(enumerable, elementType, this);
                     }
                 }
@@ -254,11 +242,11 @@ namespace Sanlog
         {
             if (redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, key))
             {
-                return Format(FormatRedactedValue, value, this);
+                return Format("R", value, this);
             }
             else if (key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null)
             {
-                return Format(FormatProperty, value, this);
+                return Format("P", value, this);
             }
             return SensitiveObject(value, redacted);
 
@@ -273,19 +261,19 @@ namespace Sanlog
                 };
                 IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted)
                 {
-                    var newdictionary = new Dictionary<string, object?>(dictionary.Count);
+                    var newDictionary = new Dictionary<string, object?>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
-                        var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? Format(FormatRedactedValue, entry.Value, this) : SensitiveObject(entry.Value, redacted);
-                        newdictionary.Add(newkey, newvalue);
+                        var newKey = Format(null, entry.Key, this);
+                        var newValue = redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newKey) ? Format("R", entry.Value, this) : SensitiveObject(entry.Value, redacted);
+                        newDictionary.Add(newKey, newValue);
                     }
-                    return newdictionary;
+                    return newDictionary;
                 }
                 IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
                 {
                     if (redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapseArray, key))
-                        return Format(FormatArrayCollapse, enumerable, this);
+                        return Format("C", enumerable, this);
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
                         _ = newlist.Add(SensitiveObject(value, redacted));
