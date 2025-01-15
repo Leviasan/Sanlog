@@ -12,7 +12,7 @@
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
+            Assert.IsTrue(broker.Register(typeof(object), handler));
             for (var i = 0; i < 10; ++i)
                 Assert.IsTrue(broker.SendMessage(new object()));
             await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);

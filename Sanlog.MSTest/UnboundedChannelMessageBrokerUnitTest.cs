@@ -30,12 +30,12 @@ namespace Sanlog.MSTest
         [TestMethod]
         public void Subscribe()
         {
-            Assert.IsTrue(_broker.Subscribe(typeof(object), _objectHandler));
-            Assert.IsFalse(_broker.Subscribe(typeof(object), _objectHandler)); // Expected false because service is registered before
-            Assert.IsTrue(_broker.Subscribe(typeof(object), new ObjectHandler()));
-            Assert.IsTrue(_broker.Unsubscribe(typeof(object), _objectHandler));
-            Assert.IsFalse(_broker.Unsubscribe(typeof(object), _objectHandler)); // Expected false because service is unregistered before
-            Assert.IsTrue(_broker.Unsubscribe(typeof(object))); // Expected true because subscribe 'new ObjectHandler()' is not unregistered yet
+            Assert.IsTrue(_broker.Register(typeof(object), _objectHandler));
+            Assert.IsFalse(_broker.Register(typeof(object), _objectHandler)); // Expected false because service is registered before
+            Assert.IsTrue(_broker.Register(typeof(object), new ObjectHandler()));
+            Assert.IsTrue(_broker.Remove(typeof(object), _objectHandler));
+            Assert.IsFalse(_broker.Remove(typeof(object), _objectHandler)); // Expected false because service is unregistered before
+            Assert.IsTrue(_broker.Remove(typeof(object))); // Expected true because subscribe 'new ObjectHandler()' is not unregistered yet
         }
         [TestMethod]
         public async Task StartAndCancel()
@@ -43,7 +43,7 @@ namespace Sanlog.MSTest
             var task = _broker.StartAsync(_cts.Token);
             await task.ConfigureAwait(false);
 
-            Assert.IsTrue(_broker.Subscribe(typeof(object), _objectHandler));
+            Assert.IsTrue(_broker.Register(typeof(object), _objectHandler));
             Assert.IsTrue(_broker.SendMessage(new object()));
             await _cts.CancelAsync().ConfigureAwait(false);
         }
@@ -55,7 +55,7 @@ namespace Sanlog.MSTest
             await broker.StartAsync(cts.Token).ConfigureAwait(false);
 
             var handler = new ObjectHandler();
-            Assert.IsTrue(broker.Subscribe(typeof(object), handler));
+            Assert.IsTrue(broker.Register(typeof(object), handler));
             Assert.IsTrue(broker.SendMessage(new object()));
             await broker.StopAsync(TimeSpan.Zero, cts.Token).ConfigureAwait(false);
         }

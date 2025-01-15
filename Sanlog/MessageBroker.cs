@@ -88,7 +88,7 @@ namespace Sanlog
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public bool Subscribe(Type serviceType, IMessageHandler handler)
+        public bool Register(Type serviceType, IMessageHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             if (_consumers.TryGetValue(serviceType, out var handlers)) // ArgumentNullException
@@ -103,14 +103,14 @@ namespace Sanlog
         }
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public bool Unsubscribe(Type serviceType, IMessageHandler handler)
+        public bool Remove(Type serviceType, IMessageHandler handler)
         {
             ArgumentNullException.ThrowIfNull(handler);
             return _consumers.TryGetValue(serviceType, out var handlers) && handlers.Remove(handler); // ArgumentNullException
         }
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
-        public bool Unsubscribe(Type serviceType)
+        public bool Remove(Type serviceType)
             => _consumers.Remove(serviceType); // ArgumentNullException
         /// <inheritdoc/>
         public bool SendMessage<TMessage>(TMessage? message)
