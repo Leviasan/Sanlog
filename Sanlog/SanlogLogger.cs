@@ -49,17 +49,17 @@ namespace Sanlog
                 var options = _provider.Options;
                 var stateFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
                 {
-                    SensitiveConfiguration = _provider.Options.SensitiveConfiguration,
-                    FormattedConfiguration = _provider.Options.FormattedConfiguration,
-                    CultureInfo = _provider.Options.CultureInfo
+                    SensitiveConfiguration = options.SensitiveConfiguration,
+                    FormattedConfiguration = options.FormattedConfiguration,
+                    CultureInfo = options.CultureInfo
                 };
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
-                    TenantId = _provider.Options.TenantId,
+                    TenantId = options.TenantId,
                     Id = logEntryId,
-                    AppId = _provider.Options.AppId,
-                    Version = _provider.Options.OnRetrieveVersion?.Invoke(),
+                    AppId = options.AppId,
+                    Version = options.OnRetrieveVersion?.Invoke(),
                     Timestamp = DateTime.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
@@ -72,8 +72,8 @@ namespace Sanlog
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(_provider.Options, Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(_provider.Options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(options, Guid.NewGuid(), exception, logEntryId, null)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
                         : []
                 };
                 _ = _provider.SendMessage(loggingEntry);
