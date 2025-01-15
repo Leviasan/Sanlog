@@ -83,7 +83,7 @@ namespace Sanlog
                 {
                     throw new ArgumentException("Passed less than the minimum number of arguments that must be passed to a formatting operation.", nameof(args));
                 }
-                foreach (var segment in messageTemplate)
+                foreach (var segment in messageTemplate.Segments)
                 {
                     if (dictionary.ContainsKey(segment))
                     {
@@ -201,7 +201,7 @@ namespace Sanlog
             object?[] TakeBySegmentOrder(MessageTemplate messageTemplate)
             {
                 var dictionary = new Dictionary<string, object?>();
-                foreach (var segment in messageTemplate)
+                foreach (var segment in messageTemplate.Segments)
                 {
                     if (dictionary.ContainsKey(segment))
                     {

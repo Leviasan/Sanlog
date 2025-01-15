@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a composite/named message template.
     /// </summary>
-    public sealed class MessageTemplate : IReadOnlyList<string>
+    public sealed class MessageTemplate
     {
         /// <summary>
         /// The delimiters used by composite string.
@@ -139,10 +138,10 @@ namespace Sanlog
         /// Gets the composite format string.
         /// </summary>
         public CompositeFormat CompositeFormat { get; }
-        /// <inheritdoc/>
-        public int Count => _segments.Count;
-        /// <inheritdoc/>
-        public string this[int index] => _segments[index];
+        /// <summary>
+        /// Gets the segments that make up the composite format string.
+        /// </summary>
+        public IReadOnlyList<string> Segments => _segments;
 
         /// <summary>
         /// Replaces a format item or items in the current instance with the string representation of the corresponding objects in the specified format.
@@ -153,12 +152,11 @@ namespace Sanlog
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">The index of a format item is greater than or equal to the number of supplied arguments.</exception>
         public string Format(IFormatProvider? formatProvider, params object?[] args) => string.Format(formatProvider, CompositeFormat, args);
-        /// <inheritdoc/>
-        public IEnumerator<string> GetEnumerator() => _segments.GetEnumerator();
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        #region Override: Object
         /// <inheritdoc/>
         public override string ToString() => CompositeFormat.Format;
+        #endregion
 
         /// <summary>
         /// Defines segment naming convention.

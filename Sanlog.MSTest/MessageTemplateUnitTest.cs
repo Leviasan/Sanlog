@@ -13,7 +13,7 @@ namespace Sanlog.MSTest
         public void FormatEmpty()
         {
             var messageTemplate = new MessageTemplate("Timestamp: {Timestamp}");
-            Assert.AreEqual("Timestamp", messageTemplate[0]);
+            Assert.AreEqual("Timestamp", messageTemplate.Segments[0]);
             Assert.AreEqual("Timestamp: {0}", messageTemplate.CompositeFormat.Format);
             Assert.AreEqual("Timestamp: 05/22/2024 23:56:18", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
@@ -21,7 +21,7 @@ namespace Sanlog.MSTest
         public void FormatFormatString()
         {
             var messageTemplate = new MessageTemplate("Timestamp: {Timestamp:Y}");
-            Assert.AreEqual("Timestamp", messageTemplate[0]);
+            Assert.AreEqual("Timestamp", messageTemplate.Segments[0]);
             Assert.AreEqual("Timestamp: {0:Y}", messageTemplate.CompositeFormat.Format);
             Assert.AreEqual("Timestamp: 2024 May", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
@@ -29,7 +29,7 @@ namespace Sanlog.MSTest
         public void FormatAlignmentAndFormatString()
         {
             var messageTemplate = new MessageTemplate("Timestamp: {Timestamp,-22:Y}");
-            Assert.AreEqual("Timestamp", messageTemplate[0]);
+            Assert.AreEqual("Timestamp", messageTemplate.Segments[0]);
             Assert.AreEqual("Timestamp: {0,-22:Y}", messageTemplate.CompositeFormat.Format);
             Assert.AreEqual("Timestamp: 2024 May              ", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue));
         }
@@ -37,9 +37,9 @@ namespace Sanlog.MSTest
         public void FormatThreeItemsWithTwoEqualsAndDifferentFormats()
         {
             var messageTemplate = new MessageTemplate("Year month: {Timestamp:Y}. StringComparison: {StringComparison:D}. Sortable date/time: {Timestamp:s}.");
-            Assert.AreEqual("Timestamp", messageTemplate[0]);
-            Assert.AreEqual("StringComparison", messageTemplate[1]);
-            Assert.AreEqual("Timestamp", messageTemplate[2]);
+            Assert.AreEqual("Timestamp", messageTemplate.Segments[0]);
+            Assert.AreEqual("StringComparison", messageTemplate.Segments[1]);
+            Assert.AreEqual("Timestamp", messageTemplate.Segments[2]);
             Assert.AreEqual("Year month: {0:Y}. StringComparison: {1:D}. Sortable date/time: {0:s}.", messageTemplate.CompositeFormat.Format);
             Assert.AreEqual("Year month: 2024 May. StringComparison: 4. Sortable date/time: 2024-05-22T23:56:18.", messageTemplate.Format(CultureInfo.InvariantCulture, DateTimeValue, StringComparisonValue));
         }
@@ -56,9 +56,9 @@ namespace Sanlog.MSTest
         {
             var format = "{1} {0} {2}";
             var messageTemplate = new MessageTemplate(format);
-            Assert.AreEqual("1", messageTemplate[0]);
-            Assert.AreEqual("0", messageTemplate[1]);
-            Assert.AreEqual("2", messageTemplate[2]);
+            Assert.AreEqual("1", messageTemplate.Segments[0]);
+            Assert.AreEqual("0", messageTemplate.Segments[1]);
+            Assert.AreEqual("2", messageTemplate.Segments[2]);
             Assert.AreEqual(string.Format(CultureInfo.InvariantCulture, CompositeFormat.Parse(format), 0, 1, 2), messageTemplate.Format(CultureInfo.InvariantCulture, 0, 1, 2));
         }
         [TestMethod]
