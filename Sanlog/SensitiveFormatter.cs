@@ -66,7 +66,6 @@ namespace Sanlog
         /// <inheritdoc/>
         public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
-            var provider = Equals(formatProvider) ? CultureInfo : formatProvider;
             if (format is not null && format.Length == 1 && format.Equals(SerializeOperator, StringComparison.Ordinal) && arg is not null)
             {
                 var props = arg.GetType().GetProperties();
@@ -80,6 +79,7 @@ namespace Sanlog
                 }
                 return stringBuilder.Append('}').ToString();
             }
+            var provider = Equals(formatProvider) ? CultureInfo : formatProvider;
             return arg switch
             {
                 IFormattable formattable => formattable.ToString(format, provider),
