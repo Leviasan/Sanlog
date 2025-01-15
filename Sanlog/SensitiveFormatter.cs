@@ -82,7 +82,11 @@ namespace Sanlog
         {
             if (Equals(formatProvider) && format is not null && arg is not null)
             {
-                if (format.Equals("P", StringComparison.Ordinal))
+                if (format.Equals("R", StringComparison.Ordinal))
+                {
+                    return RedactedValue;
+                }
+                else if (format.Equals("P", StringComparison.Ordinal))
                 {
                     var props = arg.GetType().GetProperties();
                     var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
@@ -94,10 +98,6 @@ namespace Sanlog
                         _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
                     }
                     return stringBuilder.Append('}').ToString();
-                }
-                else if (format.Equals("R", StringComparison.Ordinal))
-                {
-                    return RedactedValue;
                 }
                 else if (format.Equals("C", StringComparison.Ordinal) && arg is IEnumerable enumerable)
                 {
