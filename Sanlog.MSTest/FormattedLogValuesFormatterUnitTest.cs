@@ -141,7 +141,5 @@ namespace Sanlog.MSTest
             Assert.AreEqual("Position", formatter.GetObject(0, false).Key);
             Assert.AreEqual("Position", serilogFormatter.GetObject(0, false).Key);
         }
-
-        private sealed record class Position(int Latitude, int Longitude);
     }
 }
