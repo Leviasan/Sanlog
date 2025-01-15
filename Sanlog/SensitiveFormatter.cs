@@ -44,6 +44,11 @@ namespace Sanlog
         private SensitiveFormatterOptions? _configuration;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SensitiveFormatter"/> class.
+        /// </summary>
+        public SensitiveFormatter() : this([]) { }
+
+        /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
         public CultureInfo? CultureInfo { get; set; }
