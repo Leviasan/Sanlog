@@ -116,14 +116,16 @@ namespace Sanlog
         public bool SendMessage<TMessage>(TMessage? message)
             => message is not null && SendMessage(message.GetType(), message);
         /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
         public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
             => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
         /// <inheritdoc/>
         public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
             => message is not null && await SendMessageAsync(message.GetType(), message, cancellationToken).ConfigureAwait(false);
         /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
         public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
-            => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message);
+            => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message); // ArgumentNullException
         /// <inheritdoc/>
         /// <exception cref="InvalidOperationException">The service is started.</exception>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
