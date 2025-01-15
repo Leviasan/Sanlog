@@ -12,9 +12,9 @@ namespace Sanlog
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 #pragma warning disable IDE0290 // Use primary constructor
 #pragma warning disable IDE0021 // Use expression body for constructor
-    public sealed class CustomFormatterManager
+    public sealed class SensitiveDictionary : Dictionary<string, object?>
     {
-        public CustomFormatterManager(ICustomFormatter formatter)
+        public SensitiveDictionary(ICustomFormatter formatter)
         {
             Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
         }
