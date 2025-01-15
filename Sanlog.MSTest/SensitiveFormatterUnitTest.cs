@@ -18,16 +18,11 @@
             Assert.AreNotEqual(configuration, formatter.SensitiveConfiguration);
         }
         [TestMethod]
-        public void SerializeOperator()
-        {
-            var formatter = new SensitiveFormatter();
-            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", formatter.Format("@", new Position(25, 134), null));
-        }
-        [TestMethod]
         public void CustomFormatter()
         {
             var position = new Position(25, 134);
             var formatter = new SensitiveFormatter();
+            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", formatter.Format("@", position, null));
             Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", string.Format(formatter, "{0:@}", position));
             Assert.AreEqual(position.ToString(), string.Format(formatter, "{0}", position));
         }
