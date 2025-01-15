@@ -100,12 +100,7 @@ namespace Sanlog
         /// <summary>
         /// Makes the configuration read-only.
         /// </summary>
-        /// <returns>Returns the current instance.</returns>
-        public SensitiveFormatterOptions MakeReadOnly()
-        {
-            IsReadOnly = true;
-            return this;
-        }
+        public void MakeReadOnly() => IsReadOnly = true;
         /// <summary>
         /// Removes all properties with the specified sensitive key type.
         /// </summary>
@@ -127,14 +122,35 @@ namespace Sanlog
         /// <param name="property">The property whose value belongs to sensitive data.</param>
         /// <returns><see langword="true"/> if the element is successfully found and removed; otherwise, <see langword="false"/>.
         /// This method returns <see langword="false"/> if <paramref name="type"/> or <paramref name="property"/> is not found.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
         /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         public bool RemoveSensitive(SensitiveKeyType type, string property)
         {
             CheckReadOnly(); // InvalidOperationException
+            ArgumentNullException.ThrowIfNull(property);
             return Enum.IsDefined(type)
                 ? _dictionary.TryGetValue(type, out var hashset) && hashset.Remove(property)
                 : throw new InvalidEnumArgumentException(nameof(type), (int)type, typeof(SensitiveKeyType));
+        }
+        /// <summary>
+        /// Removes an array of properties whose value belongs to sensitive data.
+        /// </summary>
+        /// <param name="type">The sensitive key type.</param>
+        /// <param name="args">An array of properties whose value belongs to sensitive data.</param>
+        /// <returns>The count of the removed element.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> or at least one element in the specified array is <see langword="null"/>.</exception>
+        /// <exception cref="InvalidEnumArgumentException">The <paramref name="type"/> in invalid.</exception>
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        public int RemoveSensitive(SensitiveKeyType type, params string[] args)
+        {
+            ArgumentNullException.ThrowIfNull(args);
+            if (!Array.TrueForAll(args, x => x is not null))
+                throw new ArgumentNullException(nameof(args), "At least one element in the specified array was null.");
+            var count = 0;
+            foreach (var name in args)
+                count += Convert.ToInt32(RemoveSensitive(type, name)); // InvalidEnumArgumentException + InvalidOperationException
+            return count;
         }
         /// <summary>
         /// Throws an exception if the configuration is read-only.
