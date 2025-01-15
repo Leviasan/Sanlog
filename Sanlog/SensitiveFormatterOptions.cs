@@ -176,8 +176,8 @@ namespace Sanlog
         /// </summary>
         DictionaryEntry = 1,
         /// <summary>
-        /// Formats <see cref="IEnumerable"/> instance as [*{ElementCount} {Type.Name}*]. Supported if <see cref="Type.IsPrimitive"/>.
+        /// Formats <see cref="IEnumerable"/> instance as [*{ElementCount} {Type.Name}*].
         /// </summary>
-        CollapsePrimitive = 2
+        CollapseArray = 2
     }
 }

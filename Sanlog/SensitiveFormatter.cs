@@ -9,6 +9,22 @@ using System.Text;
 
 namespace Sanlog
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable IDE0290 // Use primary constructor
+#pragma warning disable IDE0021 // Use expression body for constructor
+    public sealed class CustomFormatterManager
+    {
+        public CustomFormatterManager(ICustomFormatter formatter)
+        {
+            Formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
+        }
+
+        public ICustomFormatter Formatter { get; }
+    }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore IDE0290 // Use primary constructor
+#pragma warning restore IDE0021 // Use expression body for constructor
+
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
@@ -22,15 +38,25 @@ namespace Sanlog
         /// <summary>
         /// The operator in front of the argument name tells the formatter to serialize the object passed in, rather than convert it using ToString().
         /// </summary>
-        public const string SerializeOperator = "@";
+        public const string OperatorSerialize = "@";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string FormatProperty = "P";
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string FormatRedactedValue = "R";
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string FormatArrayCollapse = "C";
+
         /// <summary>
         /// The message format of the redacted value.
         /// </summary>
         public const string RedactedValue = "[Redacted]";
-        /// <summary>
-        /// The message format that represents a primitive type array.
-        /// </summary>
-        public static readonly CompositeFormat CollapsePrimitiveFormat = CompositeFormat.Parse("[*{0} {1}*]");
 
         /// <summary>
         /// The key value pair collection to format.
@@ -66,18 +92,40 @@ namespace Sanlog
         /// <inheritdoc/>
         public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
-            if (format is not null && format.Length == 1 && format.Equals(SerializeOperator, StringComparison.Ordinal) && arg is not null)
+            if (Equals(formatProvider) && format is not null && arg is not null)
             {
-                var props = arg.GetType().GetProperties();
-                var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
-                var stringBuilder = new StringBuilder(256).Append('{');
-                for (var index = 0; index < nodes.Length; ++index)
+                if (format.Equals(FormatProperty, StringComparison.Ordinal))
                 {
-                    var node = nodes[index];
-                    _ = stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
-                    _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
+                    var props = arg.GetType().GetProperties();
+                    var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
+                    var stringBuilder = new StringBuilder(256).Append('{');
+                    for (var index = 0; index < nodes.Length; ++index)
+                    {
+                        var node = nodes[index];
+                        _ = stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
+                        _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
+                    }
+                    return stringBuilder.Append('}').ToString();
                 }
-                return stringBuilder.Append('}').ToString();
+                else if (format.Equals(FormatRedactedValue, StringComparison.Ordinal))
+                {
+                    return RedactedValue;
+                }
+                else if (format.Equals(FormatArrayCollapse, StringComparison.Ordinal) && arg is IEnumerable enumerable)
+                {
+                    var type = enumerable.GetType();
+                    if (type.IsArray)
+                    {
+                        var elementType = type.GetElementType();
+                        if (elementType is not null)
+                            return ArrayToFormat(enumerable, elementType, this);
+                    }
+                    else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
+                    {
+                        var elementType = type.GenericTypeArguments.First();
+                        return ArrayToFormat(enumerable, elementType, this);
+                    }
+                }
             }
             var provider = Equals(formatProvider) ? CultureInfo : formatProvider;
             return arg switch
@@ -85,6 +133,19 @@ namespace Sanlog
                 IFormattable formattable => formattable.ToString(format, provider),
                 _ => Convert.ToString(arg, provider) ?? string.Empty
             };
+
+            static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
+            {
+                return string.Format(formatProvider, "[*{0} {1}*]", IEnumerableCount(enumerable), type.Name);
+
+                static int IEnumerableCount(IEnumerable enumerable)
+                {
+                    var count = 0;
+                    foreach (var item in enumerable)
+                        ++count;
+                    return count;
+                }
+            }
         }
         #endregion
 
@@ -123,7 +184,7 @@ namespace Sanlog
             return -1;
 
             static bool EqualOrdinal(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
-                => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(SerializeOperator, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
+                => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
         }
         /// <summary>
         /// Returns the element at a specified index in the sequence.
@@ -135,7 +196,7 @@ namespace Sanlog
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
             var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
-            var newkey = kvp.Key[(kvp.Key.StartsWith(SerializeOperator, StringComparison.Ordinal) ? 1 : 0)..];
+            var newkey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
             var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newkey, newvalue);
         }
@@ -151,7 +212,7 @@ namespace Sanlog
         {
             ArgumentNullException.ThrowIfNull(key);
             var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
-            var newkey = kvp.Key[(kvp.Key.StartsWith(SerializeOperator, StringComparison.Ordinal) ? 1 : 0)..];
+            var newkey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
             var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newkey, newvalue);
         }
@@ -193,11 +254,11 @@ namespace Sanlog
         {
             if (redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, key))
             {
-                return RedactedValue;
+                return Format(FormatRedactedValue, value, this);
             }
-            else if (key.StartsWith(SerializeOperator, StringComparison.Ordinal) && value is not null)
+            else if (key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null)
             {
-                return Format(SerializeOperator, value, this);
+                return Format(FormatProperty, value, this);
             }
             return SensitiveObject(value, redacted);
 
@@ -212,54 +273,23 @@ namespace Sanlog
                 };
                 IDictionary SensitiveDictionary(IDictionary dictionary, bool redacted)
                 {
-                    var newdict = new Dictionary<string, object?>(dictionary.Count);
+                    var newdictionary = new Dictionary<string, object?>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newkey = Format(null, entry.Key, this);
-                        var newvalue = redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? RedactedValue : SensitiveObject(entry.Value, redacted);
-                        newdict.Add(newkey, newvalue);
+                        var newvalue = redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newkey) ? Format(FormatRedactedValue, entry.Value, this) : SensitiveObject(entry.Value, redacted);
+                        newdictionary.Add(newkey, newvalue);
                     }
-                    return newdict;
+                    return newdictionary;
                 }
                 IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
                 {
-                    var type = enumerable.GetType();
-                    if (type.IsArray)
-                    {
-                        var elementType = type.GetElementType();
-                        if (elementType is not null && elementType.IsPrimitive)
-                        {
-                            return redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
-                                ? ArrayToFormat(enumerable, elementType, this)
-                                : enumerable;
-                        }
-                    }
-                    else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
-                    {
-                        var elementType = type.GenericTypeArguments.First();
-                        if (elementType.IsPrimitive)
-                        {
-                            return redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapsePrimitive, key)
-                                ? ArrayToFormat(enumerable, elementType, this)
-                                : enumerable;
-                        }
-                    }
+                    if (redacted && SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapseArray, key))
+                        return Format(FormatArrayCollapse, enumerable, this);
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
                         _ = newlist.Add(SensitiveObject(value, redacted));
                     return newlist;
-                }
-                static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
-                {
-                    return string.Format(formatProvider, CollapsePrimitiveFormat, IEnumerableCount(enumerable), type.Name);
-
-                    static int IEnumerableCount(IEnumerable enumerable)
-                    {
-                        var count = 0;
-                        foreach (var item in enumerable)
-                            ++count;
-                        return count;
-                    }
                 }
             }
         }

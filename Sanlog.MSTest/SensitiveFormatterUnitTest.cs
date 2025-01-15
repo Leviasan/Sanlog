@@ -22,8 +22,8 @@
         {
             var position = new Position(25, 134);
             var formatter = new SensitiveFormatter();
-            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", formatter.Format("@", position, null));
-            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", string.Format(formatter, "{0:@}", position));
+            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", formatter.Format("P", position, formatter));
+            Assert.AreEqual("{ Latitude = 25, Longitude = 134 }", string.Format(formatter, "{0:P}", position));
             Assert.AreEqual(position.ToString(), string.Format(formatter, "{0}", position));
         }
     }

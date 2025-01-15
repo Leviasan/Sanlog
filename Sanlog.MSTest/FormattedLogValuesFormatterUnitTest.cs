@@ -88,7 +88,7 @@ namespace Sanlog.MSTest
             };
             var formatter = new FormattedLogValuesFormatter(dictionary);
             Assert.IsTrue(formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1);
-            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.CollapsePrimitive, "ShortArray"));
+            Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.CollapseArray, "ShortArray"));
             Assert.IsTrue(formatter.SensitiveConfiguration.AddSensitive(SensitiveKeyType.DictionaryEntry, "Password"));
             // Non-redacted
             Assert.AreEqual("1", formatter.GetObjectAsString("Int32Value", false).Value);
