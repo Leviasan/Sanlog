@@ -71,7 +71,7 @@ namespace Sanlog
 
             _meter = new Meter("Sanlog.MessageBroker");
             _counter = _meter.CreateUpDownCounter<int>("broker.channel.reader.count", "{items}", "The current number of items available from the channel reader.");
-            _histogram = _meter.CreateHistogram<long>("broker.consumer.duration", "ms", "Message processing duration");
+            _histogram = _meter.CreateHistogram<long>("broker.consumer.duration", "ms", "The duration for processing a message by a handler.");
         }
 
         /// <inheritdoc/>
