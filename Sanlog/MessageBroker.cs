@@ -5,6 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics.Metrics;
+using System.Runtime.InteropServices;
 
 namespace Sanlog
 {
@@ -34,6 +36,12 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposedValue;
 
+#pragma warning disable IDE0044 // Add readonly modifier
+        private Meter _meter;
+        private UpDownCounter<int> _counter;
+        private Histogram<long> _histogram;
+#pragma warning restore IDE0044 // Add readonly modifier
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
@@ -60,6 +68,10 @@ namespace Sanlog
         {
             _channel = channel ?? throw new ArgumentNullException(nameof(channel));
             _consumers = [];
+
+            _meter = new Meter("Sanlog.MessageBroker");
+            _counter = _meter.CreateUpDownCounter<int>("broker.channel.reader.count", "{items}", "The current number of items available from the channel reader.");
+            _histogram = _meter.CreateHistogram<long>("broker.consumer.duration", "ms", "Message processing duration");
         }
 
         /// <inheritdoc/>
@@ -81,6 +93,7 @@ namespace Sanlog
                     _channel.Writer.Complete();
                     _tokenSource?.Cancel();
                     _tokenSource?.Dispose();
+                    _meter.Dispose();
                 }
                 _disposedValue = true;
             }
@@ -118,7 +131,14 @@ namespace Sanlog
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
         public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
-            => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
+        {
+            if (_channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message)))
+            {
+                _counter.Add(1, KeyValuePair.Create<string, object?>("ServiceType", serviceType));
+                return true;
+            }
+            return false;
+        }
         /// <inheritdoc/>
         public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
             => message is not null && await SendMessageAsync(message.GetType(), message, cancellationToken).ConfigureAwait(false);
@@ -152,13 +172,20 @@ namespace Sanlog
                 {
                     while (_channel.Reader.TryRead(out var context))
                     {
+                        _counter.Add(-1, KeyValuePair.Create<string, object?>("ServiceType", context.ServiceType));
                         if (_consumers.TryGetValue(context.ServiceType, out var handlers))
                         {
                             foreach (var handler in handlers)
                             {
                                 try
                                 {
+                                    var stopwatch = Stopwatch.StartNew();
                                     await handler.HandleAsync(context.Message, _tokenSource.Token).ConfigureAwait(false);
+                                    stopwatch.Stop();
+                                    _histogram.Record(
+                                        value: stopwatch.ElapsedMilliseconds,
+                                        tag1: KeyValuePair.Create<string, object?>("ServiceType", context.ServiceType),
+                                        tag2: KeyValuePair.Create<string, object?>("HandlerType", handler.GetType()));
                                 }
                                 catch
                                 {
