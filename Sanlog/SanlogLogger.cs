@@ -47,12 +47,19 @@ namespace Sanlog
             if (IsEnabled(logLevel))
             {
                 var options = _provider.Options;
-                var stateFormatter = new FormattedLogValuesFormatter(state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : [])
+
+                var sensitive = new SensitiveFormatter
                 {
-                    SensitiveConfiguration = options.SensitiveConfiguration,
-                    FormattedConfiguration = options.FormattedConfiguration,
-                    CultureInfo = options.CultureInfo
+                    CultureInfo = options.CultureInfo,
+                    SensitiveConfiguration = options.SensitiveConfiguration
                 };
+                var formatted = new FormattedLogValuesFormatter
+                {
+                    CultureInfo = options.CultureInfo,
+                    FormattedConfiguration = options.FormattedConfiguration
+                };
+                var stateFormatter = new FormattedLogValues(sensitive, formatted, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
+              
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
@@ -65,10 +72,10 @@ namespace Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = stateFormatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 // not found {OriginalFormat}
-                        ? formatter.Invoke(state, exception) // use default formatter
-                        : formatter.ToString(), // format message template
-                    Properties = stateFormatter.SelectFormat(),
+                    Message = stateFormatter.OriginalFormat
+                        ? formatter.ToString() // format message template
+                        : formatter.Invoke(state, exception), // use default formatter
+                    Properties = stateFormatter.FormatToList(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -107,6 +114,10 @@ namespace Sanlog
 
                 static IReadOnlyList<KeyValuePair<string, string?>>? ProcessIDictionary(IDictionary dictionary, SanlogLoggerOptions options)
                 {
+#pragma warning disable IDE0061 // Use expression body for local function
+                    throw new NotImplementedException();
+#pragma warning restore IDE0061 // Use expression body for local function
+                    /*
                     if (dictionary.Count == 0)
                     {
                         return null;
@@ -125,6 +136,7 @@ namespace Sanlog
                         CultureInfo = options.CultureInfo
                     };
                     return formatter.SelectFormat();
+                    */
                 }
             }
             static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
@@ -136,6 +148,7 @@ namespace Sanlog
                     {
                         if (scope is not null)
                         {
+                            /*
                             var formatter = new FormattedLogValuesFormatter(scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
                             {
                                 SensitiveConfiguration = options.SensitiveConfiguration,
@@ -154,6 +167,7 @@ namespace Sanlog
                                 Properties = formatter.SelectFormat()
                             };
                             scopes.Add(loggingScope);
+                            */
                         }
                     }, scopes);
                 }
