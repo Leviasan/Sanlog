@@ -24,7 +24,7 @@ namespace Sanlog
         /// <summary>
         /// The element key that represents a structured logging message.
         /// </summary>
-        public const string KeyOriginalFormat = "{OriginalFormat}";
+        public const string OriginalFormatKey = "{OriginalFormat}";
 
         /// <summary>
         /// Max cached collection size.
@@ -97,12 +97,12 @@ namespace Sanlog
         /// The sensitive formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SensitiveFormatter _sensitiveFormatter;
+        private readonly SensitiveFormatter? _sensitiveFormatter;
         /// <summary>
         /// The formatted log values formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly FormattedLogValuesFormatter _formattedLogValuesFormatter;
+        private readonly FormattedLogValuesFormatter? _formattedLogValuesFormatter;
         /// <summary>
         /// The key value pair collection to format.
         /// </summary>
@@ -115,33 +115,44 @@ namespace Sanlog
         private readonly string? _format;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified key value pair collection to format and sensitive formatter.
+        /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified key value pair collection to format.
         /// </summary>
-        /// <param name="sensitiveFormatter">The sensitive formatter.</param>
-        /// <param name="formattedLogValuesFormatter">The sensitive formatter.</param>
         /// <param name="collection">The key value pair collection to format.</param>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public FormattedLogValues(SensitiveFormatter sensitiveFormatter, FormattedLogValuesFormatter formattedLogValuesFormatter, IReadOnlyCollection<KeyValuePair<string, object?>> collection)
+        /// <exception cref="ArgumentNullException">The <paramref name="collection"/> is <see langword="null"/>.</exception>
+        public FormattedLogValues(IReadOnlyCollection<KeyValuePair<string, object?>> collection)
         {
-            _sensitiveFormatter = sensitiveFormatter ?? throw new ArgumentNullException(nameof(sensitiveFormatter));
-            _formattedLogValuesFormatter = formattedLogValuesFormatter ?? throw new ArgumentNullException(nameof(formattedLogValuesFormatter));
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
-            _format = Convert.ToString(_collection.SingleOrDefault(x => x.Key == FormattedLogValuesFormatter.OriginalFormat).Value, null);
+            _format = Convert.ToString(_collection.SingleOrDefault(x => x.Key.Equals(OriginalFormatKey, StringComparison.Ordinal)).Value, null);
         }
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified composite/named format string.
         /// </summary>
-        /// <param name="sensitiveFormatter"></param>
-        /// <param name="formattedLogValuesFormatter"></param>
-        /// <param name="format"></param>
-        /// <param name="args"></param>
-        public FormattedLogValues(SensitiveFormatter sensitiveFormatter, FormattedLogValuesFormatter formattedLogValuesFormatter, string? format, params object?[] args)
-            : this(sensitiveFormatter, formattedLogValuesFormatter, ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
-        {
-            _format = !string.IsNullOrEmpty(format) ? format : null;
-        }
+        /// <param name="format">The composite/named format string.</param>
+        /// <param name="args">An object array that contains zero or more objects to format.</param>
+        /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
+        public FormattedLogValues(string? format, params object?[] args) : this(ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
+            => _format = !string.IsNullOrEmpty(format) ? format : null;
 
+        /// <summary>
+        /// Gets or sets the configuration of the <see cref="SensitiveFormatter"/>.
+        /// </summary>
+        public SensitiveFormatterOptions? SensitiveConfiguration { get; set; }
+        /// <summary>
+        /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
+        /// </summary>
+        public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
+
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentOutOfRangeException">Tne <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
         public KeyValuePair<string, object?> this[int index] => this[index, true];
+        /// <summary>
+        /// Gets the element at the specified index in the read-only list.
+        /// </summary>
+        /// <param name="index">The zero-based index of the element to get.</param>
+        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
+        /// <returns>The element at the specified position in the source sequence.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Tne <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
         public KeyValuePair<string, object?> this[int index, bool redacted]
         {
             get
@@ -152,7 +163,20 @@ namespace Sanlog
                 return KeyValuePair.Create(newkey, newvalue);
             }
         }
+        /// <summary>
+        /// Gets the element with the specified key in the read-only list.
+        /// </summary>
+        /// <param name="key">The key of the value to retrieve.</param>
+        /// <returns>The element with the specified key in the read-only list.</returns>
+        /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
         public KeyValuePair<string, object?> this[string key] => this[key, true];
+        /// <summary>
+        /// Gets the element with the specified key in the read-only list.
+        /// </summary>
+        /// <param name="key">The key of the value to retrieve.</param>
+        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
+        /// <returns>The element with the specified key in the read-only list.</returns>
+        /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
         public KeyValuePair<string, object?> this[string key, bool redacted]
         {
             get
@@ -164,10 +188,13 @@ namespace Sanlog
                 return KeyValuePair.Create(newkey, newvalue);
             }
         }
+        /// <inheritdoc/>
         public int Count => _collection.Count;
+        /// <summary>
+        /// Indicates whether the original format is defined.
+        /// </summary>
         public bool OriginalFormat => _format is not null;
 
-        #region Interface: IEnumerable
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
         {
@@ -176,7 +203,6 @@ namespace Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-        #endregion
 
         /// <inheritdoc/>
         public override string? ToString()
@@ -230,7 +256,13 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            if (redacted && _sensitiveFormatter.SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, key))
+            var sensitive = _sensitiveFormatter ?? new SensitiveFormatter
+            {
+                CultureInfo = CultureInfo,
+                Configuration = SensitiveConfiguration
+            };
+
+            if (redacted && sensitive.Configuration.IsSensitive(SensitiveKeyType.SegmentName, key))
             {
                 return string.Format(_sensitiveFormatter, "{0:R}", value);
             }
@@ -255,14 +287,14 @@ namespace Sanlog
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newKey = string.Format(_sensitiveFormatter, "{0}", entry.Key);
-                        var newValue = redacted && _sensitiveFormatter.SensitiveConfiguration.IsSensitive(SensitiveKeyType.DictionaryEntry, newKey) ? string.Format(_sensitiveFormatter, "{0:R}", entry.Value) : SensitiveObject(entry.Value, redacted);
+                        var newValue = redacted && _sensitiveFormatter.Configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newKey) ? string.Format(_sensitiveFormatter, "{0:R}", entry.Value) : SensitiveObject(entry.Value, redacted);
                         newDictionary.Add(newKey, newValue);
                     }
                     return newDictionary;
                 }
                 IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
                 {
-                    if (redacted && _sensitiveFormatter.SensitiveConfiguration.IsSensitive(SensitiveKeyType.CollapseArray, key))
+                    if (redacted && _sensitiveFormatter.Configuration.IsSensitive(SensitiveKeyType.CollapseArray, key))
                         return string.Format(_sensitiveFormatter, "{0:C}", enumerable);
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
@@ -300,7 +332,7 @@ namespace Sanlog
       /// Returns the element at a specified index in the sequence.
       /// </summary>
       /// <param name="index">The zero-based index of the element to retrieve.</param>
-      /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
+      /// <param name="redacted"></param>
       /// <returns>The element at the specified position in the source sequence.</returns>
       /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
       public KeyValuePair<string, object?> GetObject(int index, bool redacted)

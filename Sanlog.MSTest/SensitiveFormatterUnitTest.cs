@@ -10,12 +10,12 @@
             Assert.IsTrue(configuration.AddSensitive(SensitiveKeyType.SegmentName, "Password"));
             var formatter = new SensitiveFormatter()
             {
-                SensitiveConfiguration = configuration
+                Configuration = configuration
             };
             Assert.IsNull(formatter.CultureInfo);
-            Assert.AreEqual(configuration, formatter.SensitiveConfiguration);
-            formatter.SensitiveConfiguration = null; // reset to default
-            Assert.AreNotEqual(configuration, formatter.SensitiveConfiguration);
+            Assert.AreEqual(configuration, formatter.Configuration);
+            formatter.Configuration = null; // reset to default
+            Assert.AreNotEqual(configuration, formatter.Configuration);
         }
         [TestMethod]
         public void CustomFormatter()

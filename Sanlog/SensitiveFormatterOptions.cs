@@ -83,12 +83,12 @@ namespace Sanlog
             return _dictionary.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
-        /// Copies the current to the specified configuration.
+        /// Copies the current options to the specified configuration.
         /// </summary>
         /// <param name="configuration">The destination configuration.</param>
         /// <returns>The count of the added element.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="configuration"/> is <see langword="null"/>.</exception>
-        /// <exception cref="InvalidOperationException">The <paramref name="configuration"/> is read-only.</exception>
+        /// <exception cref="InvalidOperationException">The destionation <paramref name="configuration"/> is read-only.</exception>
         public int CopyTo(SensitiveFormatterOptions configuration)
         {
             ArgumentNullException.ThrowIfNull(configuration);

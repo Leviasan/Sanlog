@@ -11,7 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
-    public sealed class SensitiveFormatter : CustomFormatProvider
+    public sealed class SensitiveFormatter : CustomFormatter
     {
         /// <summary>
         /// The configuration of the formatter.
@@ -23,7 +23,7 @@ namespace Sanlog
         /// Gets or sets the configuration of the formatter.
         /// </summary>
         [AllowNull]
-        public SensitiveFormatterOptions SensitiveConfiguration
+        public SensitiveFormatterOptions Configuration
         {
             get => _configuration ??= new SensitiveFormatterOptions();
             set => _configuration = value;
@@ -52,7 +52,7 @@ namespace Sanlog
                     for (var index = 0; index < nodes.Length; ++index)
                     {
                         var node = nodes[index];
-                        _ = stringBuilder.Append(' ').Append(node.Key).Append(' ').Append('=').Append(' ').Append(Format(null, node.Value, this));
+                        _ = stringBuilder.Append(' ').Append(node.Key).Append(" = ").Append(Format(null, node.Value, this));
                         _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
                     }
                     return stringBuilder.Append('}').ToString();

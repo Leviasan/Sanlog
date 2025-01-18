@@ -6,7 +6,7 @@ namespace Sanlog
     /// <summary>
     /// Provides a mechanism for formatting the value of an object.
     /// </summary>
-    public abstract class CustomFormatProvider : IFormatProvider, ICustomFormatter
+    public abstract class CustomFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// Gets or sets the formatting culture.

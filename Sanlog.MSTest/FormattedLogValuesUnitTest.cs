@@ -22,8 +22,8 @@ namespace Sanlog.MSTest
             Assert.IsTrue(formatter.OriginalFormat);
             Assert.IsNull(sensitive.CultureInfo);
             Assert.AreEqual("Login: some_username. Password: some_password.", formatter.ToString());
-            Assert.IsTrue(sensitive.SensitiveConfiguration.AddSensitive(SensitiveKeyType.SegmentName, "Password"));
-            Assert.IsTrue(sensitive.SensitiveConfiguration.IsSensitive(SensitiveKeyType.SegmentName, "Password"));
+            Assert.IsTrue(sensitive.Configuration.AddSensitive(SensitiveKeyType.SegmentName, "Password"));
+            Assert.IsTrue(sensitive.Configuration.IsSensitive(SensitiveKeyType.SegmentName, "Password"));
             Assert.AreEqual("Login: some_username. Password: [Redacted].", formatter.ToString());
 
             Assert.AreEqual("some_password", formatter[1, false].Value);

@@ -9,7 +9,7 @@ namespace Sanlog
     /// <summary>
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    public sealed class FormattedLogValuesFormatter : CustomFormatProvider
+    public sealed class FormattedLogValuesFormatter : CustomFormatter
     {
         /// <summary>
         /// The configuration of the formatter.
@@ -21,7 +21,7 @@ namespace Sanlog
         /// Gets or sets the configuration of the formatter.
         /// </summary>
         [AllowNull]
-        public FormattedLogValuesFormatterOptions FormattedConfiguration
+        public FormattedLogValuesFormatterOptions Configuration
         {
             get => _configuration ??= new FormattedLogValuesFormatterOptions
             {
@@ -46,11 +46,11 @@ namespace Sanlog
             {
                 stringValue = value switch
                 {
-                    DateTime dateTime => dateTime.ToString(FormattedConfiguration.DateTimeFormat, formatProvider),
-                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString(FormattedConfiguration.DateTimeOffsetFormat, formatProvider),
-                    Enum @enum => @enum.ToString(FormattedConfiguration.EnumFormat),
-                    float binary32 => binary32.ToString(FormattedConfiguration.SingleFormat, formatProvider),
-                    double binary64 => binary64.ToString(FormattedConfiguration.DoubleFormat, formatProvider),
+                    DateTime dateTime => dateTime.ToString(Configuration.DateTimeFormat, formatProvider),
+                    DateTimeOffset dateTimeOffset => dateTimeOffset.ToString(Configuration.DateTimeOffsetFormat, formatProvider),
+                    Enum @enum => @enum.ToString(Configuration.EnumFormat),
+                    float binary32 => binary32.ToString(Configuration.SingleFormat, formatProvider),
+                    double binary64 => binary64.ToString(Configuration.DoubleFormat, formatProvider),
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => IDictionaryToString(dictionary, formatProvider, formatter), // IDictionary implements IEnumerable so must be process before
                     IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider, formatter),

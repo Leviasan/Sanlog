@@ -51,12 +51,12 @@ namespace Sanlog
                 var sensitive = new SensitiveFormatter
                 {
                     CultureInfo = options.CultureInfo,
-                    SensitiveConfiguration = options.SensitiveConfiguration
+                    Configuration = options.SensitiveConfiguration
                 };
                 var formatted = new FormattedLogValuesFormatter
                 {
                     CultureInfo = options.CultureInfo,
-                    FormattedConfiguration = options.FormattedConfiguration
+                    Configuration = options.FormattedConfiguration
                 };
                 var stateFormatter = new FormattedLogValues(sensitive, formatted, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
               
