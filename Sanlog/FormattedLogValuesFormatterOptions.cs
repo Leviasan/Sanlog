@@ -42,7 +42,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format string.
         /// </summary>
-        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
+        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] // TODO: ADD EXCEPTION
         public string? DateTimeFormat
         {
             get => _dateTimeFormat;
@@ -108,12 +108,7 @@ namespace Sanlog
         /// <summary>
         /// Makes the configuration read-only.
         /// </summary>
-        /// <returns>Returns the current instance.</returns>
-        public FormattedLogValuesFormatterOptions MakeReadOnly()
-        {
-            IsReadOnly = true;
-            return this;
-        }
+        public void MakeReadOnly() => IsReadOnly = true;
         /// <summary>
         /// Throws an exception if the configuration is read-only.
         /// </summary>
