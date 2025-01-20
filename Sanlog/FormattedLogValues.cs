@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 
 namespace Sanlog
@@ -20,7 +21,7 @@ namespace Sanlog
         /// <summary>
         /// The message format that represents a null format.
         /// </summary>
-        public const string NullFormatValue = "[null]";
+        public const string NullFormat = "[null]";
         /// <summary>
         /// The element key that represents a structured logging message.
         /// </summary>
@@ -94,17 +95,7 @@ namespace Sanlog
         }
 
         /// <summary>
-        /// The sensitive formatter.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SensitiveFormatter? _sensitiveFormatter;
-        /// <summary>
-        /// The formatted log values formatter.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly FormattedLogValuesFormatter? _formattedLogValuesFormatter;
-        /// <summary>
-        /// The key value pair collection to format.
+        /// The key-value pair collection to format.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IReadOnlyCollection<KeyValuePair<string, object?>> _collection;
@@ -115,9 +106,9 @@ namespace Sanlog
         private readonly string? _format;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified key value pair collection to format.
+        /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified key-value pair collection to format.
         /// </summary>
-        /// <param name="collection">The key value pair collection to format.</param>
+        /// <param name="collection">The key-value pair collection to format.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="collection"/> is <see langword="null"/>.</exception>
         public FormattedLogValues(IReadOnlyCollection<KeyValuePair<string, object?>> collection)
         {
@@ -135,6 +126,10 @@ namespace Sanlog
             => _format = !string.IsNullOrEmpty(format) ? format : null;
 
         /// <summary>
+        /// Gets or sets the formatting culture.
+        /// </summary>
+        public CultureInfo? CultureInfo { get; set; }
+        /// <summary>
         /// Gets or sets the configuration of the <see cref="SensitiveFormatter"/>.
         /// </summary>
         public SensitiveFormatterOptions? SensitiveConfiguration { get; set; }
@@ -144,23 +139,23 @@ namespace Sanlog
         public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
 
         /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException">Tne <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
-        public KeyValuePair<string, object?> this[int index] => this[index, true];
+        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
+        public KeyValuePair<string, object?> this[int index] => this[index, true]; // ArgumentOutOfRangeException
         /// <summary>
         /// Gets the element at the specified index in the read-only list.
         /// </summary>
         /// <param name="index">The zero-based index of the element to get.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The element at the specified position in the source sequence.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Tne <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
         public KeyValuePair<string, object?> this[int index, bool redacted]
         {
             get
             {
                 var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
-                var newkey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-                var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
-                return KeyValuePair.Create(newkey, newvalue);
+                var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+                var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
+                return KeyValuePair.Create(newKey, newValue);
             }
         }
         /// <summary>
@@ -168,14 +163,16 @@ namespace Sanlog
         /// </summary>
         /// <param name="key">The key of the value to retrieve.</param>
         /// <returns>The element with the specified key in the read-only list.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
-        public KeyValuePair<string, object?> this[string key] => this[key, true];
+        public KeyValuePair<string, object?> this[string key] => this[key, true]; // ArgumentNullException + InvalidOperationException
         /// <summary>
         /// Gets the element with the specified key in the read-only list.
         /// </summary>
-        /// <param name="key">The key of the value to retrieve.</param>
+        /// <param name="key">The key of the element to retrieve.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>The element with the specified key in the read-only list.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
         /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
         public KeyValuePair<string, object?> this[string key, bool redacted]
         {
@@ -183,9 +180,9 @@ namespace Sanlog
             {
                 ArgumentNullException.ThrowIfNull(key);
                 var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
-                var newkey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-                var newvalue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
-                return KeyValuePair.Create(newkey, newvalue);
+                var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+                var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
+                return KeyValuePair.Create(newKey, newValue);
             }
         }
         /// <inheritdoc/>
@@ -203,11 +200,23 @@ namespace Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
         /// <inheritdoc/>
         public override string? ToString()
         {
-            return TryGetOrAdd(_format, out var messageTemplate) ? messageTemplate.Format(_formattedLogValuesFormatter, TakeBySegmentOrder(messageTemplate)) : FormattedLogValuesFormatter.NullFormat;
+            if (TryGetOrAdd(_format, out var messageTemplate))
+            {
+                var args = TakeBySegmentOrder(messageTemplate);
+                var formatter = new FormattedLogValuesFormatter
+                {
+                    Configuration = FormattedConfiguration,
+                    CultureInfo = CultureInfo
+                };
+                return messageTemplate.Format(formatter, args);
+            }
+            else
+            {
+                return NullFormat;
+            }
 
             object?[] TakeBySegmentOrder(MessageTemplate messageTemplate)
             {
@@ -218,27 +227,27 @@ namespace Sanlog
                     {
                         continue;
                     }
-                    var index = IndexOf(segment); // Defines the first occurrence of the key instead of directly using GetObject(string, bool) to prevent InvalidOperationException
-                    dictionary[segment] = this[index].Value;
+                    var index = IndexOf(segment); // Defines the first occurrence of the key instead of directly using this[string, bool] to prevent InvalidOperationException
+                    dictionary[segment] = index != -1 ? this[index].Value : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
             }
             int IndexOf(string key)
             {
-                ArgumentNullException.ThrowIfNull(key);
                 for (var index = 0; index < _collection.Count; ++index)
                 {
-                    if (EqualOrdinal(_collection.ElementAt(index).Key, key))
+                    if (EqualsOrdinalString(_collection.ElementAt(index).Key, key))
                     {
                         return index;
                     }
                 }
                 return -1;
 
-                static bool EqualOrdinal(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
+                static bool EqualsOrdinalString(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
                     => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
             }
         }
+
         /*
         /// <summary>
         /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
