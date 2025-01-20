@@ -42,7 +42,8 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="DateTime"/> format string.
         /// </summary>
-        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)] // TODO: ADD EXCEPTION
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
         public string? DateTimeFormat
         {
             get => _dateTimeFormat;
@@ -55,6 +56,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="DateTimeOffset"/> format string.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
         public string? DateTimeOffsetFormat
         {
@@ -68,6 +70,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="Enum"/> format string.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         [StringSyntax(StringSyntaxAttribute.EnumFormat)]
         public string? EnumFormat
         {
@@ -81,6 +84,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="float"/> format string.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         [StringSyntax(StringSyntaxAttribute.NumericFormat)]
         public string? SingleFormat
         {
@@ -94,6 +98,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the <see cref="double"/> format string.
         /// </summary>
+        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
         [StringSyntax(StringSyntaxAttribute.NumericFormat)]
         public string? DoubleFormat
         {
