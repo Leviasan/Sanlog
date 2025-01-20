@@ -39,7 +39,7 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the configuration of the formatter.
         /// </summary>
-        [AllowNull]
+        [AllowNull, NotNull]
         public SensitiveFormatterOptions Configuration
         {
             get => _configuration ??= new SensitiveFormatterOptions();

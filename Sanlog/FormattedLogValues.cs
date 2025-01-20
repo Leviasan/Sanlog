@@ -122,8 +122,7 @@ namespace Sanlog
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
         /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
-        public FormattedLogValues(string? format, params object?[] args) : this(ParseCompositeArgs(format, args)) // ArgumentException + ArgumentNullException
-            => _format = !string.IsNullOrEmpty(format) ? format : null;
+        public FormattedLogValues(string? format, params object?[] args) : this(ParseCompositeArgs(format, args)) { } // ArgumentException + ArgumentNullException
 
         /// <summary>
         /// Gets or sets the formatting culture.
@@ -227,35 +226,36 @@ namespace Sanlog
                     {
                         continue;
                     }
-                    var index = IndexOf(segment); // Defines the first occurrence of the key instead of directly using this[string, bool] to prevent InvalidOperationException
+                    // Defines the first occurrence of the key instead of directly using this[string, bool] to prevent InvalidOperationException
+                    var index = -1;
+                    for (var i = 0; i < _collection.Count; ++i)
+                    {
+                        if (EqualsOrdinalString(_collection.ElementAt(i).Key, segment))
+                        {
+                            index = i;
+                        }
+                    }
                     dictionary[segment] = index != -1 ? this[index].Value : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
-            }
-            int IndexOf(string key)
-            {
-                for (var index = 0; index < _collection.Count; ++index)
-                {
-                    if (EqualsOrdinalString(_collection.ElementAt(index).Key, key))
-                    {
-                        return index;
-                    }
-                }
-                return -1;
 
                 static bool EqualsOrdinalString(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
                     => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
             }
         }
-
-        /*
         /// <summary>
-        /// Projects each element processes through the formatter into a string through invoke <see cref="Format(string?, object?, IFormatProvider?)"/>.
+        /// Projects each element processes through formatters into a string key-value pair collection.
         /// </summary>
-        /// <returns>An enumerable whose elements result from invoking the transform function <see cref="Format(string?, object?, IFormatProvider?)"/> on each element.</returns>
-        */
-        public IReadOnlyList<KeyValuePair<string, string?>> FormatToList() => this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formattedLogValuesFormatter, "{0}", x.Value))).ToList();
-
+        /// <returns>An enumerable whose elements were processed through formatters.</returns>
+        public IEnumerable<KeyValuePair<string, string?>> FormatToList()
+        {
+            var formatter = new FormattedLogValuesFormatter
+            {
+                Configuration = FormattedConfiguration,
+                CultureInfo = CultureInfo
+            };
+            return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(formatter, "{0}", x.Value))); // how works 'this.Select' see 'GetEnumerator'
+        }
         /// <summary>
         /// Processes a value through the sensitive formatter.
         /// </summary>
@@ -265,19 +265,19 @@ namespace Sanlog
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? ProcessSensitiveObject(string key, object? value, bool redacted)
         {
-            var sensitive = _sensitiveFormatter ?? new SensitiveFormatter
+            var formatter = new SensitiveFormatter
             {
                 CultureInfo = CultureInfo,
                 Configuration = SensitiveConfiguration
             };
 
-            if (redacted && sensitive.Configuration.IsSensitive(SensitiveKeyType.SegmentName, key))
+            if (redacted && formatter.Configuration.IsSensitive(SensitiveKeyType.SegmentName, key))
             {
-                return string.Format(_sensitiveFormatter, "{0:R}", value);
+                return string.Format(formatter, "{0:R}", value);
             }
             else if (key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null)
             {
-                return string.Format(_sensitiveFormatter, "{0:P}", value);
+                return string.Format(formatter, "{0:S}", value);
             }
             return SensitiveObject(value, redacted);
 
@@ -295,16 +295,16 @@ namespace Sanlog
                     var newDictionary = new Dictionary<string, object?>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
-                        var newKey = string.Format(_sensitiveFormatter, "{0}", entry.Key);
-                        var newValue = redacted && _sensitiveFormatter.Configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newKey) ? string.Format(_sensitiveFormatter, "{0:R}", entry.Value) : SensitiveObject(entry.Value, redacted);
+                        var newKey = string.Format(formatter, "{0}", entry.Key);
+                        var newValue = redacted && formatter.Configuration.IsSensitive(SensitiveKeyType.DictionaryEntry, newKey) ? string.Format(formatter, "{0:R}", entry.Value) : SensitiveObject(entry.Value, redacted);
                         newDictionary.Add(newKey, newValue);
                     }
                     return newDictionary;
                 }
                 IEnumerable SensitiveEnumerable(IEnumerable enumerable, bool redacted)
                 {
-                    if (redacted && _sensitiveFormatter.Configuration.IsSensitive(SensitiveKeyType.CollapseArray, key))
-                        return string.Format(_sensitiveFormatter, "{0:C}", enumerable);
+                    if (redacted && formatter.Configuration.IsSensitive(SensitiveKeyType.CollapseArray, key))
+                        return string.Format(formatter, "{0:C}", enumerable);
                     var newlist = new ArrayList();
                     foreach (var value in enumerable)
                         _ = newlist.Add(SensitiveObject(value, redacted));
