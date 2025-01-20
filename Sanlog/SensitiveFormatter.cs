@@ -14,6 +14,23 @@ namespace Sanlog
     public sealed class SensitiveFormatter : CustomFormatter
     {
         /// <summary>
+        /// The format string is used to redact sensitive values.
+        /// </summary>
+        internal const string FormatRedacted = "R";
+        /// <summary>
+        /// The format string is used to serialize public properties to a string representation.
+        /// </summary>
+        internal const string FormatSerialize = "S";
+        /// <summary>
+        /// The format string is used to collapse array values.
+        /// </summary>
+        internal const string FormatCollapse = "C";
+        /// <summary>
+        /// The message format that represents a redacted value.
+        /// </summary>
+        public const string RedactedValue = "[Redacted]";
+
+        /// <summary>
         /// The configuration of the formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -32,10 +49,6 @@ namespace Sanlog
         /// <inheritdoc/>
         public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
-            const string FormatRedacted = "R";
-            const string FormatProperty = "P";
-            const string FormatCollapse = "C";
-            const string RedactedValue = "[Redacted]";
             const string FormatCollapseArray = "[*{0} {1}*]";
 
             if (Equals(formatProvider) && format is not null && arg is not null)
@@ -44,7 +57,7 @@ namespace Sanlog
                 {
                     return RedactedValue;
                 }
-                else if (format.Equals(FormatProperty, StringComparison.Ordinal))
+                else if (format.Equals(FormatSerialize, StringComparison.Ordinal))
                 {
                     var props = arg.GetType().GetProperties();
                     var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
@@ -52,8 +65,12 @@ namespace Sanlog
                     for (var index = 0; index < nodes.Length; ++index)
                     {
                         var node = nodes[index];
-                        _ = stringBuilder.Append(' ').Append(node.Key).Append(" = ").Append(Format(null, node.Value, this));
-                        _ = index < nodes.Length - 1 ? stringBuilder.Append(',') : stringBuilder.Append(' ');
+                        _ = stringBuilder
+                            .Append(' ')
+                            .Append(node.Key)
+                            .Append(" = ")
+                            .Append(Format(null, node.Value, this))
+                            .Append(index < nodes.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder.Append('}').ToString();
                 }

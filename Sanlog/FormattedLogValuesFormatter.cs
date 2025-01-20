@@ -12,6 +12,11 @@ namespace Sanlog
     public sealed class FormattedLogValuesFormatter : CustomFormatter
     {
         /// <summary>
+        /// The message format that represents a null value.
+        /// </summary>
+        public const string NullValue = "(null)";
+
+        /// <summary>
         /// The configuration of the formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -38,7 +43,6 @@ namespace Sanlog
         public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyArray = "[]";
-            const string NullValue = "(null)";
 
             return Equals(formatProvider) && string.IsNullOrEmpty(format) && TryCustomFormat(arg, formatProvider, base.Format, out var stringValue) ? stringValue : base.Format(format, arg, formatProvider);
 

@@ -59,7 +59,7 @@ namespace Sanlog
             return false;
         }
         /// <summary>
-        /// Creates a dictionary from an object array that contains zero or more objects to format.
+        /// Creates a dictionary from an object array containing zero or more objects to format linked with <paramref name="format"/> a composite/named format string.
         /// </summary>
         /// <param name="format">A composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
