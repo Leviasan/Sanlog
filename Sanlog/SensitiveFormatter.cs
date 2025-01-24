@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 
@@ -11,70 +10,49 @@ namespace Sanlog
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
-    public sealed class SensitiveFormatter : CustomFormatter
+    public class SensitiveFormatter : IFormatProvider, ICustomFormatter
     {
-        /// <summary>
-        /// The format string is used to redact sensitive values.
-        /// </summary>
-        internal const string FormatRedacted = "R";
-        /// <summary>
-        /// The format string is used to serialize public properties to a string representation.
-        /// </summary>
-        internal const string FormatSerialize = "S";
-        /// <summary>
-        /// The format string is used to collapse array values.
-        /// </summary>
-        internal const string FormatCollapse = "C";
         /// <summary>
         /// The message format that represents a redacted value.
         /// </summary>
         public const string RedactedValue = "[Redacted]";
 
         /// <summary>
-        /// The configuration of the formatter.
+        /// Gets or sets the formatting culture.
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SensitiveFormatterOptions? _configuration;
-
-        /// <summary>
-        /// Gets or sets the configuration of the formatter.
-        /// </summary>
-        [AllowNull, NotNull]
-        public SensitiveFormatterOptions Configuration
-        {
-            get => _configuration ??= new SensitiveFormatterOptions();
-            set => _configuration = value;
-        }
+        public CultureInfo? CultureInfo { get; set; }
 
         /// <inheritdoc/>
-        public override string Format(string? format, object? arg, IFormatProvider? formatProvider)
-        {
-            const string FormatCollapseArray = "[*{0} {1}*]";
+        public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : CultureInfo?.GetFormat(formatType);
 
-            if (Equals(formatProvider) && format is not null && arg is not null)
+        /// <inheritdoc/>
+        public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            const string EmptyObject = "{}";
+            if (Equals(formatProvider) && !string.IsNullOrEmpty(format) && arg is not null)
             {
-                if (format.Equals(FormatRedacted, StringComparison.Ordinal))
+                if (format.Equals("R", StringComparison.Ordinal))
                 {
                     return RedactedValue;
                 }
-                else if (format.Equals(FormatSerialize, StringComparison.Ordinal))
+                else if (format.Equals("S", StringComparison.Ordinal))
                 {
                     var props = arg.GetType().GetProperties();
                     var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
-                    var stringBuilder = new StringBuilder(256).Append('{');
+                    StringBuilder? stringBuilder = null;
                     for (var index = 0; index < nodes.Length; ++index)
                     {
                         var node = nodes[index];
-                        _ = stringBuilder
+                        stringBuilder = (index == 0 ? new StringBuilder(256).Append('{') : stringBuilder!)
                             .Append(' ')
                             .Append(node.Key)
                             .Append(" = ")
                             .Append(Format(null, node.Value, this))
                             .Append(index < nodes.Length - 1 ? ',' : ' ');
                     }
-                    return stringBuilder.Append('}').ToString();
+                    return stringBuilder?.Append('}').ToString() ?? EmptyObject;
                 }
-                else if (format.Equals(FormatCollapse, StringComparison.Ordinal) && arg is IEnumerable enumerable)
+                else if (format.Equals("C", StringComparison.Ordinal) && arg is IEnumerable enumerable)
                 {
                     var type = enumerable.GetType();
                     if (type.IsArray)
@@ -90,11 +68,16 @@ namespace Sanlog
                     }
                 }
             }
-            return base.Format(format, arg, formatProvider);
+            var provider = Equals(formatProvider) ? CultureInfo : formatProvider;
+            return arg switch
+            {
+                IFormattable formattable => formattable.ToString(format, provider),
+                _ => Convert.ToString(arg, provider) ?? string.Empty
+            };
 
             static string ArrayToFormat(IEnumerable enumerable, Type type, IFormatProvider? formatProvider)
             {
-                return string.Format(formatProvider, FormatCollapseArray, IEnumerableCount(enumerable), type.Name);
+                return string.Format(formatProvider, "[*{0} {1}*]", IEnumerableCount(enumerable), type.Name);
 
                 static int IEnumerableCount(IEnumerable enumerable)
                 {

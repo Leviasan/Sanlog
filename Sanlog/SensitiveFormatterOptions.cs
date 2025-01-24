@@ -7,7 +7,7 @@ using System.Diagnostics;
 namespace Sanlog
 {
     /// <summary>
-    /// Represents the configuration of the <see cref="SensitiveFormatter"/>.
+    /// Represents the configuration of the sensitive data.
     /// </summary>
     public sealed class SensitiveFormatterOptions
     {
