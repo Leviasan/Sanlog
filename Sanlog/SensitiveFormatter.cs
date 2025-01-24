@@ -3,15 +3,27 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Sanlog
 {
+    [AttributeUsage(AttributeTargets.Property)]
+    internal sealed class SensitiveAttribute : Attribute { }
+
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
-    public class SensitiveFormatter : IFormatProvider, ICustomFormatter
+    public sealed class SensitiveFormatter : IFormatProvider, ICustomFormatter
     {
+        /// <summary>
+        /// The format string is used to redact sensitive values.
+        /// </summary>
+        public const string FormatRedacted = "R";
+        /// <summary>
+        /// The format string is used to serialize public properties to a string representation.
+        /// </summary>
+        public const string FormatSerialize = "S";
         /// <summary>
         /// The message format that represents a redacted value.
         /// </summary>
@@ -26,29 +38,33 @@ namespace Sanlog
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : CultureInfo?.GetFormat(formatType);
 
         /// <inheritdoc/>
-        public virtual string Format(string? format, object? arg, IFormatProvider? formatProvider)
+        public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             const string EmptyObject = "{}";
+
             if (Equals(formatProvider) && !string.IsNullOrEmpty(format) && arg is not null)
             {
-                if (format.Equals("R", StringComparison.Ordinal))
+                if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                 {
-                    return RedactedValue;
+                    return RedactedValue; // TODO: Collapse Type.IsPrimitive array
                 }
-                else if (format.Equals("S", StringComparison.Ordinal))
+                else if (format.Equals(FormatSerialize, StringComparison.Ordinal))
                 {
-                    var props = arg.GetType().GetProperties();
-                    var nodes = props.Select(x => KeyValuePair.Create(x.Name, x.GetValue(arg))).ToArray();
                     StringBuilder? stringBuilder = null;
-                    for (var index = 0; index < nodes.Length; ++index)
+                    var properties = arg.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                    for (var index = 0; index < properties.Length; ++index)
                     {
-                        var node = nodes[index];
-                        stringBuilder = (index == 0 ? new StringBuilder(256).Append('{') : stringBuilder!)
+                        var property = properties[index];
+                        stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
+                        _ = stringBuilder
                             .Append(' ')
-                            .Append(node.Key)
+                            .Append(property.Name)
                             .Append(" = ")
-                            .Append(Format(null, node.Value, this))
-                            .Append(index < nodes.Length - 1 ? ',' : ' ');
+                            .Append(Format(
+                                format: property.IsDefined(typeof(SensitiveAttribute)) ? FormatRedacted : null,
+                                arg: property.GetValue(arg),
+                                formatProvider: this))
+                            .Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;
                 }
