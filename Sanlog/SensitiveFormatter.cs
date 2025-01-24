@@ -40,34 +40,8 @@ namespace Sanlog
         /// <inheritdoc/>
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
-            const string EmptyObject = "{}";
-
             if (Equals(formatProvider) && !string.IsNullOrEmpty(format) && arg is not null)
             {
-                if (arg is not string and IEnumerable enumerable)
-                {
-                    if (format.Equals(FormatRedacted, StringComparison.Ordinal))
-                    {
-                        var type = arg.GetType();
-                        if (type.IsArray)
-                        {
-                            var elementType = type.GetElementType();
-                            if (elementType is not null && elementType.IsPrimitive)
-                                return ArrayToFormat(enumerable, elementType, this);
-                        }
-                        else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
-                        {
-                            var elementType = type.GenericTypeArguments[0];
-                            if (elementType.IsPrimitive)
-                                return ArrayToFormat(enumerable, elementType, this);
-                        }
-                    }
-                    else if (format.Equals(FormatSerialize, StringComparison.Ordinal))
-                    {
-                        // TODO: Serialize array
-                    }
-                }
-
                 if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                 {
                     return RedactedValue;
@@ -90,7 +64,42 @@ namespace Sanlog
                                 formatProvider: this))
                             .Append(index < properties.Length - 1 ? ',' : ' ');
                     }
-                    return stringBuilder?.Append('}').ToString() ?? EmptyObject;
+                    return stringBuilder?.Append('}').ToString() ?? "{}";
+                }
+
+                if (format.Equals(FormatRedacted, StringComparison.Ordinal))
+                {
+                    if (arg is not string and IEnumerable enumerable)
+                    {
+                        var type = arg.GetType();
+                        if (type.IsArray)
+                        {
+                            var elementType = type.GetElementType();
+                            if (elementType is not null && elementType.IsPrimitive)
+                                return ArrayToFormat(enumerable, elementType, this);
+                        }
+                        else if (type.IsGenericType && type.GenericTypeArguments.Length == 1)
+                        {
+                            var elementType = type.GenericTypeArguments[0];
+                            if (elementType.IsPrimitive)
+                                return ArrayToFormat(enumerable, elementType, this);
+                        }
+                    }
+                }
+                else if (format.Equals(FormatSerialize, StringComparison.Ordinal))
+                {
+                    StringBuilder? stringBuilder = null;
+                    if (arg is not string and IEnumerable enumerable)
+                    {
+                        foreach (var element in enumerable)
+                        {
+                            stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('[') : stringBuilder;
+                            _ = stringBuilder
+                                .Append(Format(null))
+                        }
+                        return stringBuilder?.Append(']').ToString() ?? "[]";
+                    }
+                    
                 }
             }
             return DefaultFallback(format, arg, Equals(formatProvider) ? CultureInfo : formatProvider);
