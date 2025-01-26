@@ -70,7 +70,7 @@ namespace Sanlog
             {
                 if (string.IsNullOrEmpty(format))
                 {
-                    if (OverrideToString(arg, formatProvider, Configuration) is string stringValue && !string.IsNullOrEmpty(stringValue))
+                    if (OverrideFormat(arg, formatProvider, Configuration) is string stringValue && !string.IsNullOrEmpty(stringValue))
                     {
                         return stringValue;
                     }
@@ -116,7 +116,7 @@ namespace Sanlog
                     _ => Convert.ToString(arg, formatProvider) ?? string.Empty
                 };
             };
-            static string? OverrideToString(object? arg, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration)
+            static string? OverrideFormat(object? arg, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration)
             {
                 return arg switch
                 {
@@ -129,6 +129,18 @@ namespace Sanlog
                     _ => null
                 };
             }
+            static string Serialize(object arg, IFormatProvider? provider)
+            {
+                return arg switch
+                {
+                    string str => str, // string implements IEnumerable so must be process before
+                    IDictionary dictionary => IDictionaryToString(dictionary, formatProvider, formatter, configuration), // IDictionary implements IEnumerable so must be process before
+                    IEnumerable enumerable => IEnumerableToString(enumerable, formatProvider, formatter, configuration),
+                    _ => SerializeObject(arg, formatProvider)
+                };
+            }
+
+
             static string SerializeObject(object value, IFormatProvider? provider)
             {
                 const string EmptyObject = "{}";
