@@ -1,4 +1,5 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
@@ -8,9 +9,6 @@ using System.Text;
 
 namespace Sanlog
 {
-    [AttributeUsage(AttributeTargets.Property)]
-    internal sealed class SensitiveAttribute : Attribute { }
-
     /// <summary>
     /// Represents a formatter that supports the concealment of confidential data.
     /// </summary>
@@ -127,3 +125,4 @@ namespace Sanlog
         }
     }
 }
+*/

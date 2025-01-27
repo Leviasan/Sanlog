@@ -120,7 +120,7 @@ namespace Sanlog
                     IDictionary dictionary => SerializeDictionary(dictionary, formatProvider, configuration), // IDictionary implements IEnumerable so must be process before
                     IEnumerable enumerable => SerializeEnumerable(enumerable, formatProvider, configuration),
                     null => NullValue,
-                    _ => SerializeObject(arg, formatProvider)
+                    _ => SerializeObject(arg, formatProvider, configuration)
                 };
 
                 static string SerializeDictionary(IDictionary dictionary, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration)
@@ -147,7 +147,7 @@ namespace Sanlog
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
-                static string SerializeObject(object value, IFormatProvider? provider)
+                static string SerializeObject(object value, IFormatProvider? provider, FormattedLogValuesFormatterOptions configuration)
                 {
                     const string EmptyObject = "{}";
                     const string SimpleFormat = "{0}";
@@ -159,12 +159,13 @@ namespace Sanlog
                     for (var index = 0; index < properties.Length; ++index)
                     {
                         var property = properties[index];
+                        var sensitive = property.IsDefined(typeof(SensitiveAttribute)) || configuration.IsSensitive(type, property.Name);
                         stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
                         _ = stringBuilder
                             .Append(' ')
                             .Append(property.Name)
                             .Append(" = ")
-                            .Append(string.Format(provider, property.IsDefined(typeof(SensitiveAttribute)) ? RedactedFormat : SimpleFormat, property.GetValue(value)))
+                            .Append(string.Format(provider, sensitive ? RedactedFormat : SimpleFormat, property.GetValue(value)))
                             .Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;

@@ -122,23 +122,16 @@ namespace Sanlog
         }
 
         /// <summary>
-        /// Registers a property whose value belongs to sensitive data.
+        /// Checks whether the property of the specified type belongs to sensitive data.
         /// </summary>
-        /// <param name="type">The sensitive key type.</param>
+        /// <param name="type">The sensitive type.</param>
         /// <param name="property">The property whose value belongs to sensitive data.</param>
-        /// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
+        /// <returns><see langword="true"/> if the property of the specified key type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        public bool AddSensitive(Type type, string property)
+        public bool IsSensitive(Type type, string property)
         {
-            var d = Mapper<FormatException>.GetProperty(x => x.StackTrace);
-            var e = AddSensitive<FormatException, string>(x => x.HResult);
-
-
-
-            CheckReadOnly(); // InvalidOperationException
             ArgumentNullException.ThrowIfNull(property);
-            return _dictionary.TryGetValue(type, out var hashset) ? hashset.Add(property) : _dictionary.TryAdd(type, [property]);
+            return _dictionary.TryGetValue(type, out var hashset) && hashset.Contains(property);
         }
         /// <summary>
         /// Makes the configuration read-only.
@@ -153,35 +146,47 @@ namespace Sanlog
             if (IsReadOnly)
                 throw new InvalidOperationException("The configuration is read-only.");
         }
-
-        internal bool AddSensitive<T, P>(Expression<Func<T, P>> expression)
-        {
-            var ex = new FormatException();
-            var c = InstanceMapper.GetProperty(ex, x => x.HResult);
-
-            var e = ex.GetProperty(x => x.StackTrace);
-
-            var p = Mapper<T>.GetProperty(expression);
-            return AddSensitive(typeof(T), p.Name);
-        }
-    }
-
-    internal static class Mapper<T>
-    {
-        public static PropertyInfo GetProperty<P>(Expression<Func<T, P>> expression)
-        {
-            return expression.Body is MemberExpression member && member.Member is PropertyInfo property
-                ? property
-                : throw new ArgumentException("Expression is not a Property", nameof(expression));
-        }
-    }
-    internal static class InstanceMapper
-    {
-        public static PropertyInfo GetProperty<T, P>(this T _, Expression<Func<T, P>> expression)
-        {
-            return expression.Body is MemberExpression member && member.Member is PropertyInfo property
-                ? property
-                : throw new ArgumentException("Expression is not a Property", nameof(expression));
-        }
     }
 }
+/*
+
+/// <summary>
+/// Registers a property whose value belongs to sensitive data.
+/// </summary>
+/// <param name="type">The sensitive key type.</param>
+/// <param name="property">The property whose value belongs to sensitive data.</param>
+/// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
+/// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
+/// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+public bool AddSensitive(Type type, string property)
+{
+    var d = Mapper<FormatException>.GetProperty(x => x.StackTrace);
+    var e = AddSensitive<FormatException, string>(x => x.HResult);
+
+
+
+    CheckReadOnly(); // InvalidOperationException
+    ArgumentNullException.ThrowIfNull(property);
+    return _dictionary.TryGetValue(type, out var hashset) ? hashset.Add(property) : _dictionary.TryAdd(type, [property]);
+}
+*/
+/*
+internal static class Mapper<T>
+{
+    public static PropertyInfo GetProperty<P>(Expression<Func<T, P>> expression)
+    {
+        return expression.Body is MemberExpression member && member.Member is PropertyInfo property
+            ? property
+            : throw new ArgumentException("Expression is not a Property", nameof(expression));
+    }
+}
+internal static class InstanceMapper
+{
+    public static PropertyInfo GetProperty<T, P>(this T _, Expression<Func<T, P>> expression)
+    {
+        return expression.Body is MemberExpression member && member.Member is PropertyInfo property
+            ? property
+            : throw new ArgumentException("Expression is not a Property", nameof(expression));
+    }
+}
+*/
