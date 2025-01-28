@@ -63,9 +63,6 @@ namespace Sanlog
         /// <inheritdoc/>
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
-
-            Configuration.MakeReadOnly(); // Disallows to change configuration while formatting
-
             if (Equals(formatProvider))
             {
                 if (string.IsNullOrEmpty(format))
