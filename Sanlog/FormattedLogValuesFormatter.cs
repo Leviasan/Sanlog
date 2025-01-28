@@ -67,7 +67,7 @@ namespace Sanlog
             {
                 if (string.IsNullOrEmpty(format))
                 {
-                    if (OverrideFormat(arg, formatProvider, Configuration) is string stringValue && !string.IsNullOrEmpty(stringValue))
+                    if (TryOverrideFormat(arg, formatProvider, Configuration) is string stringValue && !string.IsNullOrEmpty(stringValue))
                     {
                         return stringValue;
                     }
@@ -94,7 +94,7 @@ namespace Sanlog
                     _ => Convert.ToString(arg, formatProvider) ?? string.Empty
                 };
             };
-            static string? OverrideFormat(object? arg, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration)
+            static string? TryOverrideFormat(object? arg, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration)
             {
                 return arg switch
                 {
@@ -111,7 +111,7 @@ namespace Sanlog
             {
                 const string EmptyArray = "[]";
 
-                return OverrideFormat(arg, formatProvider, configuration) is string stringValue && !string.IsNullOrEmpty(stringValue) ? stringValue : arg switch
+                return TryOverrideFormat(arg, formatProvider, configuration) is string stringValue && !string.IsNullOrEmpty(stringValue) ? stringValue : arg switch
                 {
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => SerializeDictionary(dictionary, formatProvider, configuration), // IDictionary implements IEnumerable so must be process before
