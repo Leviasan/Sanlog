@@ -48,7 +48,7 @@ namespace Sanlog
             {
                 var options = _provider.Options;
 
-                var sensitive = new SensitiveFormatter
+                var sensitive = new FormattedLogValuesFormatter
                 {
                     CultureInfo = options.CultureInfo,
                     Configuration = options.SensitiveConfiguration

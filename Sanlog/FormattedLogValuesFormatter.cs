@@ -156,7 +156,7 @@ namespace Sanlog
                     for (var index = 0; index < properties.Length; ++index)
                     {
                         var property = properties[index];
-                        var sensitive = property.IsDefined(typeof(SensitiveAttribute)) || configuration.IsSensitive(type, property.Name);
+                        var sensitive = property.IsDefined(typeof(SensitiveDataAttribute)) || configuration.IsSensitive(type, property.Name);
                         stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
                         _ = stringBuilder
                             .Append(' ')
