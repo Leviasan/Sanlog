@@ -75,7 +75,7 @@ namespace Sanlog
         /// <returns>Returns the current instance.</returns>
         public FormattedLogValuesFormatterOptions SetFormat<T>(string? format) where T : IFormattable
         {
-            CheckReadOnly(); // InvalidOperationException
+            CheckReadOnly();
             var type = typeof(T);
             if (_formatters.ContainsKey(type))
             {
