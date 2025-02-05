@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Compliance.Classification;
 using Sanlog.Compliance.Redaction;
-using Sanlog.Compliance.Classification;
 using System;
+using Sanlog.Compliance.Classification;
 
 namespace Sanlog
 {

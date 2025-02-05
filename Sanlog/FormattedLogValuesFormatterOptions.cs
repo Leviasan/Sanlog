@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 
 namespace Sanlog
@@ -47,6 +48,10 @@ namespace Sanlog
         }
 
         /// <summary>
+        /// Gets or sets the formatting culture.
+        /// </summary>
+        public CultureInfo? CultureInfo { get; set; }
+        /// <summary>
         /// Gets a value indicating whether the current instance has been locked for user modification.
         /// </summary>
         public bool IsReadOnly { get; private set; }
@@ -54,9 +59,20 @@ namespace Sanlog
         /// <summary>
         /// Gets the overriden format associated with the specified <typeparamref name="T"/>.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public string? GetFormat<T>() => _formatters.TryGetValue(typeof(T), out var format) ? format : null;
+        /// <typeparam name="T">The type of the instance to format.</typeparam>
+        /// <returns>The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
+        public string? GetFormat<T>() => GetFormat(typeof(T));
+        /// <summary>
+        /// Gets the overriden format associated with the specified <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type of the instance to format.</param>
+        /// <returns>The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
+        public string? GetFormat(Type type)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            return _formatters.TryGetValue(type, out var format) ? format : null;
+        }
         /// <summary>
         /// Marks the current instance as read-only to prevent any further user modification.
         /// </summary>
@@ -75,7 +91,7 @@ namespace Sanlog
         /// <returns>Returns the current instance.</returns>
         public FormattedLogValuesFormatterOptions SetFormat<T>(string? format) where T : IFormattable
         {
-            CheckReadOnly();
+            CheckReadOnly(); // InvalidOperationException
             var type = typeof(T);
             if (_formatters.ContainsKey(type))
             {
