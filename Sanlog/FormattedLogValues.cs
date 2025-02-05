@@ -6,42 +6,9 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Compliance.Redaction;
-using Microsoft.Extensions.Compliance.Classification;
 
 namespace Sanlog
 {
-    internal static class IServiceCollectionExtensions
-    {
-        public static void AddCompliance(this IServiceCollection services)
-        {
-            _ = services.AddRedaction(x =>
-            {
-                _ = x.SetRedactor<ErasingRedactor>(new DataClassificationSet(SensitiveDataAttribute.DataClassification));
-                _ = x.SetHmacRedactor(x =>
-                {
-                    x.KeyId = 1;
-                    x.Key = "...";
-                }, new DataClassificationSet(PIIDataAttribute.DataClassification));
-            });
-        }
-    }
-    internal sealed class SensitiveDataAttribute : DataClassificationAttribute
-    {
-        internal static DataClassification DataClassification { get; } = new DataClassification(nameof(SanlogLogger), nameof(SensitiveDataAttribute));
-
-        public SensitiveDataAttribute() : base(DataClassification) { }
-    }
-    internal sealed class PIIDataAttribute : DataClassificationAttribute
-    {
-        internal static DataClassification DataClassification { get; } = new DataClassification(nameof(SanlogLogger), nameof(PIIDataAttribute));
-
-        public PIIDataAttribute() : base(DataClassification) { }
-    }
-    internal sealed record Customer([SensitiveData] string Name, [PIIData] string Password);
-
     /// <summary>
     /// Represents the wrapper of the Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>

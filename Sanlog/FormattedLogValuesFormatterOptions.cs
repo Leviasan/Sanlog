@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Threading;
+using System.Numerics;
+using System.Text.Json;
 
 namespace Sanlog
 {
@@ -16,177 +13,98 @@ namespace Sanlog
     public sealed class FormattedLogValuesFormatterOptions
     {
         /// <summary>
-        /// The <see cref="DateTime"/> format string.
+        /// Gets a read-only, singleton instance of <see cref="FormattedLogValuesFormatterOptions"/> that uses the default configuration.
         /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string? _dateTimeFormat;
-        /// <summary>
-        /// The <see cref="DateTimeOffset"/> format string.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string? _dateTimeOffsetFormat;
-        /// <summary>
-        /// The <see cref="Enum"/> format string.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string? _enumFormat;
-        /// <summary>
-        /// The <see cref="float"/> format string.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string? _singleFormat;
-        /// <summary>
-        /// The <see cref="double"/> format string.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private string? _doubleFormat;
-        /// <summary>
-        /// The sensitive properties.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<string>> _dictionary = [];
+        public static readonly FormattedLogValuesFormatterOptions Default = new FormattedLogValuesFormatterOptions()
+            .SetFormat<Enum>("D")
+            .SetFormat<float>("G9")
+            .SetFormat<double>("G17")
+            .SetFormat<BigInteger>("R")
+            .SetFormat<DateOnly>("O")
+            .SetFormat<TimeOnly>("O")
+            .SetFormat<DateTime>("O")
+            .SetFormat<DateTimeOffset>("O")
+            .MakeReadOnly();
 
         /// <summary>
-        /// Gets a value indicating whether the configuration is read-only.
+        /// The overridden format for specified types.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Dictionary<Type, string?> _formatters = [];
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> with default configuration.
+        /// </summary>
+        public FormattedLogValuesFormatterOptions() : this(Default) { }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> based on the specified configuration.
+        /// </summary>
+        /// <param name="options">The based configuration.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
+        public FormattedLogValuesFormatterOptions(FormattedLogValuesFormatterOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            _formatters = options._formatters;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the current instance has been locked for user modification.
         /// </summary>
         public bool IsReadOnly { get; private set; }
+
         /// <summary>
-        /// Gets or sets the <see cref="DateTime"/> format string.
+        /// Gets the overriden format associated with the specified <typeparamref name="T"/>.
         /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
-        public string? DateTimeFormat
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public string? GetFormat<T>() => _formatters.TryGetValue(typeof(T), out var format) ? format : null;
+        /// <summary>
+        /// Marks the current instance as read-only to prevent any further user modification.
+        /// </summary>
+        /// <returns>Returns the current instance.</returns>
+        public FormattedLogValuesFormatterOptions MakeReadOnly()
         {
-            get => _dateTimeFormat;
-            set
-            {
-                CheckReadOnly();
-                _dateTimeFormat = value;
-            }
+            IsReadOnly = true;
+            return this;
         }
         /// <summary>
-        /// Gets or sets the <see cref="DateTimeOffset"/> format string.
+        /// Overrides format to use for the specified <typeparamref name="T"/>.
         /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        [StringSyntax(StringSyntaxAttribute.DateTimeFormat)]
-        public string? DateTimeOffsetFormat
+        /// <typeparam name="T">The type of the instance to format.</typeparam>
+        /// <param name="format">The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</param>
+        /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
+        /// <returns>Returns the current instance.</returns>
+        public FormattedLogValuesFormatterOptions SetFormat<T>(string? format) where T : IFormattable
         {
-            get => _dateTimeOffsetFormat;
-            set
+            CheckReadOnly();
+            var type = typeof(T);
+            if (_formatters.ContainsKey(type))
             {
-                CheckReadOnly();
-                _dateTimeOffsetFormat = value;
+                _formatters.Add(type, format);
             }
-        }
-        /// <summary>
-        /// Gets or sets the <see cref="Enum"/> format string.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        [StringSyntax(StringSyntaxAttribute.EnumFormat)]
-        public string? EnumFormat
-        {
-            get => _enumFormat;
-            set
+            else
             {
-                CheckReadOnly();
-                _enumFormat = value;
+                _formatters[type] = format;
             }
-        }
-        /// <summary>
-        /// Gets or sets the <see cref="float"/> format string.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        [StringSyntax(StringSyntaxAttribute.NumericFormat)]
-        public string? SingleFormat
-        {
-            get => _singleFormat;
-            set
-            {
-                CheckReadOnly();
-                _singleFormat = value;
-            }
-        }
-        /// <summary>
-        /// Gets or sets the <see cref="double"/> format string.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-        [StringSyntax(StringSyntaxAttribute.NumericFormat)]
-        public string? DoubleFormat
-        {
-            get => _doubleFormat;
-            set
-            {
-                CheckReadOnly();
-                _doubleFormat = value;
-            }
+            return this;
         }
 
         /// <summary>
-        /// Checks whether the property of the specified type belongs to sensitive data.
+        /// Throws an exception if the current instance is read-only to prevent any further user modification.
         /// </summary>
-        /// <param name="type">The sensitive type.</param>
-        /// <param name="property">The property whose value belongs to sensitive data.</param>
-        /// <returns><see langword="true"/> if the property of the specified key type belongs to sensitive data; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
-        public bool IsSensitive(Type type, string property)
-        {
-            ArgumentNullException.ThrowIfNull(property);
-            return _dictionary.TryGetValue(type, out var hashset) && hashset.Contains(property);
-        }
-        /// <summary>
-        /// Makes the configuration read-only.
-        /// </summary>
-        public void MakeReadOnly() => IsReadOnly = true;
-        /// <summary>
-        /// Throws an exception if the configuration is read-only.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
+        /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
         private void CheckReadOnly()
         {
             if (IsReadOnly)
-                throw new InvalidOperationException("The configuration is read-only.");
+                ThrowInvalidOperationException("The current instance is read-only to prevent any further user modification.");
         }
+
+        /// <summary>
+        /// Throws an <see cref="InvalidOperationException"/> with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <exception cref="InvalidOperationException">The method will never return under any circumstance.</exception>
+        [DoesNotReturn]
+        private static void ThrowInvalidOperationException(string? message) => throw new InvalidOperationException(message);
     }
 }
-/*
-
-/// <summary>
-/// Registers a property whose value belongs to sensitive data.
-/// </summary>
-/// <param name="type">The sensitive key type.</param>
-/// <param name="property">The property whose value belongs to sensitive data.</param>
-/// <returns><see langword="true"/> if the element is added to the collection; <see langword="false"/> if the element is already present.</returns>
-/// <exception cref="ArgumentNullException">The <paramref name="property"/> is <see langword="null"/>.</exception>
-/// <exception cref="InvalidOperationException">The configuration is read-only.</exception>
-public bool AddSensitive(Type type, string property)
-{
-    var d = Mapper<FormatException>.GetProperty(x => x.StackTrace);
-    var e = AddSensitive<FormatException, string>(x => x.HResult);
-
-
-
-    CheckReadOnly(); // InvalidOperationException
-    ArgumentNullException.ThrowIfNull(property);
-    return _dictionary.TryGetValue(type, out var hashset) ? hashset.Add(property) : _dictionary.TryAdd(type, [property]);
-}
-*/
-/*
-internal static class Mapper<T>
-{
-    public static PropertyInfo GetProperty<P>(Expression<Func<T, P>> expression)
-    {
-        return expression.Body is MemberExpression member && member.Member is PropertyInfo property
-            ? property
-            : throw new ArgumentException("Expression is not a Property", nameof(expression));
-    }
-}
-internal static class InstanceMapper
-{
-    public static PropertyInfo GetProperty<T, P>(this T _, Expression<Func<T, P>> expression)
-    {
-        return expression.Body is MemberExpression member && member.Member is PropertyInfo property
-            ? property
-            : throw new ArgumentException("Expression is not a Property", nameof(expression));
-    }
-}
-*/

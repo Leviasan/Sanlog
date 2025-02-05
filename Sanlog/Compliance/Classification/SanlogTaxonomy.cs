@@ -1,0 +1,19 @@
+﻿using Microsoft.Extensions.Compliance.Classification;
+
+namespace Sanlog.Compliance.Classification
+{
+    /// <summary>
+    /// Provides data classifications for logging.
+    /// </summary>
+    public static class SanlogTaxonomy
+    {
+        /// <summary>
+        /// Gets the name of this classification taxonomy.
+        /// </summary>
+        public static string TaxonomyName => typeof(SanlogTaxonomy).FullName!;
+        /// <summary>
+        /// Gets the value to represent sensitive data.
+        /// </summary>
+        public static DataClassification SensitiveData => new(TaxonomyName, nameof(SensitiveData));
+    }
+}

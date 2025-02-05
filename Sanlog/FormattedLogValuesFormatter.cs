@@ -4,7 +4,11 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using Microsoft.Extensions.Compliance.Redaction;
+using Microsoft.Extensions.Options;
+using Sanlog.Compliance.Classification;
 
 namespace Sanlog
 {
@@ -35,6 +39,15 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private FormattedLogValuesFormatterOptions? _configuration;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="options"></param>
+        public FormattedLogValuesFormatter(IOptions<FormattedLogValuesFormatterOptions>? options = null)
+        {
+
+        }
 
         /// <summary>
         /// Gets or sets the configuration of the formatter.
@@ -156,7 +169,7 @@ namespace Sanlog
                     for (var index = 0; index < properties.Length; ++index)
                     {
                         var property = properties[index];
-                        var sensitive = property.IsDefined(typeof(SensitiveDataAttribute)) || configuration.IsSensitive(type, property.Name);
+                        var sensitive = property.IsDefined(typeof(SensitiveDataClassificationAttribute)) || configuration.IsSensitive(type, property.Name);
                         stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
                         _ = stringBuilder
                             .Append(' ')
