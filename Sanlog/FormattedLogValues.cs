@@ -39,62 +39,6 @@ namespace Sanlog
         private static readonly ConcurrentDictionary<string, MessageTemplate> CachedMessageTemplates = [];
 
         /// <summary>
-        /// Tries to get a message template from the cache or parses composite/named format string and tries to add to cache one.
-        /// </summary>
-        /// <param name="format">A composite/named format string.</param>
-        /// <param name="messageTemplate">When this method returns, it contains a message template or the <see langword="null"/> if the operation failed.</param>
-        /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
-        /// <exception cref="FormatException">A format item in <paramref name="format"/> is invalid.</exception>
-        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out MessageTemplate? messageTemplate)
-        {
-            if (!string.IsNullOrEmpty(format))
-            {
-                if (!CachedMessageTemplates.TryGetValue(format, out messageTemplate))
-                {
-                    messageTemplate = new MessageTemplate(format); // FormatException
-                    return messageTemplate.CompositeFormat.MinimumArgumentCount == 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate) || true;
-                }
-                return true;
-            }
-            messageTemplate = default;
-            return false;
-        }
-        /// <summary>
-        /// Creates a dictionary from an object array containing zero or more objects to format linked with <paramref name="format"/> a composite/named format string.
-        /// </summary>
-        /// <param name="format">A composite/named format string.</param>
-        /// <param name="args">An object array that contains zero or more objects to format.</param>
-        /// <returns>A dictionary from an object array that contains zero or more objects to format.</returns>
-        /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
-        /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
-        private static Dictionary<string, object?> ParseCompositeArgs(string? format, params object?[] args)
-        {
-            ArgumentNullException.ThrowIfNull(args);
-            var index = 0;
-            var dictionary = new Dictionary<string, object?>();
-            if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
-            {
-                if (args.Length < messageTemplate.CompositeFormat.MinimumArgumentCount)
-                {
-                    throw new ArgumentException("Passed less than the minimum number of arguments that must be passed to a formatting operation.", nameof(args));
-                }
-                foreach (var segment in messageTemplate.Segments)
-                {
-                    if (dictionary.ContainsKey(segment))
-                    {
-                        continue;
-                    }
-                    dictionary.Add(segment, args[index++]);
-                }
-            }
-            if (!string.IsNullOrEmpty(format))
-            {
-                dictionary.Add(OriginalFormatKey, format);
-            }
-            return dictionary;
-        }
-
-        /// <summary>
         /// The key-value pair collection to format.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -311,6 +255,61 @@ namespace Sanlog
                     return newlist;
                 }
             }
+        }
+        /// <summary>
+        /// Tries to get a message template from the cache or parses composite/named format string and tries to add to cache one.
+        /// </summary>
+        /// <param name="format">A composite/named format string.</param>
+        /// <param name="messageTemplate">When this method returns, it contains a message template or the <see langword="null"/> if the operation failed.</param>
+        /// <returns><see langword="true"/> if the operation is successful; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="FormatException">A format item in <paramref name="format"/> is invalid.</exception>
+        private static bool TryGetOrAdd(string? format, [NotNullWhen(true)] out MessageTemplate? messageTemplate)
+        {
+            if (!string.IsNullOrEmpty(format))
+            {
+                if (!CachedMessageTemplates.TryGetValue(format, out messageTemplate))
+                {
+                    messageTemplate = new MessageTemplate(format); // FormatException
+                    return messageTemplate.CompositeFormat.MinimumArgumentCount == 0 || CachedMessageTemplates.Count >= MaxCachedTemplates || CachedMessageTemplates.TryAdd(format, messageTemplate) || true;
+                }
+                return true;
+            }
+            messageTemplate = default;
+            return false;
+        }
+        /// <summary>
+        /// Creates a dictionary from an object array containing zero or more objects to format linked with <paramref name="format"/> a composite/named format string.
+        /// </summary>
+        /// <param name="format">A composite/named format string.</param>
+        /// <param name="args">An object array that contains zero or more objects to format.</param>
+        /// <returns>A dictionary from an object array that contains zero or more objects to format.</returns>
+        /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="args"/> is <see langword="null"/>.</exception>
+        private static Dictionary<string, object?> ParseCompositeArgs(string? format, params object?[] args)
+        {
+            ArgumentNullException.ThrowIfNull(args);
+            var index = 0;
+            var dictionary = new Dictionary<string, object?>();
+            if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
+            {
+                if (args.Length < messageTemplate.CompositeFormat.MinimumArgumentCount)
+                {
+                    throw new ArgumentException("Passed less than the minimum number of arguments that must be passed to a formatting operation.", nameof(args));
+                }
+                foreach (var segment in messageTemplate.Segments)
+                {
+                    if (dictionary.ContainsKey(segment))
+                    {
+                        continue;
+                    }
+                    dictionary.Add(segment, args[index++]);
+                }
+            }
+            if (!string.IsNullOrEmpty(format))
+            {
+                dictionary.Add(OriginalFormatKey, format);
+            }
+            return dictionary;
         }
     }
 }

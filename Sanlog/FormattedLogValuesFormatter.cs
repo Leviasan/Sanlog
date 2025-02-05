@@ -29,10 +29,6 @@ namespace Sanlog
         /// The message format that represents a null value.
         /// </summary>
         public const string NullValue = "(null)";
-        /// <summary>
-        /// The message format that represents a redacted value.
-        /// </summary>
-        public const string RedactedValue = "[Redacted]";
 
         /// <summary>
         /// The configuration of the formatter.
