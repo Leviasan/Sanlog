@@ -15,7 +15,7 @@ namespace Sanlog
         /// <summary>
         /// Gets a read-only, singleton instance of <see cref="FormattedLogValuesFormatterOptions"/> that uses the default configuration.
         /// </summary>
-        public static readonly FormattedLogValuesFormatterOptions Default = new FormattedLogValuesFormatterOptions()
+        public static readonly FormattedLogValuesFormatterOptions Default = new FormattedLogValuesFormatterOptions(CultureInfo.InvariantCulture)
             .SetFormat<Enum>("D")
             .SetFormat<float>("G9")
             .SetFormat<double>("G17")
@@ -27,15 +27,21 @@ namespace Sanlog
             .MakeReadOnly();
 
         /// <summary>
+        /// The formatting culture.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private CultureInfo? _culture;
+        /// <summary>
         /// The overridden format for specified types.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Dictionary<Type, string?> _formatters = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> with default configuration.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> class.
         /// </summary>
-        public FormattedLogValuesFormatterOptions() : this(Default) { }
+        /// <param name="culture">The formatting culture.</param>
+        public FormattedLogValuesFormatterOptions(CultureInfo? culture = null) => _culture = culture;
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> based on the specified configuration.
         /// </summary>
@@ -44,13 +50,23 @@ namespace Sanlog
         public FormattedLogValuesFormatterOptions(FormattedLogValuesFormatterOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
+            _culture = options._culture;
             _formatters = options._formatters;
         }
 
         /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
-        public CultureInfo? CultureInfo { get; set; }
+        /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
+        public CultureInfo? CultureInfo
+        {
+            get => _culture;
+            set
+            {
+                CheckReadOnly();
+                _culture = value;
+            }
+        }
         /// <summary>
         /// Gets a value indicating whether the current instance has been locked for user modification.
         /// </summary>
