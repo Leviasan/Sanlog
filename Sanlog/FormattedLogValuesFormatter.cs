@@ -2,10 +2,10 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Xml.Linq;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Options;
@@ -143,13 +143,14 @@ namespace Sanlog
                 static string SerializeObject(object value, IFormatProvider? provider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
                     const string EmptyObject = "{}";
+                    const BindingFlags InstancePublic = BindingFlags.Instance | BindingFlags.Public;
 
                     var type = value.GetType();
                     if (TryGetRedactor(type, redactorProvider, out var redactor))
                         return redactor.Redact(value.ToString());
 
                     StringBuilder? stringBuilder = null;
-                    var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                    var properties = type.GetProperties(InstancePublic);
                     for (var index = 0; index < properties.Length; ++index)
                     {
                         var property = properties[index];
@@ -164,7 +165,6 @@ namespace Sanlog
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;
                 }
-
                 static bool TryGetRedactor(MemberInfo member, IRedactorProvider provider, [NotNullWhen(true)] out Redactor? redactor)
                 {
                     redactor = null;
