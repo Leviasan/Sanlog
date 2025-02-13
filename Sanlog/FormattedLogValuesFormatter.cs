@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Xml.Linq;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Options;
@@ -144,23 +145,36 @@ namespace Sanlog
                     const string EmptyObject = "{}";
 
                     var type = value.GetType();
+                    if (TryGetRedactor(type, redactorProvider, out var redactor))
+                        return redactor.Redact(value.ToString());
+
                     StringBuilder? stringBuilder = null;
                     var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
                     for (var index = 0; index < properties.Length; ++index)
                     {
                         var property = properties[index];
-                        var attributes = property.GetCustomAttributes<DataClassificationAttribute>();
-                        var redactor = redactorProvider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
-
                         stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
                         _ = stringBuilder
                             .Append(' ')
                             .Append(property.Name)
-                            .Append(" = ")
-                            .AppendRedacted(redactor, Serialize(property.GetValue(value), provider, configuration, redactorProvider))
-                            .Append(index < properties.Length - 1 ? ',' : ' ');
+                            .Append(" = ");
+                        if (TryGetRedactor(property, redactorProvider, out redactor))
+                            _ = stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(value), provider, configuration, redactorProvider));
+                        _ = stringBuilder.Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;
+                }
+
+                static bool TryGetRedactor(MemberInfo member, IRedactorProvider provider, [NotNullWhen(true)] out Redactor? redactor)
+                {
+                    redactor = null;
+                    if (member.IsDefined(typeof(DataClassificationAttribute)))
+                    {
+                        var attributes = member.GetCustomAttributes<DataClassificationAttribute>();
+                        redactor = provider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
+                        return true;
+                    }
+                    return false;
                 }
             }
         }
