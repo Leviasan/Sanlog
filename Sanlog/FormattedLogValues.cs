@@ -104,20 +104,6 @@ namespace Sanlog
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         /// <summary>
         /// Gets the element at the specified index in the read-only list.
         /// </summary>
@@ -144,25 +130,16 @@ namespace Sanlog
         {
             ArgumentNullException.ThrowIfNull(key);
             var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
-            var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
+            var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
-
-
-
-
-
-
-
-
-
         /// <inheritdoc/>
         public override string? ToString()
         {
             if (TryGetOrAdd(_format, out var messageTemplate))
             {
-                var args = TakeBySegmentOrder(messageTemplate, _collection, (index) => this[index].Value);
+                var args = TakeBySegmentOrder(messageTemplate, _collection, (index) => GetObject(index, true));
                 return messageTemplate.Format(_formatter, args);
             }
             else
@@ -170,7 +147,7 @@ namespace Sanlog
                 return NullFormat;
             }
 
-            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> indexer)
+            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> retrieve)
             {
                 var dictionary = new Dictionary<string, object?>();
                 foreach (var segment in messageTemplate.Segments)
@@ -179,7 +156,7 @@ namespace Sanlog
                     {
                         continue;
                     }
-                    // Defines the first occurrence of the key instead of directly using this[string, bool] to prevent InvalidOperationException
+                    // Defines the first occurrence of the key instead of directly using GetObject(string, bool) to prevent InvalidOperationException
                     var index = -1;
                     for (var i = 0; i < collection.Count; ++i)
                     {
@@ -188,7 +165,7 @@ namespace Sanlog
                             index = i;
                         }
                     }
-                    dictionary[segment] = index != -1 ? indexer.Invoke(index) : null; // The element maybe not found
+                    dictionary[segment] = index != -1 ? retrieve.Invoke(index) : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
 
@@ -196,18 +173,6 @@ namespace Sanlog
                     => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
             }
         }
-        /// <summary>
-        /// Projects each element processes through formatters into a string key-value pair collection.
-        /// </summary>
-        /// <returns>An enumerable whose elements were processed through formatters.</returns>
-        public IEnumerable<KeyValuePair<string, string?>> FormatToList()
-        {
-            const string SimpleFormat = "{0}";
-            return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value))); // 'this.Select' see 'GetEnumerator'
-        }
-
-
-
         /// <summary>
         /// Processes a value through the sensitive formatter.
         /// </summary>
@@ -285,3 +250,15 @@ namespace Sanlog
         }
     }
 }
+
+/*
+/// <summary>
+/// Projects each element processes through formatters into a string key-value pair collection.
+/// </summary>
+/// <returns>An enumerable whose elements were processed through formatters.</returns>
+public IEnumerable<KeyValuePair<string, string?>> FormatToList()
+{
+    const string SimpleFormat = "{0}";
+    return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value))); // 'this.Select' see 'GetEnumerator'
+}
+*/
