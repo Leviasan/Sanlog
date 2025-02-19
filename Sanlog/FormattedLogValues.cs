@@ -100,7 +100,7 @@ namespace Sanlog
         public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
         {
             for (var index = 0; index < _collection.Count; ++index)
-                yield return GetObject(index, false);
+                yield return GetObject(index, false); // 'true' operation is expensive
         }
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -172,6 +172,16 @@ namespace Sanlog
                 static bool EqualsOrdinalString(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
                     => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
             }
+        }
+        /// <summary>
+        /// Projects each element processes through formatters into a string key-value pair collection.
+        /// </summary>
+        /// <returns>An enumerable whose elements were processed through formatters.</returns>
+        public IEnumerable<KeyValuePair<string, string?>> FormatToList()
+        {
+            const string SimpleFormat = "{0}";
+
+            return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value))); // 'this.Select' see 'GetEnumerator'
         }
         /// <summary>
         /// Processes a value through the sensitive formatter.
@@ -250,15 +260,3 @@ namespace Sanlog
         }
     }
 }
-
-/*
-/// <summary>
-/// Projects each element processes through formatters into a string key-value pair collection.
-/// </summary>
-/// <returns>An enumerable whose elements were processed through formatters.</returns>
-public IEnumerable<KeyValuePair<string, string?>> FormatToList()
-{
-    const string SimpleFormat = "{0}";
-    return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value))); // 'this.Select' see 'GetEnumerator'
-}
-*/

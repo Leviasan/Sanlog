@@ -73,7 +73,7 @@ namespace Sanlog
                 {
                     if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                     {
-                        return SensitiveRedactor.RedactedValue;
+                        return SensitiveDataRedactor.RedactedValue;
                     }
                     if (format.Equals(FormatSerialize, StringComparison.Ordinal) && arg is not null)
                     {
@@ -103,16 +103,16 @@ namespace Sanlog
                 };
                 return !string.IsNullOrEmpty(stringValue);
             }
-            static string Serialize(object? arg, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
+            static string Serialize(object? obj, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
             {
                 const string EmptyArray = "[]";
 
-                return TryOverrideFormat(arg, formatProvider, configuration, out var stringValue) ? stringValue : arg switch
+                return TryOverrideFormat(obj, formatProvider, configuration, out var stringValue) ? stringValue : obj switch
                 {
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => SerializeDictionary(dictionary, formatProvider, configuration, redactorProvider), // IDictionary implements IEnumerable so must be process before
                     IEnumerable enumerable => SerializeEnumerable(enumerable, formatProvider, configuration, redactorProvider),
-                    _ => SerializeObject(arg, formatProvider, configuration, redactorProvider)
+                    _ => SerializeObject(obj, formatProvider, configuration, redactorProvider)
                 };
 
                 static string SerializeDictionary(IDictionary dictionary, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
@@ -139,14 +139,14 @@ namespace Sanlog
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
-                static string SerializeObject(object value, IFormatProvider? provider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
+                static string SerializeObject(object obj, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
                     const string EmptyObject = "{}";
                     const BindingFlags InstancePublic = BindingFlags.Instance | BindingFlags.Public;
 
-                    var type = value.GetType();
+                    var type = obj.GetType();
                     if (TryGetRedactor(type, redactorProvider, out var redactor))
-                        return redactor.Redact(value.ToString());
+                        return redactor.Redact(obj, null, formatProvider);
 
                     StringBuilder? stringBuilder = null;
                     var properties = type.GetProperties(InstancePublic);
@@ -159,18 +159,18 @@ namespace Sanlog
                             .Append(property.Name)
                             .Append(" = ");
                         if (TryGetRedactor(property, redactorProvider, out redactor))
-                            _ = stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(value), provider, configuration, redactorProvider));
+                            _ = stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(obj), formatProvider, configuration, redactorProvider));
                         _ = stringBuilder.Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;
                 }
-                static bool TryGetRedactor(MemberInfo member, IRedactorProvider provider, [NotNullWhen(true)] out Redactor? redactor)
+                static bool TryGetRedactor(MemberInfo member, IRedactorProvider redactorProvider, [NotNullWhen(true)] out Redactor? redactor)
                 {
                     redactor = null;
                     if (member.IsDefined(typeof(DataClassificationAttribute)))
                     {
                         var attributes = member.GetCustomAttributes<DataClassificationAttribute>();
-                        redactor = provider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
+                        redactor = redactorProvider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
                         return true;
                     }
                     return false;

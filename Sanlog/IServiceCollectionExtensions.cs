@@ -19,7 +19,7 @@ namespace Sanlog
         public static IServiceCollection AddCompliance(this IServiceCollection services)
         {
             ArgumentNullException.ThrowIfNull(services);
-            return services.AddRedaction(redactionBuilder => redactionBuilder.SetRedactor<SensitiveRedactor>(new DataClassificationSet(SanlogTaxonomy.SensitiveData)));
+            return services.AddRedaction(redactionBuilder => redactionBuilder.SetRedactor<SensitiveDataRedactor>(new DataClassificationSet(SanlogTaxonomy.SensitiveData)));
         }
     }
 }

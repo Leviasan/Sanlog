@@ -7,7 +7,7 @@ namespace Sanlog.Compliance.Redaction
     /// <summary>
     /// Redactor that replaces anything with <see cref="RedactedValue"/>.
     /// </summary>
-    public sealed class SensitiveRedactor : Redactor
+    public sealed class SensitiveDataRedactor : Redactor
     {
         /// <summary>
         /// The redacted value.
