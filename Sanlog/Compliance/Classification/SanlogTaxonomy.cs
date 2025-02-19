@@ -14,6 +14,6 @@ namespace Sanlog.Compliance.Classification
         /// <summary>
         /// Gets the value to represent sensitive data.
         /// </summary>
-        public static DataClassification SensitiveData => new(TaxonomyName, nameof(SensitiveData));
+        public static DataClassification Sensitive => new(TaxonomyName, nameof(Sensitive));
     }
 }

@@ -73,7 +73,7 @@ namespace Sanlog
                 {
                     if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                     {
-                        return SensitiveDataRedactor.RedactedValue;
+                        return SensitiveRedactor.RedactedValue;
                     }
                     if (format.Equals(FormatSerialize, StringComparison.Ordinal) && arg is not null)
                     {

@@ -10,6 +10,6 @@ namespace Sanlog.Compliance.Classification
         /// <summary>
         /// Initializes a new instance of the <see cref="SensitiveDataClassificationAttribute"/> class.
         /// </summary>
-        public SensitiveDataClassificationAttribute() : base(SanlogTaxonomy.SensitiveData) { }
+        public SensitiveDataClassificationAttribute() : base(SanlogTaxonomy.Sensitive) { }
     }
 }
