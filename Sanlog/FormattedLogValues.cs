@@ -129,11 +129,21 @@ namespace Sanlog
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
         {
             ArgumentNullException.ThrowIfNull(key);
-            var kvp = _collection.Single(x => x.Key == key); // InvalidOperationException
+            var kvp = _collection.Single(x => EqualsSensitiveKey(x.Key, key)); // InvalidOperationException
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
             var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="left"></param>
+        /// <param name="rigth"></param>
+        /// <returns></returns>
+        private static bool EqualsSensitiveKey(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
+            => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
+
         /// <inheritdoc/>
         public override string? ToString()
         {
@@ -162,7 +172,7 @@ namespace Sanlog
                     var index = NotFound;
                     for (var i = 0; i < collection.Count; ++i)
                     {
-                        if (EqualsOrdinalString(collection.ElementAt(i).Key, segment))
+                        if (EqualsSensitiveKey(collection.ElementAt(i).Key, segment))
                         {
                             index = i;
                         }
@@ -170,9 +180,6 @@ namespace Sanlog
                     dictionary[segment] = index != NotFound ? retrieve.Invoke(index) : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
-
-                static bool EqualsOrdinalString(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
-                    => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
             }
         }
         /// <summary>
