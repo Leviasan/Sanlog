@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Sanlog
+namespace Sanlog.Models
 {
     /// <summary>
     /// Represents the tenant client.
