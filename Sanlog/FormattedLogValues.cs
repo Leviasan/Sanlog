@@ -149,6 +149,8 @@ namespace Sanlog
 
             static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> retrieve)
             {
+                const int NotFound = -1;
+
                 var dictionary = new Dictionary<string, object?>();
                 foreach (var segment in messageTemplate.Segments)
                 {
@@ -157,7 +159,7 @@ namespace Sanlog
                         continue;
                     }
                     // Defines the first occurrence of the key instead of directly using GetObject(string, bool) to prevent InvalidOperationException
-                    var index = -1;
+                    var index = NotFound;
                     for (var i = 0; i < collection.Count; ++i)
                     {
                         if (EqualsOrdinalString(collection.ElementAt(i).Key, segment))
@@ -165,7 +167,7 @@ namespace Sanlog
                             index = i;
                         }
                     }
-                    dictionary[segment] = index != -1 ? retrieve.Invoke(index) : null; // The element maybe not found
+                    dictionary[segment] = index != NotFound ? retrieve.Invoke(index) : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
 
