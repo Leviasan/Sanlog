@@ -11,7 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents the wrapper of the Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    public sealed class FormattedLogValues : IEnumerable<KeyValuePair<string, object?>>
+    internal sealed class FormattedLogValues : IEnumerable<KeyValuePair<string, object?>>
     {
         /// <summary>
         /// The operator in front of the argument name tells the formatter to serialize the object passed in, rather than convert it using ToString method.

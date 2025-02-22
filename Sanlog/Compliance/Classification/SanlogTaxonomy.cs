@@ -5,7 +5,7 @@ namespace Sanlog.Compliance.Classification
     /// <summary>
     /// Provides data classifications.
     /// </summary>
-    public static class SanlogTaxonomy
+    internal static class SanlogTaxonomy
     {
         /// <summary>
         /// Gets the name of classification taxonomy.

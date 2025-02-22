@@ -13,7 +13,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.
     /// </summary>
-    public sealed class MessageBroker : IMessageBroker, IDisposable
+    internal sealed class MessageBroker : IMessageBroker, IDisposable
     {
         /// <summary>
         /// The underlying channel.

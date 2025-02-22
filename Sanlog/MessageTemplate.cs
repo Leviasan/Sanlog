@@ -9,7 +9,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a composite/named message template.
     /// </summary>
-    public sealed class MessageTemplate
+    internal sealed class MessageTemplate
     {
         /// <summary>
         /// The delimiters used by composite string.
