@@ -45,8 +45,10 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var logValues = new FormattedLogValues(_provider.Formatter, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
-              
+                var logValues = new FormattedLogValues(
+                    formatter: _provider.Formatter,
+                    collection: state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
+
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
@@ -54,7 +56,7 @@ namespace Sanlog
                     Id = logEntryId,
                     AppId = _provider.Options.AppId,
                     Version = _provider.Options.OnRetrieveVersion?.Invoke(),
-                    Timestamp = DateTime.Now,
+                    Timestamp = DateTimeOffset.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
                     EventId = eventId.Id,
@@ -86,7 +88,7 @@ namespace Sanlog
                     Type = exception.GetType().FullName,
                     Message = exception.Message,
                     HResult = exception.HResult,
-                    Data = ProcessExceptionDictionary(exception.Data, loggerProvider.Formatter),
+                    Data = GetExceptionDictionary(exception.Data, loggerProvider.Formatter),
                     StackTrace = exception.StackTrace,
                     Source = exception.Source,
                     HelpLink = exception.HelpLink,
@@ -100,7 +102,7 @@ namespace Sanlog
                         : []
                 };
 
-                static IReadOnlyList<KeyValuePair<string, string?>>? ProcessExceptionDictionary(IDictionary dictionary, FormattedLogValuesFormatter formatter)
+                static IReadOnlyList<KeyValuePair<string, string?>>? GetExceptionDictionary(IDictionary dictionary, FormattedLogValuesFormatter formatter)
                 {
                     if (dictionary.Count == 0)
                     {
@@ -117,11 +119,11 @@ namespace Sanlog
                     return logValues.SelectToFormat();
                 }
             }
-            static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerProvider loggerProvider)
+            static List<LoggingScope>? GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerProvider loggerProvider)
             {
-                var scopes = new List<LoggingScope>();
                 if (loggerProvider.Options.IncludeScopes && loggerProvider.ExternalScopeProvider is not null)
                 {
+                    var scopes = new List<LoggingScope>();
                     loggerProvider.ExternalScopeProvider.ForEachScope((scope, scopes) =>
                     {
                         if (scope is not null)
@@ -141,8 +143,9 @@ namespace Sanlog
                             scopes.Add(loggingScope);
                         }
                     }, scopes);
+                    return scopes;
                 }
-                return scopes;
+                return null;
             }
         }
     }

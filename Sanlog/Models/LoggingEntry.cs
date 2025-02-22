@@ -23,7 +23,7 @@ namespace Sanlog.Models
         /// <summary>
         /// Gets the date and time when the event occurred.
         /// </summary>
-        public DateTime Timestamp { get; init; }
+        public DateTimeOffset Timestamp { get; init; }
         /// <summary>
         /// Gets the application version in which the event occurred.
         /// </summary>
