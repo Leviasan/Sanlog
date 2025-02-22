@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Compliance.Redaction;
 
 namespace Sanlog.Compliance.Redaction
@@ -19,17 +18,9 @@ namespace Sanlog.Compliance.Redaction
         /// <inheritdoc/>
         public override int Redact(ReadOnlySpan<char> source, Span<char> destination)
         {
-            if (!RedactedValue.TryCopyTo(destination))
-                ThrowArgumentException($"Buffer too small, needed a size of {RedactedValue.Length} but got {destination.Length}", nameof(destination));
-            return RedactedValue.Length;
+            return RedactedValue.TryCopyTo(destination)
+                ? RedactedValue.Length
+                : throw new ArgumentException($"Buffer too small, needed a size of {RedactedValue.Length} but got {destination.Length}", nameof(destination));
         }
-        /// <summary>
-        /// Throws an <see cref="ArgumentException"/> with a specified error message and the name of the parameter that causes this exception.
-        /// </summary>
-        /// <param name="message">The error message that explains the reason for the exception.</param>
-        /// <param name="paramName">The name of the parameter that caused the current exception.</param>
-        /// <exception cref="ArgumentException">The method will never return under any circumstance.</exception>
-        [DoesNotReturn]
-        private static void ThrowArgumentException(string? message, string? paramName) => throw new ArgumentException(message, paramName);
     }
 }

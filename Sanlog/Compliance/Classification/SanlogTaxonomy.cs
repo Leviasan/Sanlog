@@ -3,12 +3,12 @@
 namespace Sanlog.Compliance.Classification
 {
     /// <summary>
-    /// Provides data classifications for logging.
+    /// Provides data classifications.
     /// </summary>
     public static class SanlogTaxonomy
     {
         /// <summary>
-        /// Gets the name of this classification taxonomy.
+        /// Gets the name of classification taxonomy.
         /// </summary>
         public static string TaxonomyName => typeof(SanlogTaxonomy).FullName!;
         /// <summary>
