@@ -45,41 +45,29 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var options = _provider.Options;
-
-                var sensitive = new FormattedLogValuesFormatter
-                {
-                    CultureInfo = options.CultureInfo,
-                    Configuration = options.SensitiveConfiguration
-                };
-                var formatted = new FormattedLogValuesFormatter
-                {
-                    CultureInfo = options.CultureInfo,
-                    Configuration = options.FormattedConfiguration
-                };
-                var stateFormatter = new FormattedLogValues(sensitive, formatted, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
+                var logValues = new FormattedLogValues(_provider.Formatter, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
               
                 var logEntryId = Guid.NewGuid();
                 var loggingEntry = new LoggingEntry
                 {
-                    TenantId = options.TenantId,
+                    TenantId = _provider.Options.TenantId,
                     Id = logEntryId,
-                    AppId = options.AppId,
-                    Version = options.OnRetrieveVersion?.Invoke(),
+                    AppId = _provider.Options.AppId,
+                    Version = _provider.Options.OnRetrieveVersion?.Invoke(),
                     Timestamp = DateTime.Now,
                     LoggingLevelId = (int)logLevel,
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = stateFormatter.OriginalFormat
-                        ? formatter.ToString() // format message template
+                    Message = logValues.OriginalFormat
+                        ? logValues.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
-                    Properties = stateFormatter.SelectToFormat(),
-                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
+                    Properties = logValues.SelectToFormat(),
+                    Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _provider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
-                            ? [GetErrorInformation(options, Guid.NewGuid(), exception, logEntryId, null)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, null)).ToList()
+                            ? [GetErrorInformation(exception, logEntryId, null, _provider)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(innerException, logEntryId, null, _provider)).ToList()
                         : []
                 };
                 _ = _provider.SendMessage(loggingEntry);
@@ -88,16 +76,17 @@ namespace Sanlog
             [UnconditionalSuppressMessage("Trimming",
                 "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
                 Justification = "TargetSite metadata might be incomplete or removed")]
-            static LoggingError GetErrorInformation(SanlogLoggerOptions options, Guid id, Exception exception, Guid logEntryId, Guid? parentErrorId)
+            static LoggingError GetErrorInformation(Exception exception, Guid logEntryId, Guid? parentErrorId, SanlogLoggerProvider loggerProvider)
             {
+                var id = Guid.NewGuid();
                 return new LoggingError
                 {
-                    TenantId = options.TenantId,
+                    TenantId = loggerProvider.Options.TenantId,
                     Id = id,
                     Type = exception.GetType().FullName,
                     Message = exception.Message,
                     HResult = exception.HResult,
-                    Data = ProcessIDictionary(exception.Data, options),
+                    Data = ProcessExceptionDictionary(exception.Data, loggerProvider.Formatter),
                     StackTrace = exception.StackTrace,
                     Source = exception.Source,
                     HelpLink = exception.HelpLink,
@@ -106,67 +95,50 @@ namespace Sanlog
                     ParentExceptionId = parentErrorId,
                     InnerException = exception.InnerException is not null
                         ? exception.InnerException is not AggregateException aggregateException
-                            ? [GetErrorInformation(options, Guid.NewGuid(), exception.InnerException, logEntryId, id)]
-                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(options, Guid.NewGuid(), innerException, logEntryId, id)).ToList()
+                            ? [GetErrorInformation(exception.InnerException, logEntryId, id, loggerProvider)]
+                            : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(innerException, logEntryId, id, loggerProvider)).ToList()
                         : []
                 };
 
-                static IReadOnlyList<KeyValuePair<string, string?>>? ProcessIDictionary(IDictionary dictionary, SanlogLoggerOptions options)
+                static IReadOnlyList<KeyValuePair<string, string?>>? ProcessExceptionDictionary(IDictionary dictionary, FormattedLogValuesFormatter formatter)
                 {
-#pragma warning disable IDE0061 // Use expression body for local function
-                    throw new NotImplementedException();
-#pragma warning restore IDE0061 // Use expression body for local function
-                    /*
                     if (dictionary.Count == 0)
                     {
                         return null;
                     }
-                    var generic = new List<KeyValuePair<string, object?>>(dictionary.Count);
+                    var collection = new List<KeyValuePair<string, object?>>(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         var newKey = entry.Key.ToString();
                         if (!string.IsNullOrEmpty(newKey))
-                            generic.Add(KeyValuePair.Create(newKey, entry.Value));
+                            collection.Add(KeyValuePair.Create(newKey, entry.Value));
                     }
-                    var formatter = new FormattedLogValuesFormatter(generic)
-                    {
-                        SensitiveConfiguration = options.SensitiveConfiguration,
-                        FormattedConfiguration = options.FormattedConfiguration,
-                        CultureInfo = options.CultureInfo
-                    };
-                    return formatter.SelectFormat();
-                    */
+                    var logValues = new FormattedLogValues(formatter, collection);
+                    return logValues.SelectToFormat();
                 }
             }
-            static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerOptions options, IExternalScopeProvider? externalScopeProvider)
+            static List<LoggingScope> GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerProvider loggerProvider)
             {
                 var scopes = new List<LoggingScope>();
-                if (options.IncludeScopes && externalScopeProvider is not null)
+                if (loggerProvider.Options.IncludeScopes && loggerProvider.ExternalScopeProvider is not null)
                 {
-                    externalScopeProvider.ForEachScope((scope, scopes) =>
+                    loggerProvider.ExternalScopeProvider.ForEachScope((scope, scopes) =>
                     {
                         if (scope is not null)
                         {
-                            /*
-                            var formatter = new FormattedLogValuesFormatter(scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : [])
-                            {
-                                SensitiveConfiguration = options.SensitiveConfiguration,
-                                FormattedConfiguration = options.FormattedConfiguration,
-                                CultureInfo = options.CultureInfo
-                            };
+                            var logValues = new FormattedLogValues(loggerProvider.Formatter, scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : []);
                             var loggingScope = new LoggingScope
                             {
-                                TenantId = options.TenantId,
+                                TenantId = loggerProvider.Options.TenantId,
                                 Id = Guid.NewGuid(),
                                 Type = scope.GetType().FullName,
-                                Message = formatter.IndexOf(FormattedLogValuesFormatter.OriginalFormat) == -1 // not found {OriginalFormat}
-                                    ? Convert.ToString(scope, formatProvider) // use default formatter
-                                    : formatter.ToString(), // format message template
+                                Message = logValues.OriginalFormat
+                                    ? logValues.ToString() // format message template
+                                    : Convert.ToString(scope, formatProvider),  // use default formatter
                                 LogEntryId = logEntryId,
-                                Properties = formatter.SelectFormat()
+                                Properties = logValues.SelectToFormat()
                             };
                             scopes.Add(loggingScope);
-                            */
                         }
                     }, scopes);
                 }

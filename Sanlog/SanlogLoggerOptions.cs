@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Globalization;
 using System.Reflection;
 
 namespace Sanlog
@@ -29,9 +28,5 @@ namespace Sanlog
         /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
         /// </summary>
         public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
-        /// <summary>
-        /// Gets or sets the formatting culture.
-        /// </summary>
-        public CultureInfo? CultureInfo { get; set; }
     }
 }

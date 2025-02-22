@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sanlog.Models;
@@ -18,20 +19,10 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ConcurrentDictionary<string, SanlogLogger> _loggers;
         /// <summary>
-        /// The listener to be called whenever a <see cref="SanlogLoggerOptions"/> changes.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IDisposable? _changeTokenRegistration;
-        /// <summary>
         /// The message broker.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IMessageBroker _messageBroker;
-        /// <summary>
-        /// The cache value of the current type to prevent multi-call <see cref="object.GetType()"/> method.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Type _type;
         /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
@@ -39,21 +30,23 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker and logger options monitor.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker, redactor provider and logger options.
         /// </summary>
         /// <param name="messageBroker">The message broker. The caller is responsible for the release.</param>
-        /// <param name="optionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="messageBroker"/> or <paramref name="optionsMonitor"/> is <see langword="null"/>.</exception>
-        protected SanlogLoggerProvider(IMessageBroker messageBroker, IOptionsMonitor<SanlogLoggerOptions> optionsMonitor)
+        /// <param name="formatter">The message formatter.</param>
+        /// <param name="options">Used to retrieve configured <see cref="SanlogLoggerOptions"/> instances.</param>
+        /// <exception cref="ArgumentNullException">The one of the parameters is <see langword="null"/>.</exception>
+        protected SanlogLoggerProvider(IMessageBroker messageBroker, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
         {
             ArgumentNullException.ThrowIfNull(messageBroker);
-            ArgumentNullException.ThrowIfNull(optionsMonitor);
+            ArgumentNullException.ThrowIfNull(messageBroker);
+            ArgumentNullException.ThrowIfNull(options);
+            ArgumentNullException.ThrowIfNull(options.Value);
 
-            _type = GetType();
             _messageBroker = messageBroker;
-            _changeTokenRegistration = optionsMonitor.OnChange((options) => Options = options);
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            Options = optionsMonitor.CurrentValue;
+            Formatter = formatter;
+            Options = options.Value;
         }
 
         /// <summary>
@@ -61,9 +54,13 @@ namespace Sanlog
         /// </summary>
         public IExternalScopeProvider? ExternalScopeProvider { get; private set; }
         /// <summary>
+        /// Provides redactors for different data classifications.
+        /// </summary>
+        public FormattedLogValuesFormatter Formatter { get; }
+        /// <summary>
         /// Gets the logger options.
         /// </summary>
-        public SanlogLoggerOptions Options { get; private set; }
+        public SanlogLoggerOptions Options { get; }
 
         /// <inheritdoc/>
         public void Dispose()
@@ -82,7 +79,6 @@ namespace Sanlog
                 if (disposing)
                 {
                     _loggers.Clear();
-                    _changeTokenRegistration?.Dispose();
                 }
                 _disposedValue = true;
             }
@@ -102,6 +98,6 @@ namespace Sanlog
         /// </summary>
         /// <param name="message">The message to handle.</param>
         /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
-        public bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(_type, message);
+        public bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(GetType(), message);
     }
 }

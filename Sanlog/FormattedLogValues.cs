@@ -169,12 +169,13 @@ namespace Sanlog
         /// Projects each element processes through formatters into a string key-value pair collection.
         /// </summary>
         /// <returns>An enumerable whose elements were processed through formatters.</returns>
-        public IEnumerable<KeyValuePair<string, string?>> SelectToFormat()
+        public IReadOnlyList<KeyValuePair<string, string?>> SelectToFormat()
         {
             const string SimpleFormat = "{0}";
             return this
                 .Select(x => GetObject(x.Key, true))
-                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)));
+                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
+                .ToList();
         }
         /// <summary>
         /// Processes a value through the sensitive formatter.
