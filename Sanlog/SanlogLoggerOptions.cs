@@ -26,10 +26,6 @@ namespace Sanlog
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
         /// <summary>
-        /// Gets or sets the configuration of the sensitive data.
-        /// </summary>
-        public SensitiveFormatterOptions? SensitiveConfiguration { get; set; }
-        /// <summary>
         /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
         /// </summary>
         public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }

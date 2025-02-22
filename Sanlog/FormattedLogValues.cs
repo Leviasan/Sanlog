@@ -11,7 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents the wrapper of the Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    public sealed class FormattedLogValues : IReadOnlyList<KeyValuePair<string, object?>>
+    public sealed class FormattedLogValues : IEnumerable<KeyValuePair<string, object?>>
     {
         /// <summary>
         /// The operator in front of the argument name tells the formatter to serialize the object passed in, rather than convert it using ToString method.
@@ -78,30 +78,13 @@ namespace Sanlog
         public FormattedLogValues(FormattedLogValuesFormatter formatter, string? format, params object?[] args)
             : this(formatter, ParseCompositeArgs(format, args)) { } // ArgumentException + ArgumentNullException
 
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
-        public KeyValuePair<string, object?> this[int index] => GetObject(index, true); // ArgumentOutOfRangeException
-        /// <summary>
-        /// Gets the element with the specified key in the read-only list.
-        /// </summary>
-        /// <param name="key">The key of the value to retrieve.</param>
-        /// <returns>The element with the specified key in the read-only list.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="key"/> is <see langword="null"/>.</exception>
-        /// <exception cref="InvalidOperationException">The <paramref name="key"/> does not exist in the sequence. -or- More than one element satisfies the condition. -or- The source sequence is empty.</exception>
-        public KeyValuePair<string, object?> this[string key] => GetObject(key, true); // ArgumentNullException + InvalidOperationException
-        /// <inheritdoc/>
-        public int Count => _collection.Count;
         /// <summary>
         /// Indicates whether the original format is defined.
         /// </summary>
         public bool OriginalFormat => _format is not null;
 
         /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
-        {
-            for (var index = 0; index < _collection.Count; ++index)
-                yield return GetObject(index, false); // 'true' operation is expensive
-        }
+        public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => _collection.GetEnumerator();
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         /// <summary>
@@ -115,7 +98,7 @@ namespace Sanlog
         {
             var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-            var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+            var newValue = FormatSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
         /// <summary>
@@ -131,7 +114,7 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(key);
             var kvp = _collection.Single(x => EqualsSensitiveKey(x.Key, key)); // InvalidOperationException
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-            var newValue = ProcessSensitiveObject(kvp.Key, kvp.Value, redacted);
+            var newValue = FormatSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
 
@@ -157,7 +140,7 @@ namespace Sanlog
                 return NullFormat;
             }
 
-            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> retrieve)
+            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> callback)
             {
                 const int NotFound = -1;
 
@@ -177,7 +160,7 @@ namespace Sanlog
                             index = i;
                         }
                     }
-                    dictionary[segment] = index != NotFound ? retrieve.Invoke(index) : null; // The element maybe not found
+                    dictionary[segment] = index != NotFound ? callback.Invoke(index) : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
             }
@@ -186,11 +169,12 @@ namespace Sanlog
         /// Projects each element processes through formatters into a string key-value pair collection.
         /// </summary>
         /// <returns>An enumerable whose elements were processed through formatters.</returns>
-        public IEnumerable<KeyValuePair<string, string?>> FormatToList()
+        public IEnumerable<KeyValuePair<string, string?>> SelectToFormat()
         {
             const string SimpleFormat = "{0}";
-
-            return this.Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value))); // 'this.Select' see 'GetEnumerator'
+            return this
+                .Select(x => GetObject(x.Key, true))
+                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)));
         }
         /// <summary>
         /// Processes a value through the sensitive formatter.
@@ -199,7 +183,7 @@ namespace Sanlog
         /// <param name="value">The value to process.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>A new value considering the concealment of confidential data.</returns>
-        private object? ProcessSensitiveObject(string key, object? value, bool redacted)
+        private object? FormatSensitiveObject(string key, object? value, bool redacted)
         {
             if (redacted)
             {

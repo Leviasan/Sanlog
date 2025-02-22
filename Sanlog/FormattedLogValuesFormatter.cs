@@ -8,7 +8,6 @@ using System.Text;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Options;
-using Sanlog.Compliance.Redaction;
 
 namespace Sanlog
 {
@@ -69,13 +68,13 @@ namespace Sanlog
                         return stringValue;
                     }
                 }
-                else
+                else if (arg is not null)
                 {
-                    if (format.Equals(FormatRedacted, StringComparison.Ordinal))
+                    if (format.Equals(FormatRedacted, StringComparison.Ordinal) && TryGetRedactor(arg.GetType(), _redactorProvider, out var redactor))
                     {
-                        return SensitiveRedactor.RedactedValue;
+                        return redactor.Redact(arg, null, formatProvider);
                     }
-                    if (format.Equals(FormatSerialize, StringComparison.Ordinal) && arg is not null)
+                    if (format.Equals(FormatSerialize, StringComparison.Ordinal))
                     {
                         return Serialize(arg, formatProvider, _configuration, _redactorProvider);
                     }
@@ -102,6 +101,17 @@ namespace Sanlog
                     _ => null
                 };
                 return !string.IsNullOrEmpty(stringValue);
+            }
+            static bool TryGetRedactor(MemberInfo member, IRedactorProvider redactorProvider, [NotNullWhen(true)] out Redactor? redactor)
+            {
+                redactor = null;
+                if (member.IsDefined(typeof(DataClassificationAttribute)))
+                {
+                    var attributes = member.GetCustomAttributes<DataClassificationAttribute>();
+                    redactor = redactorProvider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
+                    return true;
+                }
+                return false;
             }
             static string Serialize(object? obj, IFormatProvider? formatProvider, FormattedLogValuesFormatterOptions configuration, IRedactorProvider redactorProvider)
             {
@@ -163,17 +173,6 @@ namespace Sanlog
                         _ = stringBuilder.Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? EmptyObject;
-                }
-                static bool TryGetRedactor(MemberInfo member, IRedactorProvider redactorProvider, [NotNullWhen(true)] out Redactor? redactor)
-                {
-                    redactor = null;
-                    if (member.IsDefined(typeof(DataClassificationAttribute)))
-                    {
-                        var attributes = member.GetCustomAttributes<DataClassificationAttribute>();
-                        redactor = redactorProvider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
-                        return true;
-                    }
-                    return false;
                 }
             }
         }

@@ -33,13 +33,11 @@ namespace Sanlog
         private readonly SanlogLoggerProvider _provider = provider ?? throw new ArgumentNullException(nameof(provider));
 
         /// <inheritdoc/>
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _provider.ExternalScopeProvider?.Push(state);
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+            => _provider.ExternalScopeProvider?.Push(state);
         /// <inheritdoc/>
         public bool IsEnabled(LogLevel logLevel)
-        {
-            var options = _provider.Options;
-            return logLevel != LogLevel.None && options.AppId != Guid.Empty && options.TenantId != Guid.Empty;
-        }
+            => logLevel != LogLevel.None && _provider.Options.AppId != Guid.Empty && _provider.Options.TenantId != Guid.Empty;
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> is <see langword="null"/>.</exception>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
@@ -76,7 +74,7 @@ namespace Sanlog
                     Message = stateFormatter.OriginalFormat
                         ? formatter.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
-                    Properties = stateFormatter.FormatToList(),
+                    Properties = stateFormatter.SelectToFormat(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, options, _provider.ExternalScopeProvider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
