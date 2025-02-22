@@ -29,22 +29,22 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker, redactor provider and logger options.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker, log values formatter and logger options.
         /// </summary>
-        /// <param name="messageBroker">The message broker. The caller is responsible for the release.</param>
-        /// <param name="formatter">The message formatter.</param>
+        /// <param name="messageBroker">The message broker.</param>
+        /// <param name="logValuesFormatter">The log values formatter.</param>
         /// <param name="options">Used to retrieve configured <see cref="SanlogLoggerOptions"/> instances.</param>
         /// <exception cref="ArgumentNullException">The one of the parameters is <see langword="null"/>.</exception>
-        protected SanlogLoggerProvider(IMessageBroker messageBroker, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
+        protected SanlogLoggerProvider(IMessageBroker messageBroker, FormattedLogValuesFormatter logValuesFormatter, IOptions<SanlogLoggerOptions> options)
         {
             ArgumentNullException.ThrowIfNull(messageBroker);
-            ArgumentNullException.ThrowIfNull(messageBroker);
+            ArgumentNullException.ThrowIfNull(logValuesFormatter);
             ArgumentNullException.ThrowIfNull(options);
             ArgumentNullException.ThrowIfNull(options.Value);
 
             _messageBroker = messageBroker;
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            Formatter = formatter;
+            Formatter = logValuesFormatter;
             Options = options.Value;
         }
 
@@ -53,7 +53,7 @@ namespace Sanlog
         /// </summary>
         public IExternalScopeProvider? ExternalScopeProvider { get; private set; }
         /// <summary>
-        /// Provides redactors for different data classifications.
+        /// Gets the log values formatter.
         /// </summary>
         public FormattedLogValuesFormatter Formatter { get; }
         /// <summary>
@@ -88,7 +88,7 @@ namespace Sanlog
         public ILogger CreateLogger(string categoryName) => _loggers.GetOrAdd(categoryName, category => // ArgumentNullException
         {
             ObjectDisposedException.ThrowIf(_disposedValue, this);
-            return new SanlogLogger(category, this);
+            return new SanlogLogger(category, this); // ArgumentNullException
         });
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
@@ -97,6 +97,6 @@ namespace Sanlog
         /// </summary>
         /// <param name="message">The message to handle.</param>
         /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
-        public bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(GetType(), message);
+        internal bool SendMessage(LoggingEntry message) => _messageBroker.SendMessage(GetType(), message);
     }
 }
