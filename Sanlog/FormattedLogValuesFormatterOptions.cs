@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Numerics;
 
@@ -63,7 +62,7 @@ namespace Sanlog
             get => _culture;
             set
             {
-                CheckReadOnly();
+                CheckReadOnly(); // InvalidOperationException
                 _culture = value;
             }
         }
@@ -73,13 +72,13 @@ namespace Sanlog
         public bool IsReadOnly { get; private set; }
 
         /// <summary>
-        /// Gets the overriden format associated with the specified <typeparamref name="T"/>.
+        /// Gets the format associated with the specified <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">The type of the instance to format.</typeparam>
         /// <returns>The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
         public string? GetFormat<T>() => GetFormat(typeof(T));
         /// <summary>
-        /// Gets the overriden format associated with the specified <paramref name="type"/>.
+        /// Gets the format associated with the specified <paramref name="type"/>.
         /// </summary>
         /// <param name="type">The type of the instance to format.</param>
         /// <returns>The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
@@ -119,7 +118,6 @@ namespace Sanlog
             }
             return this;
         }
-
         /// <summary>
         /// Throws an exception if the current instance is read-only to prevent any further user modification.
         /// </summary>
@@ -127,15 +125,7 @@ namespace Sanlog
         private void CheckReadOnly()
         {
             if (IsReadOnly)
-                ThrowInvalidOperationException("The current instance is read-only to prevent any further user modification.");
+                throw new InvalidOperationException("The current instance is read-only to prevent any further user modification.");
         }
-
-        /// <summary>
-        /// Throws an <see cref="InvalidOperationException"/> with a specified error message.
-        /// </summary>
-        /// <param name="message">The message that describes the error.</param>
-        /// <exception cref="InvalidOperationException">The method will never return under any circumstance.</exception>
-        [DoesNotReturn]
-        private static void ThrowInvalidOperationException(string? message) => throw new InvalidOperationException(message);
     }
 }
