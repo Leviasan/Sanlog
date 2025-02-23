@@ -61,7 +61,7 @@ namespace Sanlog
                     Category = _category,
                     EventId = eventId.Id,
                     EventName = eventId.Name,
-                    Message = logValues.OriginalFormat
+                    Message = logValues.HasOriginalFormat
                         ? logValues.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
                     Properties = logValues.SelectToFormat(),
@@ -134,7 +134,7 @@ namespace Sanlog
                                 TenantId = loggerProvider.Options.TenantId,
                                 Id = Guid.NewGuid(),
                                 Type = scope.GetType().FullName,
-                                Message = logValues.OriginalFormat
+                                Message = logValues.HasOriginalFormat
                                     ? logValues.ToString() // format message template
                                     : Convert.ToString(scope, formatProvider),  // use default formatter
                                 LogEntryId = logEntryId,

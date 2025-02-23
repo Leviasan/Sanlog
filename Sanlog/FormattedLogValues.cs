@@ -24,7 +24,7 @@ namespace Sanlog
         /// <summary>
         /// The element key that represents a structured logging message.
         /// </summary>
-        public const string OriginalFormatKey = "{OriginalFormat}";
+        public const string OriginalFormat = "{HasOriginalFormat}";
 
         /// <summary>
         /// Max cached collection size.
@@ -65,7 +65,7 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(collection);
             _formatter = formatter;
             _collection = collection;
-            _format = Convert.ToString(_collection.SingleOrDefault(x => x.Key.Equals(OriginalFormatKey, StringComparison.Ordinal)).Value, null);
+            _format = Convert.ToString(_collection.SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal)).Value, null);
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified formatter and composite/named format string.
@@ -81,7 +81,7 @@ namespace Sanlog
         /// <summary>
         /// Indicates whether the original format is defined.
         /// </summary>
-        public bool OriginalFormat => _format is not null;
+        public bool HasOriginalFormat => _format is not null;
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => _collection.GetEnumerator();
@@ -238,7 +238,7 @@ namespace Sanlog
             }
             if (!string.IsNullOrEmpty(format))
             {
-                dictionary.Add(OriginalFormatKey, format);
+                dictionary.Add(OriginalFormat, format);
             }
             return dictionary;
         }
