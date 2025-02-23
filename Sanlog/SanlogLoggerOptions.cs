@@ -27,6 +27,6 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
         /// </summary>
-        public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; } = FormattedLogValuesFormatterOptions.Default;
+        public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
     }
 }

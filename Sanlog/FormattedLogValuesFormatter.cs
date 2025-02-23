@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
-using Microsoft.Extensions.Options;
 
 namespace Sanlog
 {
@@ -46,12 +45,12 @@ namespace Sanlog
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
         /// <param name="options">The configuration of the formatter.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, IOptions<FormattedLogValuesFormatterOptions> options)
+        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, FormattedLogValuesFormatterOptions options)
         {
             ArgumentNullException.ThrowIfNull(redactorProvider);
             ArgumentNullException.ThrowIfNull(options);
             _redactorProvider = redactorProvider;
-            _configuration = options.Value;
+            _configuration = options;
         }
 
         /// <inheritdoc/>
