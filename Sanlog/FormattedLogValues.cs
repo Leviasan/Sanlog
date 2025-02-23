@@ -117,16 +117,18 @@ namespace Sanlog
             var newValue = FormatSensitiveObject(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
-
         /// <summary>
-        /// 
+        /// Projects each element processes through the formatter into a string key-value pair collection.
         /// </summary>
-        /// <param name="left"></param>
-        /// <param name="rigth"></param>
-        /// <returns></returns>
-        private static bool EqualsSensitiveKey(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
-            => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
-
+        /// <returns>An enumerable whose elements were processed through formatter.</returns>
+        public IReadOnlyList<KeyValuePair<string, string?>> SelectToFormat()
+        {
+            const string SimpleFormat = "{0}";
+            return this
+                .Select(x => GetObject(x.Key, true))
+                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
+                .ToList();
+        }
         /// <inheritdoc/>
         public override string? ToString()
         {
@@ -166,19 +168,7 @@ namespace Sanlog
             }
         }
         /// <summary>
-        /// Projects each element processes through formatters into a string key-value pair collection.
-        /// </summary>
-        /// <returns>An enumerable whose elements were processed through formatters.</returns>
-        public IReadOnlyList<KeyValuePair<string, string?>> SelectToFormat()
-        {
-            const string SimpleFormat = "{0}";
-            return this
-                .Select(x => GetObject(x.Key, true))
-                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
-                .ToList();
-        }
-        /// <summary>
-        /// Processes a value through the sensitive formatter.
+        /// Processes a value through formatter.
         /// </summary>
         /// <param name="key">The key.</param>
         /// <param name="value">The value to process.</param>
@@ -219,7 +209,7 @@ namespace Sanlog
             return false;
         }
         /// <summary>
-        /// Creates a dictionary from an object array containing zero or more objects to format linked with <paramref name="format"/> a composite/named format string.
+        /// Creates a dictionary from an object array containing zero or more objects to format linked with a composite/named <paramref name="format"/> string.
         /// </summary>
         /// <param name="format">A composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
@@ -252,5 +242,13 @@ namespace Sanlog
             }
             return dictionary;
         }
+        /// <summary>
+        /// Determines whether the specified keys are considered equal.
+        /// </summary>
+        /// <param name="left">The first key.</param>
+        /// <param name="rigth">The second key.</param>
+        /// <returns><see langword="true"/> if the keys are considered equal; otherwise, <see langword="false"/>.</returns>
+        private static bool EqualsSensitiveKey(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
+            => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
     }
 }

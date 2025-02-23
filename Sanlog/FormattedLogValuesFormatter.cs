@@ -17,7 +17,7 @@ namespace Sanlog
     public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
-        /// The format string is used to redact sensitive values.
+        /// The format string is used to redact sensitive data.
         /// </summary>
         public const string FormatRedacted = "R";
         /// <summary>
@@ -35,23 +35,23 @@ namespace Sanlog
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly FormattedLogValuesFormatterOptions _configuration;
         /// <summary>
-        /// The configuration of the formatter.
+        /// The redactors provider for different data classifications.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly IRedactorProvider _redactorProvider;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified configuration.
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with the specified redactor provider and the configuration of the formatter.
         /// </summary>
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
-        /// <param name="configuration">The configuration of the formatter.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="configuration"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, IOptions<FormattedLogValuesFormatterOptions> configuration)
+        /// <param name="options">The configuration of the formatter.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
+        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, IOptions<FormattedLogValuesFormatterOptions> options)
         {
             ArgumentNullException.ThrowIfNull(redactorProvider);
-            ArgumentNullException.ThrowIfNull(configuration);
+            ArgumentNullException.ThrowIfNull(options);
             _redactorProvider = redactorProvider;
-            _configuration = configuration.Value;
+            _configuration = options.Value;
         }
 
         /// <inheritdoc/>

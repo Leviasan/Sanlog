@@ -40,7 +40,6 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(messageBroker);
             ArgumentNullException.ThrowIfNull(logValuesFormatter);
             ArgumentNullException.ThrowIfNull(options);
-            ArgumentNullException.ThrowIfNull(options.Value);
 
             _messageBroker = messageBroker;
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
