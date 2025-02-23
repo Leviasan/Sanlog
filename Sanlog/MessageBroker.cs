@@ -11,6 +11,7 @@ namespace Sanlog
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Dependency injection")]
     internal sealed class MessageBroker : IMessageBroker, IDisposable
     {
         /// <summary>
