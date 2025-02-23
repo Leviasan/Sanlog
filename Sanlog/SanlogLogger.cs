@@ -64,7 +64,7 @@ namespace Sanlog
                     Message = logValues.OriginalFormat
                         ? logValues.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
-                    Properties = logValues.SelectToStringCollection(),
+                    Properties = logValues.SelectToFormat(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _provider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
