@@ -13,7 +13,7 @@ namespace Sanlog
     /// <summary>
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
+    internal sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// The format string is used to redact sensitive data.

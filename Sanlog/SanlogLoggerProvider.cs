@@ -55,7 +55,7 @@ namespace Sanlog
         /// <summary>
         /// Gets the log values formatter.
         /// </summary>
-        public FormattedLogValuesFormatter Formatter { get; }
+        internal FormattedLogValuesFormatter Formatter { get; }
         /// <summary>
         /// Gets the logger options.
         /// </summary>
