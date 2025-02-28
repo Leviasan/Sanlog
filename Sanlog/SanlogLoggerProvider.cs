@@ -51,7 +51,7 @@ namespace Sanlog
         /// <summary>
         /// Gets the external storage of the common scope data.
         /// </summary>
-        public IExternalScopeProvider? ExternalScopeProvider { get; private set; }
+        internal IExternalScopeProvider? ExternalScopeProvider { get; private set; }
         /// <summary>
         /// Gets the log values formatter.
         /// </summary>
@@ -59,7 +59,7 @@ namespace Sanlog
         /// <summary>
         /// Gets the logger options.
         /// </summary>
-        public SanlogLoggerOptions Options { get; }
+        internal SanlogLoggerOptions Options { get; }
 
         /// <inheritdoc/>
         public void Dispose()

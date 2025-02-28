@@ -14,6 +14,6 @@ namespace Sanlog
         /// <param name="message">The message to handle.</param>
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
-        Task HandleAsync(object? message, CancellationToken cancellationToken);
+        ValueTask HandleAsync(object? message, CancellationToken cancellationToken);
     }
 }

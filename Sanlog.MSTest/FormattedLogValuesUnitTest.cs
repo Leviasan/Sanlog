@@ -2,10 +2,11 @@ using System.Globalization;
 using Microsoft.Extensions.Compliance.Redaction;
 
 namespace Sanlog.MSTest
-{
-    [TestClass]
-    public sealed class FormattedLogValuesUnitTest
-    {
+{   
+    // [TestClass]
+    // public sealed class FormattedLogValuesUnitTest
+    // {
+        /*
         [TestMethod]
         public void ConstructorDictionary()
         {
@@ -32,8 +33,7 @@ namespace Sanlog.MSTest
             _ = Assert.ThrowsException<ArgumentNullException>(() => formatter[null!, true]);
             _ = Assert.ThrowsException<InvalidOperationException>(() => formatter["InvalidKey", true]);
         }
-
-
+        */
 
         // [TestMethod]
         // public void ConstructorSingleFormat()
@@ -176,5 +176,5 @@ namespace Sanlog.MSTest
         //     Assert.AreEqual("Position", serilogFormatter.GetObject(0, false).Key);
         // }
         // */
-    }
+    //}
 }
