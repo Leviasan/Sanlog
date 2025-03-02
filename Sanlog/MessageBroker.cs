@@ -181,7 +181,7 @@ namespace Sanlog
         {
             if (_tokenSource is null || _tokenSource.IsCancellationRequested)
             {
-                throw new InvalidOperationException("The message broker is not started.");
+                return;
             }
             await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             await _tokenSource.CancelAsync().ConfigureAwait(false);

@@ -5,7 +5,7 @@ namespace Sanlog.MSTest
     public sealed class MessageBrokerUnitTest
     {
         [TestMethod]
-        public async Task Method()
+        public async Task SendMessage()
         {
             var handler = new MessageHandler();
             using var broker = new MessageBroker();
