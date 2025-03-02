@@ -10,26 +10,6 @@ namespace Sanlog
     public interface IMessageBroker
     {
         /// <summary>
-        /// Registers a service that handles messages of the <paramref name="serviceType"/>.
-        /// </summary>
-        /// <param name="serviceType">The message type to handle.</param>
-        /// <param name="handler">The handler of the message.</param>
-        /// <returns><see langword="true"/> if the handler is registered; <see langword="false"/> if the handler is already present.</returns>
-        bool Register(Type serviceType, IMessageHandler handler);
-        /// <summary>
-        /// Unsubscribes a service from listen to messages of the <paramref name="serviceType"/>.
-        /// </summary>
-        /// <param name="serviceType">The message type to handle.</param>
-        /// <param name="handler">The handler of the message.</param>
-        /// <returns><see langword="true"/> if operation to remove handler is successful; <see langword="false"/> if the handler is not found.</returns>
-        bool Remove(Type serviceType, IMessageHandler handler);
-        /// <summary>
-        /// Unsubscribes all services from listen to messages of the <paramref name="serviceType"/>.
-        /// </summary>
-        /// <param name="serviceType">The message type to handle.</param>
-        /// <returns><see langword="true"/> if all handlers are unsubscribe; otherwise <see langword="false"/>.</returns>
-        bool Remove(Type serviceType);
-        /// <summary>
         /// Sends a message to handle.
         /// </summary>
         /// <typeparam name="TMessage">The type of the <paramref name="message"/>.</typeparam>
@@ -61,18 +41,5 @@ namespace Sanlog
         /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
         /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
         ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken);
-        /// <summary>
-        /// Starts listen to messages.
-        /// </summary>
-        /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
-        Task StartAsync(CancellationToken cancellationToken);
-        /// <summary>
-        /// Stops listen to messages after a specified time interval.
-        /// </summary>
-        /// <param name="delay">The time span to wait before completing the returned task, or <see cref="Timeout.InfiniteTimeSpan"/> to wait indefinitely.</param>
-        /// <param name="cancellationToken">A cancellation token used to cancel the operation.</param>
-        /// <returns>A <see cref="Task"/> that represents the asynchronous operation.</returns>
-        Task StopAsync(TimeSpan delay, CancellationToken cancellationToken);
     }
 }

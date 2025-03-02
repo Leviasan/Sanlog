@@ -5,14 +5,64 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Threading;
+using Microsoft.Extensions.Options;
+using System.Collections.Frozen;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Sanlog
 {
+    internal sealed class MessageBrokerOptions
+    {
+        public Type? FallbackHandler { get; set; }
+        public Dictionary<Type, Type> Handlers { get; } = [];
+    }
+    internal interface IMessageBrokerBuilder
+    {
+        IServiceCollection Services { get; }
+
+        IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
+    }
+    internal sealed class MessageBrokerBuilder(IServiceCollection services) : IMessageBrokerBuilder
+    {
+        public IServiceCollection Services { get; } = services;
+
+        public IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler
+        {
+            Services.TryAddEnumerable(ServiceDescriptor.Singleton<IMessageHandler, THandler>());
+            _ = Services.Configure<MessageBrokerOptions>(options => options.Handlers[typeof(TMessage)] = typeof(THandler));
+            return this;
+        }
+        public IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler
+        {
+            Services.TryAddEnumerable(ServiceDescriptor.Singleton<IMessageHandler, THandler>());
+            _ = Services.Configure<MessageBrokerOptions>(options => options.FallbackHandler = typeof(THandler));
+            return this;
+        }
+    }
+    internal static class MessageBrokerServiceCollectionExtensions
+    {
+        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure)
+        {
+            ArgumentNullException.ThrowIfNull(services);
+            ArgumentNullException.ThrowIfNull(configure);
+
+            services
+                .AddOptions<MessageBrokerOptions>()
+                .Services
+                .TryAddSingleton<IMessageBroker, MessageBroker>();
+
+            configure.Invoke(new MessageBrokerBuilder(services));
+
+            return services;
+        }
+    }
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Dependency injection")]
-    internal sealed class MessageBroker : IMessageBroker, IDisposable
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
+    internal sealed class MessageBroker : BackgroundService, IMessageBroker
     {
         /// <summary>
         /// The underlying channel.
@@ -23,12 +73,7 @@ namespace Sanlog
         /// The dictionary of mappings between a message type and its handlers.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, HashSet<IMessageHandler>> _consumers;
-        /// <summary>
-        /// The source of the start operation cancellation token.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private CancellationTokenSource? _tokenSource;
+        private readonly FrozenDictionary<Type, IMessageHandler> _consumers;
         /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
@@ -38,153 +83,76 @@ namespace Sanlog
         /// <summary>
         /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
-        public MessageBroker()
-            : this(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true })) { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a channel with the specified maximum capacity.
-        /// </summary>
-        /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
-        /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
-        /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
-        /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
-        public MessageBroker(int capacity, BoundedChannelFullMode fullMode, Action<object?>? itemDropped)
-            : this(Channel.CreateBounded<MessageContext>(
-                options: new BoundedChannelOptions(capacity) { FullMode = fullMode, SingleReader = true },
-                itemDropped: itemDropped is not null ? (context) => itemDropped?.Invoke(context.Message) : null))
-        { }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageBroker"/> class with the specified channel.
-        /// </summary>
-        /// <param name="channel">The underlying channel.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="channel"/>is <see langword="null"/>.</exception>
-        private MessageBroker(Channel<MessageContext> channel)
+        public MessageBroker(IEnumerable<IMessageHandler> handlers, IOptions<MessageBrokerOptions> options)
         {
-            _channel = channel ?? throw new ArgumentNullException(nameof(channel));
-            _consumers = [];
+            ArgumentNullException.ThrowIfNull(handlers);
+            ArgumentNullException.ThrowIfNull(options);
+
+            _consumers = GetClassHandlerMap(handlers, options.Value.Handlers);
+            _channel = Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
+
+            static FrozenDictionary<Type, IMessageHandler> GetClassHandlerMap(IEnumerable<IMessageHandler> handlers, Dictionary<Type, Type> map)
+            {
+                var dictionary = new Dictionary<Type, IMessageHandler>(map.Count);
+                foreach (var kvp in map)
+                {
+                    foreach (var handler in handlers)
+                    {
+                        if (handler.GetType() == kvp.Value)
+                        {
+                            dictionary[kvp.Key] = handler;
+                            break;
+                        }
+                    }
+                }
+                return dictionary.ToFrozenDictionary();
+            }
         }
 
         /// <inheritdoc/>
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
-        /// </summary>
-        /// <param name="disposing"><see langword="true"/> to dispose managed objects during the finalization phase; otherwise, <see langword="false"/> (not recommended).</param>
-        private void Dispose(bool disposing)
+        public override void Dispose()
         {
             if (!_disposedValue)
             {
-                if (disposing)
-                {
-                    _channel.Writer.Complete();
-                    _tokenSource?.Cancel();
-                    _tokenSource?.Dispose();
-                }
+                _channel.Writer.Complete();
                 _disposedValue = true;
             }
-        }
-
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public bool Register(Type serviceType, IMessageHandler handler)
-        {
-            ArgumentNullException.ThrowIfNull(handler);
-            if (_consumers.TryGetValue(serviceType, out var handlers)) // ArgumentNullException
-            {
-                return handlers.Add(handler);
-            }
-            else
-            {
-                _consumers.Add(serviceType, []);
-                return _consumers[serviceType].Add(handler);
-            }
+            base.Dispose();
         }
         /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public bool Remove(Type serviceType, IMessageHandler handler)
-        {
-            ArgumentNullException.ThrowIfNull(handler);
-            return _consumers.TryGetValue(serviceType, out var handlers) && handlers.Remove(handler); // ArgumentNullException
-        }
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
-        public bool Remove(Type serviceType)
-            => _consumers.Remove(serviceType); // ArgumentNullException
-        /// <inheritdoc/>
-        public bool SendMessage<TMessage>(TMessage? message)
-            => message is not null && SendMessage(message.GetType(), message);
+        public bool SendMessage<TMessage>(TMessage? message) => SendMessage(typeof(TMessage), message);
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
         public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
             => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
         /// <inheritdoc/>
         public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
-            => message is not null && await SendMessageAsync(message.GetType(), message, cancellationToken).ConfigureAwait(false);
+            => await SendMessageAsync(typeof(TMessage), message, cancellationToken).ConfigureAwait(false);
         /// <inheritdoc/>
         /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
         public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
             => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message); // ArgumentNullException
         /// <inheritdoc/>
-        /// <exception cref="InvalidOperationException">The service is started.</exception>
         [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
-        public Task StartAsync(CancellationToken cancellationToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            // Releases cancellation token source
-            if (_tokenSource is not null)
+            while (await _channel.Reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
-                if (_tokenSource.IsCancellationRequested == false)
+                while (_channel.Reader.TryRead(out var context))
                 {
-                    throw new InvalidOperationException("The message broker is started.");
-                }
-                else
-                {
-                    _tokenSource.Dispose();
-                }
-            }
-            // Creates new linked cancellation token source
-            _tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            // Starts listening to messages as a long-running operation
-            return Task.Factory.StartNew(async delegate
-            {
-                while (await _channel.Reader.WaitToReadAsync(_tokenSource.Token).ConfigureAwait(false))
-                {
-                    while (_channel.Reader.TryRead(out var context))
+                    if (_consumers.TryGetValue(context.ServiceType, out var handler))
                     {
-                        if (_consumers.TryGetValue(context.ServiceType, out var handlers))
+                        try
                         {
-                            foreach (var handler in handlers)
-                            {
-                                try
-                                {
-                                    await handler.HandleAsync(context.Message, _tokenSource.Token).ConfigureAwait(false);
-                                }
-                                catch
-                                {
-                                    // ignored
-                                }
-                            }
+                            await handler.HandleAsync(context.Message, stoppingToken).ConfigureAwait(false);
+                        }
+                        catch
+                        {
+                            // ignored
                         }
                     }
                 }
-            }, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentOutOfRangeException"><paramref name="delay"/> represents a negative time interval other than <see cref="Timeout.InfiniteTimeSpan"/>.
-        /// -or- The delay argument's <see cref="TimeSpan.TotalMilliseconds"/> property is greater than 4294967294 on .NET 6 and later versions, or <see cref="int.MaxValue"/> on all previous versions.</exception>
-        /// <exception cref="InvalidOperationException">The service is not started.</exception>
-        /// <exception cref="TaskCanceledException">The task has been canceled.</exception>
-        /// <exception cref="ObjectDisposedException">The provided <paramref name="cancellationToken"/> has already been disposed.</exception>
-        public async Task StopAsync(TimeSpan delay, CancellationToken cancellationToken)
-        {
-            if (_tokenSource is null || _tokenSource.IsCancellationRequested)
-            {
-                return;
             }
-            await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
-            await _tokenSource.CancelAsync().ConfigureAwait(false);
         }
 
         /// <summary>
