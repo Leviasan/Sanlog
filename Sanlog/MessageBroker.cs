@@ -23,6 +23,7 @@ namespace Sanlog
         IServiceCollection Services { get; }
 
         IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
+        IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
     }
     internal sealed class MessageBrokerBuilder(IServiceCollection services) : IMessageBrokerBuilder
     {
