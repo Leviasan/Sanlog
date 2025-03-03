@@ -8,9 +8,8 @@ using System.Threading;
 using Microsoft.Extensions.Options;
 using System.Collections.Frozen;
 using Microsoft.Extensions.Hosting;
-using Sanlog.Extensions.Hosting.Broker;
 
-namespace Sanlog
+namespace Sanlog.Abstractions
 {
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.

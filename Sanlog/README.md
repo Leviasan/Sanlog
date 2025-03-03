@@ -10,5 +10,6 @@ Assert.AreEqual("Processed { Latitude = 25, Longitude = 134 } in 034 ms.", forma
 ```
 
 ### Miscellaneous
+- Channels (https://learn.microsoft.com/en-us/dotnet/core/extensions/channels).
 - Multi-tenancy (https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy).
 - Define and Use Custom Format Providers (https://learn.microsoft.com/en-us/dotnet/standard/base-types/how-to-define-and-use-custom-numeric-format-providers).
