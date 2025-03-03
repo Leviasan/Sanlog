@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Sanlog.Abstractions
 {
     /// <summary>
-    /// Represents a <see cref="IMessageBroker"/> options.
+    /// Represents a <see cref="MessageBroker"/> options.
     /// </summary>
     internal sealed class MessageBrokerOptions
     {
