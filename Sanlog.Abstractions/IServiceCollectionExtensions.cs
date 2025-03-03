@@ -1,12 +1,11 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Sanlog.Extensions.Hosting.Broker;
-using Sanlog.Extensions.Hosting.Brokers;
 
-namespace Sanlog
+namespace Sanlog.Abstractions
 {
-    internal static class MessageBrokerServiceCollectionExtensions
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+    public static class IServiceCollectionExtensions
     {
         public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure)
         {
@@ -17,8 +16,11 @@ namespace Sanlog
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .TryAddSingleton<IMessageBroker, MessageBroker>();
+
             configure.Invoke(new MessageBrokerBuilder(services));
+
             return services;
         }
     }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }
