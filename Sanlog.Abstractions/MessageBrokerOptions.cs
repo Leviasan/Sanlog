@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Sanlog.Extensions.Hosting.Brokers
+namespace Sanlog.Abstractions
 {
     /// <summary>
-    /// Represents a <see cref="MessageBroker"/> options.
+    /// Represents a <see cref="IMessageBroker"/> options.
     /// </summary>
     internal sealed class MessageBrokerOptions
     {

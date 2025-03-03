@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Sanlog.Extensions.Hosting.Brokers
+namespace Sanlog.Abstractions
 {
     /// <summary>
     /// Provides a mechanism to deliver messages to handlers.
