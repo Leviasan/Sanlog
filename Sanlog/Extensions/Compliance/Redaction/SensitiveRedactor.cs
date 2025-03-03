@@ -2,12 +2,12 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Compliance.Redaction;
 
-namespace Sanlog.Compliance.Redaction
+namespace Sanlog.Extensions.Compliance.Redaction
 {
     /// <summary>
     /// Redactor that replaces anything with <see cref="RedactedValue"/>.
     /// </summary>
-    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Dependency injection")]
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
     internal sealed class SensitiveRedactor : Redactor
     {
         /// <summary>

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Sanlog.Extensions.Hosting.Broker;
 using Sanlog.Models;
 
 namespace Sanlog

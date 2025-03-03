@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Compliance.Classification;
 
-namespace Sanlog.Compliance.Classification
+namespace Sanlog.Extensions.Compliance.Classification
 {
     /// <summary>
     /// Indicates data that is classified as sensitive.

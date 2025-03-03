@@ -1,4 +1,5 @@
-﻿
+﻿using Sanlog.Extensions.Hosting.Broker;
+
 namespace Sanlog.MSTest
 {
     [TestClass]

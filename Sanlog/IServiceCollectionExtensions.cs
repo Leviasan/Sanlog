@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Sanlog.Compliance.Redaction;
-using System;
-using Sanlog.Compliance.Classification;
-using Microsoft.Extensions.Configuration;
-using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
+using Sanlog.Extensions.Compliance.Classification;
+using Sanlog.Extensions.Compliance.Redaction;
 
 namespace Sanlog
 {
+    /*
     /// <summary>
     /// 
     /// </summary>
@@ -16,17 +15,12 @@ namespace Sanlog
         /// 
         /// </summary>
         /// <param name="services"></param>
-        /// <param name="configuration"></param>
         /// <returns></returns>
-        [RequiresDynamicCode("Binding strongly typed objects to configuration values may require generating dynamic code at runtime.")]
-        [RequiresUnreferencedCode("TOptions's dependent types may have their members trimmed. Ensure all required members are preserved.")]
-        public static IServiceCollection AddCompliance(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddRedaction(this IServiceCollection services)
         {
             ArgumentNullException.ThrowIfNull(services);
-            return services
-                .AddRedaction(builder => builder.SetRedactor<SensitiveRedactor>(SanlogTaxonomy.Sensitive))
-                .Configure<SanlogLoggerOptions>(configuration) // IL2026 + IL3050
-                .AddSingleton<IMessageBroker, MessageBroker>();
+            return services.AddRedaction(builder => builder.SetRedactor<SensitiveRedactor>(SanlogTaxonomy.Sensitive));
         }
     }
+    */
 }

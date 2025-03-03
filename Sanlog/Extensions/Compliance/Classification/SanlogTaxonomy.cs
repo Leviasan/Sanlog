@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.Compliance.Classification;
 
-namespace Sanlog.Compliance.Classification
+namespace Sanlog.Extensions.Compliance.Classification
 {
     /// <summary>
-    /// Provides data classifications.
+    /// Represents data classification.
     /// </summary>
     internal static class SanlogTaxonomy
     {
         /// <summary>
-        /// Gets the name of classification taxonomy.
+        /// Gets the name of the taxonomy.
         /// </summary>
         public static string TaxonomyName => typeof(SanlogTaxonomy).FullName!;
         /// <summary>

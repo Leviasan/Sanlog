@@ -2,15 +2,15 @@
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Sanlog
+namespace Sanlog.Extensions.Hosting.Brokers
 {
     /// <summary>
-    /// Provider a mechanism to send/deliver messages to handlers.
+    /// Provides a mechanism to deliver messages to handlers.
     /// </summary>
     public interface IMessageBroker
     {
         /// <summary>
-        /// Sends a message to handle.
+        /// Sends a message to service that handles the specified <typeparamref name="TMessage"/>.
         /// </summary>
         /// <typeparam name="TMessage">The type of the <paramref name="message"/>.</typeparam>
         /// <param name="message">The message to handle.</param>
@@ -25,7 +25,7 @@ namespace Sanlog
         /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
         bool SendMessage<TMessage>(Type serviceType, TMessage? message);
         /// <summary>
-        /// Asynchronously sends a message to handle.
+        /// Asynchronously sends a message to service that handles the specified <typeparamref name="TMessage"/>.
         /// </summary>
         /// <typeparam name="TMessage">The type of the <paramref name="message"/>.</typeparam>
         /// <param name="message">The message to handle.</param>

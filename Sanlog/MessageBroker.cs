@@ -7,58 +7,11 @@ using System.Threading.Tasks;
 using System.Threading;
 using Microsoft.Extensions.Options;
 using System.Collections.Frozen;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Sanlog.Extensions.Hosting.Broker;
 
 namespace Sanlog
 {
-    internal sealed class MessageBrokerOptions
-    {
-        public Type? FallbackHandler { get; set; }
-        public Dictionary<Type, Type> Handlers { get; } = [];
-    }
-    internal interface IMessageBrokerBuilder
-    {
-        IServiceCollection Services { get; }
-
-        IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
-        IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
-    }
-    internal sealed class MessageBrokerBuilder(IServiceCollection services) : IMessageBrokerBuilder
-    {
-        public IServiceCollection Services { get; } = services;
-
-        public IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler
-        {
-            Services.TryAddEnumerable(ServiceDescriptor.Singleton<IMessageHandler, THandler>());
-            _ = Services.Configure<MessageBrokerOptions>(options => options.Handlers[typeof(TMessage)] = typeof(THandler));
-            return this;
-        }
-        public IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler
-        {
-            Services.TryAddEnumerable(ServiceDescriptor.Singleton<IMessageHandler, THandler>());
-            _ = Services.Configure<MessageBrokerOptions>(options => options.FallbackHandler = typeof(THandler));
-            return this;
-        }
-    }
-    internal static class MessageBrokerServiceCollectionExtensions
-    {
-        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure)
-        {
-            ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(configure);
-
-            services
-                .AddOptions<MessageBrokerOptions>()
-                .Services
-                .TryAddSingleton<IMessageBroker, MessageBroker>();
-
-            configure.Invoke(new MessageBrokerBuilder(services));
-
-            return services;
-        }
-    }
     /// <summary>
     /// Represents a service to send/deliver messages to handlers based on <see cref="Channel"/>.
     /// </summary>
