@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using Sanlog.Models;
+using Sanlog.Formatters;
 
 namespace Sanlog
 {
@@ -72,7 +73,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(innerException, logEntryId, null, _provider)).ToList()
                         : []
                 };
-                _ = _provider.SendMessage(loggingEntry);
+                _provider.SendMessage(loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",

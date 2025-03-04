@@ -4,7 +4,7 @@ using System.Reflection;
 namespace Sanlog
 {
     /// <summary>
-    /// Represents <see cref="SanlogLogger"/> configuration.
+    /// Represents a <see cref="SanlogLoggerProvider"/> configuration.
     /// </summary>
     public sealed class SanlogLoggerOptions
     {
@@ -24,9 +24,5 @@ namespace Sanlog
         /// Gets or sets the callback function to retrieve the application version. By default the assembly version of the executable process.
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
-        /// <summary>
-        /// Gets or sets the configuration of the <see cref="FormattedLogValuesFormatter"/>.
-        /// </summary>
-        public FormattedLogValuesFormatterOptions? FormattedConfiguration { get; set; }
     }
 }

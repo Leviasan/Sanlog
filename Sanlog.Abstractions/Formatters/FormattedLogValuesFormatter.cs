@@ -7,13 +7,14 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
+using Microsoft.Extensions.Options;
 
 namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    internal sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
+    public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// The format string is used to redact sensitive data.
@@ -45,12 +46,12 @@ namespace Sanlog.Formatters
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
         /// <param name="options">The configuration of the formatter.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, FormattedLogValuesFormatterOptions options)
+        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, IOptions<FormattedLogValuesFormatterOptions> options)
         {
             ArgumentNullException.ThrowIfNull(redactorProvider);
             ArgumentNullException.ThrowIfNull(options);
             _redactorProvider = redactorProvider;
-            _configuration = options;
+            _configuration = options.Value;
         }
 
         /// <inheritdoc/>
