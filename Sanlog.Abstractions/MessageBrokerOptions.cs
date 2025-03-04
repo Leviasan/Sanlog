@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Sanlog.Abstractions
 {
     /// <summary>
     /// Represents a <see cref="MessageBroker"/> options.
     /// </summary>
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
     internal sealed class MessageBrokerOptions
     {
         /// <summary>

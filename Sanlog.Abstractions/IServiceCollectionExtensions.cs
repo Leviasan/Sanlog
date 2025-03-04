@@ -15,6 +15,7 @@ namespace Sanlog.Abstractions
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
+                .AddHostedService<MessageBroker>()
                 .TryAddSingleton<IMessageBroker, MessageBroker>();
 
             configure.Invoke(new MessageBrokerBuilder(services));

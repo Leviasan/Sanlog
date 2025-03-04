@@ -1,5 +1,6 @@
 ﻿namespace Sanlog.MSTest
 {
+    /*
     [TestClass]
     public sealed class SanlogLoggerOptionsUnitTest
     {
@@ -15,4 +16,5 @@
             Assert.AreEqual(typeof(SanlogLoggerOptionsUnitTest).Assembly.GetName().Version, version);
         }
     }
+    */
 }

@@ -1,5 +1,4 @@
 using System.Globalization;
-using Microsoft.Extensions.Compliance.Redaction;
 
 namespace Sanlog.MSTest
 {   
