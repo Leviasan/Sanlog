@@ -112,7 +112,6 @@ namespace Sanlog.Abstractions
             }
             base.Dispose();
         }
-        
         /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
