@@ -10,7 +10,7 @@ using Sanlog.Models;
 namespace Sanlog
 {
     /// <summary>
-    /// Represents a logger provider that can create instances of <see cref = "SanlogLogger" /> and consume external scope information.
+    /// Represents a logger provider that can create instances of <see cref="SanlogLogger"/> and consume external scope information.
     /// </summary>
     public abstract class SanlogLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
