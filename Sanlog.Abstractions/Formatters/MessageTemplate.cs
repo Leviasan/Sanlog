@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
-namespace Sanlog
+namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents a composite/named message template.
@@ -63,7 +63,7 @@ namespace Sanlog
                         throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. The mixed argument names are not supported.", openBraceIndex + 1));
                     // Evaluate argument index
                     var index = conventions[^1] == SegmentNamingConvention.AsciiDigit
-                        ? (int.TryParse(name, null, out var result) && int.IsPositive(result)) || result == -1
+                        ? int.TryParse(name, null, out var result) && int.IsPositive(result) || result == -1
                             ? result
                             : throw new FormatException(string.Format(null, "The input string was not in the correct format. Fail to parse near offset {0}. Invalid argument index.", openBraceIndex + 1))
                         : _segments.FindIndex(x => x.Equals(name, StringComparison.Ordinal));

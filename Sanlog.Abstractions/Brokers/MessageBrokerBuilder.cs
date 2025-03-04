@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Sanlog
+namespace Sanlog.Brokers
 {
     /// <summary>
     /// Represents the builder of the <see cref="MessageBrokerReceiver"/>.

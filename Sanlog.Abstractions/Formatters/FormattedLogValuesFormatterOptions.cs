@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 
-namespace Sanlog
+namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents the configuration of the <see cref="FormattedLogValuesFormatter"/>.

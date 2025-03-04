@@ -10,7 +10,7 @@ using System.Collections.Frozen;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
 
-namespace Sanlog
+namespace Sanlog.Brokers
 {
     /// <summary>
     /// Represents a service to handle messages.
@@ -93,9 +93,7 @@ namespace Sanlog
                 while (_channel.Reader.TryRead(out var context))
                 {
                     if (_consumers.TryGetValue(context.ServiceType, out var handler))
-                    {
                         await HandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
-                    }
                     else if (_fallbackHandler is not null)
                     {
                         await HandleAsync(_fallbackHandler, context.Message, stoppingToken).ConfigureAwait(false);

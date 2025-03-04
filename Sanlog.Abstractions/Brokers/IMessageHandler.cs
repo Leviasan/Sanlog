@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Sanlog
+namespace Sanlog.Brokers
 {
     /// <summary>
     /// Provides a mechanism for handling a message.

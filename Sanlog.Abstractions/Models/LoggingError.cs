@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Sanlog
+namespace Sanlog.Models
 {
     /// <summary>
     /// Represents the information about runtime error.

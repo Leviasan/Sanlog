@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
-namespace Sanlog
+namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents the wrapper of the Microsoft.Extensions.Logging.FormattedLogValues object.

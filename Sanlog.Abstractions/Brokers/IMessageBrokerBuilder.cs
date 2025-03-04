@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Sanlog
+namespace Sanlog.Brokers
 {
     /// <summary>
     /// Configures a message broker.

@@ -8,7 +8,7 @@ using System.Text;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
 
-namespace Sanlog
+namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.

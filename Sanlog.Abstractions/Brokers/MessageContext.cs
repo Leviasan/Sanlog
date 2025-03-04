@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sanlog
+namespace Sanlog.Brokers
 {
     /// <summary>
     /// Represents the context of the message.
