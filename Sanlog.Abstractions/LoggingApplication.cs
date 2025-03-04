@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sanlog.Models
+namespace Sanlog
 {
     /// <summary>
     /// Represents information about the application.
