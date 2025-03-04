@@ -24,7 +24,7 @@ namespace Sanlog.Formatters
         /// <summary>
         /// The element key that represents a structured logging message.
         /// </summary>
-        public const string OriginalFormat = "{HasOriginalFormat}";
+        public const string OriginalFormat = "{OriginalFormat}";
 
         /// <summary>
         /// Max cached collection size.
