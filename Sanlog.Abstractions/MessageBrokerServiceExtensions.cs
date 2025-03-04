@@ -3,7 +3,7 @@ using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Extension methods for registering message broker in an <see cref="IServiceCollection"/>.

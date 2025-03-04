@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Provides a mechanism for handling a message.

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Represents a service to deliver messages to handlers.

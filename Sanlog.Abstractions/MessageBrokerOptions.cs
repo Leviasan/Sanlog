@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Represents a <see cref="MessageBroker"/> options.

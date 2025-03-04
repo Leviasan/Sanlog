@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Represents the context of the message.

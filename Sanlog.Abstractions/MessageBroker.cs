@@ -10,7 +10,7 @@ using System.Collections.Frozen;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
 
-namespace Sanlog.Abstractions
+namespace Sanlog
 {
     /// <summary>
     /// Represents a service to handle messages.
