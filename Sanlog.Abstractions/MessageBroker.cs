@@ -121,9 +121,9 @@ namespace Sanlog.Abstractions
                 {
                     await handler.HandleAsync(message, cancellationToken).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    // ignored
+                    Debug.WriteLine(exception, typeof(MessageBroker).FullName);
                 }
             }
         }
