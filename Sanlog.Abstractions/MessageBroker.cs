@@ -8,6 +8,7 @@ using System.Threading;
 using Microsoft.Extensions.Options;
 using System.Collections.Frozen;
 using Microsoft.Extensions.Hosting;
+using System.Linq;
 
 namespace Sanlog.Abstractions
 {
@@ -28,16 +29,22 @@ namespace Sanlog.Abstractions
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly FrozenDictionary<Type, IMessageHandler> _consumers;
         /// <summary>
+        /// The fallback handler to use when no type-specific handler exists.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly IMessageHandler? _fallbackHandler;
+        /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private bool _disposedValue;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
-        /// <param name="handlers"></param>
-        /// <param name="options"></param>
+        /// <param name="handlers">The registered handlers.</param>
+        /// <param name="options">The configuration of the <see cref="MessageBroker"/>.</param>
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
         public MessageBroker(IEnumerable<IMessageHandler> handlers, IOptions<MessageBrokerOptions> options)
         {
             ArgumentNullException.ThrowIfNull(handlers);
@@ -45,6 +52,8 @@ namespace Sanlog.Abstractions
 
             _consumers = GetClassHandlerMap(handlers, options.Value.Handlers);
             _channel = Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
+            if (options.Value.FallbackHandler is not null)
+                _fallbackHandler = handlers.SingleOrDefault(x => x.GetType() == options.Value.FallbackHandler);
 
             static FrozenDictionary<Type, IMessageHandler> GetClassHandlerMap(IEnumerable<IMessageHandler> handlers, Dictionary<Type, Type> map)
             {
@@ -63,12 +72,6 @@ namespace Sanlog.Abstractions
                 return dictionary.ToFrozenDictionary();
             }
         }
-
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
-        /// </summary>
-
 
         /// <inheritdoc/>
         public override void Dispose()
@@ -94,7 +97,6 @@ namespace Sanlog.Abstractions
         public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
             => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message); // ArgumentNullException
         /// <inheritdoc/>
-        [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle context")]
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (await _channel.Reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
@@ -103,15 +105,25 @@ namespace Sanlog.Abstractions
                 {
                     if (_consumers.TryGetValue(context.ServiceType, out var handler))
                     {
-                        try
-                        {
-                            await handler.HandleAsync(context.Message, stoppingToken).ConfigureAwait(false);
-                        }
-                        catch
-                        {
-                            // ignored
-                        }
+                        await HandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
                     }
+                    else if (_fallbackHandler is not null)
+                    {
+                        await HandleAsync(_fallbackHandler, context.Message, stoppingToken).ConfigureAwait(false);
+                    }
+                }
+            }
+
+            [SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "Suppressing throwing exception while handle message")]
+            static async ValueTask HandleAsync(IMessageHandler handler, object? message, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    await handler.HandleAsync(message, cancellationToken).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // ignored
                 }
             }
         }
