@@ -14,7 +14,7 @@ namespace Sanlog.MSTest
         [TestInitialize]
         public void TestInitialize()
         {
-            var builder = Host.CreateApplicationBuilder();
+            var builder = Host.CreateEmptyApplicationBuilder(null);
             _ = builder.Services.AddMessageBroker(c => c.SetHandler<int, Int32MessageHandler>());
             _host = builder.Build();
             _host.Start();
@@ -24,10 +24,10 @@ namespace Sanlog.MSTest
         [TestMethod]
         public async Task SendMessage()
         {
-            var broker = _host.Services.GetRequiredService<IMessageBroker>();
+            var broker = _host.Services.GetRequiredService<IMessageBrokerReceiver>();
             Assert.IsTrue(broker.SendMessage(int.MaxValue));
 
-            await Task.Delay(1000);
+            await Task.Delay(100);
             var handler = (Int32MessageHandler)_host.Services.GetServices<IMessageHandler>().Single(x => x.GetType() == typeof(Int32MessageHandler));
             Assert.AreEqual(int.MaxValue, handler.LastMessage);
         }
@@ -44,5 +44,4 @@ namespace Sanlog.MSTest
             }
         }
     }
-
 }

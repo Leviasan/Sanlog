@@ -7,7 +7,7 @@ namespace Sanlog.Abstractions
     /// <summary>
     /// Provides a mechanism to deliver messages to handlers.
     /// </summary>
-    public interface IMessageBroker
+    public interface IMessageBrokerReceiver
     {
         /// <summary>
         /// Sends a message to service that handles the specified <typeparamref name="TMessage"/>.
