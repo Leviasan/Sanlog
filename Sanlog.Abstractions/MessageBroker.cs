@@ -13,10 +13,37 @@ using System.Linq;
 namespace Sanlog.Abstractions
 {
     /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="channel"></param>
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
+    internal sealed class MessageBroker(Channel<MessageContext> channel) : IMessageBroker
+    {
+        /// <summary>
+        /// The underlying channel.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Channel<MessageContext> _channel = channel;
+
+        /// <inheritdoc/>
+        public bool SendMessage<TMessage>(TMessage? message) => SendMessage(typeof(TMessage), message);
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
+        public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
+            => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
+        /// <inheritdoc/>
+        public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
+            => await SendMessageAsync(typeof(TMessage), message, cancellationToken).ConfigureAwait(false);
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
+        public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
+            => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message); // ArgumentNullException
+    }
+    /// <summary>
     /// Represents a service to deliver messages to handlers.
     /// </summary>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class MessageBroker : BackgroundService, IMessageBroker
+    internal sealed class MessageBrokerHostedService : BackgroundService
     {
         /// <summary>
         /// The underlying channel.
@@ -40,18 +67,20 @@ namespace Sanlog.Abstractions
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MessageBroker"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
+        /// Initializes a new instance of the <see cref="MessageBrokerHostedService"/> class based on a buffered channel of unbounded capacity for use by any number of writers but at most a single reader at a time.
         /// </summary>
+        /// <param name="channel">...</param>
         /// <param name="handlers">The registered handlers.</param>
         /// <param name="options">The configuration of the <see cref="MessageBroker"/>.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
-        public MessageBroker(IEnumerable<IMessageHandler> handlers, IOptions<MessageBrokerOptions> options)
+        public MessageBrokerHostedService(Channel<MessageContext> channel, IEnumerable<IMessageHandler> handlers, IOptions<MessageBrokerOptions> options) // TODO: channel docs
         {
+            ArgumentNullException.ThrowIfNull(channel);
             ArgumentNullException.ThrowIfNull(handlers);
             ArgumentNullException.ThrowIfNull(options);
 
             _consumers = GetClassHandlerMap(handlers, options.Value.Handlers);
-            _channel = Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
+            _channel = channel;//Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true });
             if (options.Value.FallbackHandler is not null)
                 _fallbackHandler = handlers.SingleOrDefault(x => x.GetType() == options.Value.FallbackHandler);
 
@@ -83,19 +112,7 @@ namespace Sanlog.Abstractions
             }
             base.Dispose();
         }
-        /// <inheritdoc/>
-        public bool SendMessage<TMessage>(TMessage? message) => SendMessage(typeof(TMessage), message);
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
-        public bool SendMessage<TMessage>(Type serviceType, TMessage? message)
-            => _channel.Writer.TryWrite(new MessageContext(serviceType ?? throw new ArgumentNullException(nameof(serviceType)), message));
-        /// <inheritdoc/>
-        public async ValueTask<bool> SendMessageAsync<TMessage>(TMessage? message, CancellationToken cancellationToken)
-            => await SendMessageAsync(typeof(TMessage), message, cancellationToken).ConfigureAwait(false);
-        /// <inheritdoc/>
-        /// <exception cref="ArgumentNullException">The <paramref name="serviceType"/> is <see langword="null"/>.</exception>
-        public async ValueTask<bool> SendMessageAsync<TMessage>(Type serviceType, TMessage? message, CancellationToken cancellationToken)
-            => await _channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false) && SendMessage(serviceType, message); // ArgumentNullException
+        
         /// <inheritdoc/>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -127,12 +144,11 @@ namespace Sanlog.Abstractions
                 }
             }
         }
-
-        /// <summary>
-        /// Represents the context of the message.
-        /// </summary>
-        /// <param name="ServiceType">The service type that mappings with the specified <paramref name="Message"/>.</param>
-        /// <param name="Message">The message to handle.</param>
-        private sealed record class MessageContext(Type ServiceType, object? Message);
     }
+    /// <summary>
+    /// Represents the context of the message.
+    /// </summary>
+    /// <param name="ServiceType">The service type that mappings with the specified <paramref name="Message"/>.</param>
+    /// <param name="Message">The message to handle.</param>
+    internal sealed record class MessageContext(Type ServiceType, object? Message);
 }

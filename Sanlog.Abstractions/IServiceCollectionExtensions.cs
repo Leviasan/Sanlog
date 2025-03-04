@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -12,10 +13,12 @@ namespace Sanlog.Abstractions
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configure);
 
+            services.TryAddSingleton(sp => Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true }));
+
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
-                .AddHostedService<MessageBroker>()
+                .AddHostedService<MessageBrokerHostedService>()
                 .TryAddSingleton<IMessageBroker, MessageBroker>();
 
             configure.Invoke(new MessageBrokerBuilder(services));

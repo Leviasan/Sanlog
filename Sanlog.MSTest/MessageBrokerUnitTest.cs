@@ -7,7 +7,9 @@ namespace Sanlog.MSTest
     [TestClass]
     public sealed class MessageBrokerUnitTest
     {
-        private IHost? _host;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+        private IHost _host;
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
         [TestInitialize]
         public void TestInitialize()
@@ -18,27 +20,16 @@ namespace Sanlog.MSTest
             _host.Start();
         }
         [TestCleanup]
-        public void TestCleanup() => _host!.Dispose();
+        public void TestCleanup() => _host.Dispose();
         [TestMethod]
-        public void SendMessage()
+        public async Task SendMessage()
         {
-            var broker = _host!.Services.GetRequiredService<IMessageBroker>();
-
-            //var back = broker as MessageBroker;
-            //await back!.StartAsync(CancellationToken.None);
-
-            _ = broker.SendMessage(15);
-            Assert.IsNotNull(broker);
-
-            /*
-            var handler = new Int32MessageHandler();
-            using var broker = new MessageBroker();
-            await broker.StartAsync(CancellationToken.None);
-            Assert.IsTrue(broker.Register(typeof(int), handler));
+            var broker = _host.Services.GetRequiredService<IMessageBroker>();
             Assert.IsTrue(broker.SendMessage(int.MaxValue));
-            await broker.StopAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+
+            await Task.Delay(1000);
+            var handler = (Int32MessageHandler)_host.Services.GetServices<IMessageHandler>().Single(x => x.GetType() == typeof(Int32MessageHandler));
             Assert.AreEqual(int.MaxValue, handler.LastMessage);
-            */
         }
         private sealed class Int32MessageHandler : IMessageHandler
         {
@@ -53,4 +44,5 @@ namespace Sanlog.MSTest
             }
         }
     }
+
 }
