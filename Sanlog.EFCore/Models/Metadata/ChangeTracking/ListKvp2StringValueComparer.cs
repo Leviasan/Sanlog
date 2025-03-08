@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Sanlog.Storage.ChangeTracking
+namespace Sanlog.Models.Metadata.ChangeTracking
 {
     /// <summary>
     /// Defines the snapshotting and comparison actions for <see cref="IReadOnlyList{T}"/> type

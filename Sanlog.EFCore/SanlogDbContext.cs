@@ -10,10 +10,10 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Sanlog.Models;
 using Sanlog.Models.Metadata.Builders;
-using Sanlog.Storage.ChangeTracking;
-using Sanlog.Storage.ValueConversion;
+using Sanlog.Models.Metadata.ChangeTracking;
+using Sanlog.Models.Metadata.ValueConversion;
 
-namespace Sanlog.Storage
+namespace Sanlog
 {
     /// <summary>
     /// Represents a database context of the logger.

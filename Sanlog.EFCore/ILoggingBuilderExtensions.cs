@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging.Configuration;
 using Sanlog.Brokers;
 using Sanlog.Formatters;
 using Sanlog.Models;
-using Sanlog.Storage;
 
 namespace Sanlog
 {
