@@ -27,7 +27,7 @@ namespace Sanlog.Brokers
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .TryAddSingleton<IMessageReceiver, MessageBrokerReceiver>();
+                .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configure.Invoke(new MessageBrokerBuilder(services));
 
             return services;
@@ -62,7 +62,7 @@ namespace Sanlog.Brokers
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .TryAddSingleton<IMessageReceiver, MessageBrokerReceiver>();
+                .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configure.Invoke(new MessageBrokerBuilder(services));
 
             return services;

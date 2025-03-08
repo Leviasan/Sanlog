@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sanlog.Brokers;
 using Sanlog.Formatters;
-using Sanlog.Models;
 
 namespace Sanlog
 {
@@ -19,11 +18,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly ConcurrentDictionary<string, SanlogLogger> _loggers;
-        /// <summary>
-        /// The message broker receiver.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IMessageReceiver _receiver;
         /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
@@ -43,16 +37,20 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             ArgumentNullException.ThrowIfNull(options);
 
-            _receiver = receiver;
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
-            Options = options.Value;
+            Receiver = receiver;
             Formatter = formatter;
+            Options = options.Value;
         }
 
         /// <summary>
         /// Gets the external storage of the common scope data.
         /// </summary>
         internal IExternalScopeProvider? ExternalScopeProvider { get; private set; }
+        /// <summary>
+        /// Gets the message receiver.
+        /// </summary>
+        internal IMessageReceiver Receiver { get; private set; }
         /// <summary>
         /// Gets the log values formatter.
         /// </summary>
@@ -93,11 +91,5 @@ namespace Sanlog
         });
         /// <inheritdoc/>
         public void SetScopeProvider(IExternalScopeProvider? scopeProvider) => ExternalScopeProvider = scopeProvider;
-        /// <summary>
-        /// Sends a message to handle.
-        /// </summary>
-        /// <param name="message">The message to handle.</param>
-        /// <returns><see langword="true"/> if the message is accepted for handling; otherwise <see langword="false"/>.</returns>
-        internal void SendMessage(LoggingEntry message) => _receiver.SendMessage(GetType(), message);
     }
 }
