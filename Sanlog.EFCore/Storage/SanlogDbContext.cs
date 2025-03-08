@@ -13,7 +13,7 @@ using Sanlog.Models.Metadata.Builders;
 using Sanlog.Storage.ChangeTracking;
 using Sanlog.Storage.ValueConversion;
 
-namespace Sanlog
+namespace Sanlog.Storage
 {
     /// <summary>
     /// Represents a database context of the logger.
