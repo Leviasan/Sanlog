@@ -8,7 +8,7 @@ namespace Sanlog.Brokers
     /// <summary>
     /// Extension methods for registering message broker in an <see cref="IServiceCollection"/>.
     /// </summary>
-    public static class MessageBrokerServiceExtensions
+    public static class IServiceCollectionExtensions
     {
         /// <summary>
         /// Adds message broker service based on unbounded channel to the specified <see cref="IServiceCollection"/>.
@@ -23,13 +23,11 @@ namespace Sanlog.Brokers
             ArgumentNullException.ThrowIfNull(configure);
 
             services.TryAddSingleton(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true }));
-
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .TryAddSingleton<IMessageBrokerReceiver, MessageBrokerReceiver>();
-
+                .TryAddSingleton<IMessageReceiver, MessageBrokerReceiver>();
             configure.Invoke(new MessageBrokerBuilder(services));
 
             return services;
@@ -60,13 +58,11 @@ namespace Sanlog.Brokers
                     SingleReader = true
                 },
                 itemDropped: ctx => itemDropped?.Invoke(ctx.Message)));
-
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .TryAddSingleton<IMessageBrokerReceiver, MessageBrokerReceiver>();
-
+                .TryAddSingleton<IMessageReceiver, MessageBrokerReceiver>();
             configure.Invoke(new MessageBrokerBuilder(services));
 
             return services;

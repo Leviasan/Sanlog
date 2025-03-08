@@ -24,7 +24,7 @@ namespace Sanlog.MSTest
         [TestMethod]
         public async Task SendMessage()
         {
-            var broker = _host.Services.GetRequiredService<IMessageBrokerReceiver>();
+            var broker = _host.Services.GetRequiredService<IMessageReceiver>();
             Assert.IsTrue(broker.SendMessage(int.MaxValue));
 
             await Task.Delay(100);

@@ -23,7 +23,7 @@ namespace Sanlog
         /// The message broker receiver.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IMessageBrokerReceiver _receiver;
+        private readonly IMessageReceiver _receiver;
         /// <summary>
         /// To detect redundant calls Dispose method.
         /// </summary>
@@ -37,7 +37,7 @@ namespace Sanlog
         /// <param name="formatter">The formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.</param>
         /// <param name="options">The configuration of the <see cref="SanlogLoggerProvider"/>.</param>
         /// <exception cref="ArgumentNullException">The one of the parameters is <see langword="null"/>.</exception>
-        protected SanlogLoggerProvider(IMessageBrokerReceiver receiver, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
+        protected SanlogLoggerProvider(IMessageReceiver receiver, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
         {
             ArgumentNullException.ThrowIfNull(receiver);
             ArgumentNullException.ThrowIfNull(formatter);

@@ -92,19 +92,20 @@ namespace Sanlog.Brokers
             {
                 while (_channel.Reader.TryRead(out var context))
                 {
+                    stoppingToken.ThrowIfCancellationRequested();
                     if (_consumers.TryGetValue(context.ServiceType, out var handler))
                     {
-                        await HandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
+                        await TryHandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
                     }
                     else if (_fallbackHandler is not null)
                     {
-                        await HandleAsync(_fallbackHandler, context.Message, stoppingToken).ConfigureAwait(false);
+                        await TryHandleAsync(_fallbackHandler, context.Message, stoppingToken).ConfigureAwait(false);
                     }
                 }
             }
 
             [SuppressMessage("Design", "CA1031: Do not catch general exception types", Justification = "Suppressing throwing exception while handle message")]
-            static async ValueTask HandleAsync(IMessageHandler handler, object? message, CancellationToken cancellationToken)
+            static async ValueTask TryHandleAsync(IMessageHandler handler, object? message, CancellationToken cancellationToken)
             {
                 try
                 {

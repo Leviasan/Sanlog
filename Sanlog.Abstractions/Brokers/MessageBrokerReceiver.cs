@@ -12,7 +12,7 @@ namespace Sanlog.Brokers
     /// </summary>
     /// <param name="channel">The underlying channel.</param>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class MessageBrokerReceiver(Channel<MessageContext> channel) : IMessageBrokerReceiver
+    internal sealed class MessageBrokerReceiver(Channel<MessageContext> channel) : IMessageReceiver
     {
         /// <summary>
         /// The underlying channel.

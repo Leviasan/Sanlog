@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 namespace Sanlog.Brokers
 {
     /// <summary>
-    /// Represents the builder of the <see cref="MessageBrokerReceiver"/>.
+    /// Represents the builder of the <see cref="MessageBroker"/>.
     /// </summary>
     /// <param name="services">The service collection.</param>
     internal sealed class MessageBrokerBuilder(IServiceCollection services) : IMessageBrokerBuilder
