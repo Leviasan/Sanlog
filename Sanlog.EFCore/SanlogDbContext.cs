@@ -8,30 +8,27 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Sanlog.ChangeTracking;
-using Sanlog.Storage.ValueConversion;
+using Sanlog.Models;
+using Sanlog.Models.Metadata.Builders;
+using Sanlog.Models.Metadata.ChangeTracking;
+using Sanlog.Models.Metadata.ValueConversion;
 
-namespace Sanlog.EFCore
+namespace Sanlog
 {
     /// <summary>
-    /// Represents the database context of the logger.
+    /// Represents a database context of the logger.
     /// </summary>
     /// <remarks>
     /// By default used overridden logger factory <see cref="NullLoggerFactory.Instance"/>.
     /// By default context use tracking strategy <see cref="QueryTrackingBehavior.NoTrackingWithIdentityResolution"/>.
     /// </remarks>
-    public sealed class SanlogDbContext : DbContext
+    internal sealed class SanlogDbContext : DbContext
     {
         /// <summary>
-        /// The listener to be called whenever a <see cref="SanlogLoggerOptions"/> changes.
+        /// The logger configuration.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly IDisposable? _changeTokenRegistration;
-        /// <summary>
-        /// The logger options.
-        /// </summary>
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private SanlogLoggerOptions _loggerOptions;
+        private readonly SanlogLoggerOptions _loggerOptions;
         /// <summary>
         /// The <see cref="ISaveChangesInterceptor"/> for validating tenant and application identifiers.
         /// </summary>
@@ -43,51 +40,44 @@ namespace Sanlog.EFCore
         /// The <see cref="DbContext.OnConfiguring(DbContextOptionsBuilder)"/> method will still be called to allow further configuration of the options.
         /// </summary>
         /// <param name="options">The options for this context.</param>
-        /// <param name="loggerOptionsMonitor">Used for notifications when <see cref="SanlogLoggerOptions"/> instances change.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> or <paramref name="loggerOptionsMonitor"/> is <see langword="null"/>.</exception>
+        /// <param name="loggerOptions">The configuration of the <see cref="SanlogLoggerProvider"/>.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="options"/> or <paramref name="loggerOptions"/> is <see langword="null"/>.</exception>
         [RequiresDynamicCode("EF Core isn't fully compatible with NativeAOT, and running the application may generate unexpected runtime failures.")]
         [RequiresUnreferencedCode("EF Core isn't fully compatible with trimming, and running the application may generate unexpected runtime failures." +
             " Some specific coding pattern are usually required to make trimming work properly, see https://aka.ms/efcore-docs-trimming for more details.")]
-        public SanlogDbContext(DbContextOptions<SanlogDbContext> options, IOptionsMonitor<SanlogLoggerOptions> loggerOptionsMonitor) : base(options)
+        public SanlogDbContext(DbContextOptions<SanlogDbContext> options, IOptions<SanlogLoggerOptions> loggerOptions) : base(options)
         {
             ArgumentNullException.ThrowIfNull(options);
-            ArgumentNullException.ThrowIfNull(loggerOptionsMonitor);
-            _loggerOptions = loggerOptionsMonitor.CurrentValue;
-            _interceptor = new TenantValidatorInterceptor(() => _loggerOptions);
-            _changeTokenRegistration = loggerOptionsMonitor.OnChange(OnChangeOptions);
+            ArgumentNullException.ThrowIfNull(loggerOptions);
+            _loggerOptions = loggerOptions.Value;
+            _interceptor = new TenantValidatorInterceptor(loggerOptions.Value);
         }
 
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingApplication"/>.
         /// </summary>
-        internal DbSet<LoggingApplication> LogApps => Set<LoggingApplication>();
+        public DbSet<LoggingApplication> LogApps => Set<LoggingApplication>();
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingLevel"/>.
         /// </summary>
-        internal DbSet<LoggingLevel> LogLevels => Set<LoggingLevel>();
+        public DbSet<LoggingLevel> LogLevels => Set<LoggingLevel>();
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingEntry"/>.
         /// </summary>
-        internal DbSet<LoggingEntry> LogEntries => Set<LoggingEntry>();
+        public DbSet<LoggingEntry> LogEntries => Set<LoggingEntry>();
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingScope"/>.
         /// </summary>
-        internal DbSet<LoggingScope> LogScopes => Set<LoggingScope>();
+        public DbSet<LoggingScope> LogScopes => Set<LoggingScope>();
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingError"/>.
         /// </summary>
-        internal DbSet<LoggingError> LogErrors => Set<LoggingError>();
+        public DbSet<LoggingError> LogErrors => Set<LoggingError>();
         /// <summary>
         /// Gets the dbset that can be used to query and save instances of <see cref="LoggingTenant"/>.
         /// </summary>
-        internal DbSet<LoggingTenant> LogTenants => Set<LoggingTenant>();
+        public DbSet<LoggingTenant> LogTenants => Set<LoggingTenant>();
 
-        /// <inheritdoc/>
-        public override void Dispose()
-        {
-            _changeTokenRegistration?.Dispose();
-            base.Dispose();
-        }
         /// <inheritdoc/>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -101,8 +91,12 @@ namespace Sanlog.EFCore
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             Debug.Assert(configurationBuilder is not null);
-            _ = configurationBuilder.Properties<Version>().HaveConversion<VersionValueConverter, VersionValueComparer>();
-            _ = configurationBuilder.Properties<IReadOnlyDictionary<string, string?>>().HaveConversion<CollectionKeyValuePairStringStringValueConverter, CollectionKeyValuePairStringStringValueComparer>();
+            _ = configurationBuilder
+                .Properties<Version>()
+                .HaveConversion<VersionValueConverter, VersionValueComparer>();
+            _ = configurationBuilder
+                .Properties<IReadOnlyList<KeyValuePair<string, string?>>>()
+                .HaveConversion<CollectionKeyValuePairStringStringValueConverter, CollectionKeyValuePairStringStringValueComparer>();
             base.ConfigureConventions(configurationBuilder);
         }
         /// <inheritdoc/>
@@ -122,28 +116,22 @@ namespace Sanlog.EFCore
             _ = modelBuilder.Entity<LoggingTenant>().HasQueryFilter(x => x.Id == _loggerOptions.TenantId);
             base.OnModelCreating(modelBuilder);
         }
-        /// <summary>
-        /// The action to be invoked when <see cref="SanlogLoggerOptions"/> has changed.
-        /// </summary>
-        /// <param name="options">The changed logger options.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private void OnChangeOptions(SanlogLoggerOptions options) => _loggerOptions = options ?? throw new ArgumentNullException(nameof(options));
 
         /// <summary>
         /// Represents the <see cref="ISaveChangesInterceptor"/> for validating tenant and application identifiers.
         /// </summary>
         /// <remarks>
-        /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified logger options.
+        /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified logger configuration.
         /// </remarks>
-        /// <param name="configure">The function to get the current logger configuration.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="configure"/> is <see langword="null"/>.</exception>
-        private sealed class TenantValidatorInterceptor(Func<SanlogLoggerOptions> configure) : SaveChangesInterceptor
+        /// <param name="options">The logger configuration.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
+        private sealed class TenantValidatorInterceptor(SanlogLoggerOptions options) : SaveChangesInterceptor
         {
             /// <summary>
-            /// The function to get the current logger configuration.
+            /// The logger configuration.
             /// </summary>
             [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private readonly Func<SanlogLoggerOptions> _configure = configure ?? throw new ArgumentNullException(nameof(configure));
+            private readonly SanlogLoggerOptions _options = options;
 
             /// <inheritdoc/>
             public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
@@ -151,22 +139,21 @@ namespace Sanlog.EFCore
                 var saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var options = _configure.Invoke();
-                    var tenant = context.LogTenants.Find(options.TenantId);
-                    var application = context.LogApps.Find(options.AppId);
+                    var tenant = context.LogTenants.Find(_options.TenantId);
+                    var application = context.LogApps.Find(_options.AppId);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving ? base.SavingChanges(eventData, result) : InterceptionResult<int>.SuppressWithResult(0);
             }
             /// <inheritdoc/>
-            public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+            public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+                InterceptionResult<int> result, CancellationToken cancellationToken = default)
             {
                 var saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var options = _configure.Invoke();
-                    var tenant = await context.LogTenants.FindAsync([options.TenantId], cancellationToken).ConfigureAwait(true);
-                    var application = await context.LogApps.FindAsync([options.AppId], cancellationToken).ConfigureAwait(true);
+                    var tenant = await context.LogTenants.FindAsync([_options.TenantId], cancellationToken).ConfigureAwait(true);
+                    var application = await context.LogApps.FindAsync([_options.AppId], cancellationToken).ConfigureAwait(true);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving ? await base.SavingChangesAsync(eventData, result, cancellationToken).ConfigureAwait(true) : InterceptionResult<int>.SuppressWithResult(0);

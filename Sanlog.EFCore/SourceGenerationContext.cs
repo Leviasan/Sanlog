@@ -12,11 +12,19 @@ namespace Sanlog.EFCore
     [JsonSerializable(typeof(IReadOnlyList<KeyValuePair<string, string?>>), GenerationMode = JsonSourceGenerationMode.Metadata)]
     internal sealed partial class SourceGenerationContext : JsonSerializerContext
     {
+        /// <summary>
+        /// Initializes the default context.
+        /// </summary>
         static SourceGenerationContext() => Default = new SourceGenerationContext(CreateJsonSerializerOptions(Default));
 
-        private static JsonSerializerOptions CreateJsonSerializerOptions(SourceGenerationContext defaultContext)
+        /// <summary>
+        /// Creates an overriden <see cref="JsonSerializerOptions"/> for the specified context.
+        /// </summary>
+        /// <param name="context">The context to override settings.</param>
+        /// <returns>An overriden <see cref="JsonSerializerOptions"/> for the specified context.</returns>
+        private static JsonSerializerOptions CreateJsonSerializerOptions(SourceGenerationContext context)
         {
-            var options = new JsonSerializerOptions(defaultContext.GeneratedSerializerOptions!)
+            var options = new JsonSerializerOptions(context.GeneratedSerializerOptions!)
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };

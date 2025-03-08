@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
-namespace Sanlog.ChangeTracking
+namespace Sanlog.Models.Metadata.ChangeTracking
 {
     /// <summary>
     /// Defines the snapshotting and comparison actions for <see cref="Version"/> type.

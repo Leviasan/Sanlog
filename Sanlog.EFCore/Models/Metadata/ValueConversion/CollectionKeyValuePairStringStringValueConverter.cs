@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sanlog.EFCore;
 
-namespace Sanlog.Storage.ValueConversion
+namespace Sanlog.Models.Metadata.ValueConversion
 {
     /// <summary>
     /// Defines conversions from <see cref="IReadOnlyList{T}"/> object in a model
