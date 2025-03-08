@@ -8,7 +8,7 @@ namespace Sanlog.Brokers
     /// <summary>
     /// Extension methods for registering message broker in an <see cref="IServiceCollection"/>.
     /// </summary>
-    public static class IServiceCollectionExtensions
+    internal static class IServiceCollectionExtensions
     {
         /// <summary>
         /// Adds message broker service based on unbounded channel to the specified <see cref="IServiceCollection"/>.

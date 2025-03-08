@@ -53,6 +53,12 @@ namespace Sanlog.Formatters
             _redactorProvider = redactorProvider;
             _configuration = options.Value;
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with <see cref="NullRedactorProvider"/> and the configuration of the formatter.
+        /// </summary>
+        /// <param name="options">The configuration of the formatter.</param>
+        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
+        public FormattedLogValuesFormatter(IOptions<FormattedLogValuesFormatterOptions> options) : this(NullRedactorProvider.Instance, options) { }
 
         /// <inheritdoc/>
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _configuration.CultureInfo?.GetFormat(formatType);

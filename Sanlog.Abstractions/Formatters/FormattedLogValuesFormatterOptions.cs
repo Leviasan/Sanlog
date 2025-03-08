@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace Sanlog.Formatters
@@ -9,7 +11,7 @@ namespace Sanlog.Formatters
     /// <summary>
     /// Represents the configuration of the <see cref="FormattedLogValuesFormatter"/>.
     /// </summary>
-    public sealed class FormattedLogValuesFormatterOptions
+    public sealed class FormattedLogValuesFormatterOptions : IReadOnlyList<KeyValuePair<Type, string?>>
     {
         /// <summary>
         /// Gets a read-only, singleton instance of <see cref="FormattedLogValuesFormatterOptions"/> that uses the default configuration.
@@ -53,6 +55,11 @@ namespace Sanlog.Formatters
             _formatters = options._formatters;
         }
 
+        /// <inheritdoc/>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
+        public KeyValuePair<Type, string?> this[int index] => _formatters.ElementAt(index);
+        /// <inheritdoc/>
+        public int Count => _formatters.Count;
         /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
@@ -121,5 +128,9 @@ namespace Sanlog.Formatters
             if (IsReadOnly)
                 throw new InvalidOperationException("The current instance is read-only to prevent any further user modification.");
         }
+        /// <inheritdoc/>
+        public IEnumerator<KeyValuePair<Type, string?>> GetEnumerator() => _formatters.GetEnumerator();
+        /// <inheritdoc/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
