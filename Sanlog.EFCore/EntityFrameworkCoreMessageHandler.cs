@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ namespace Sanlog
     /// Represents a handler for writing <see cref="LoggingEntry"/> to the storage.
     /// </summary>
     /// <param name="contextFactory">The factory for creating <see cref="SanlogDbContext"/> instances.</param>
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
     internal sealed class EntityFrameworkCoreMessageHandler(IDbContextFactory<SanlogDbContext> contextFactory) : IMessageHandler
     {
         /// <summary>
