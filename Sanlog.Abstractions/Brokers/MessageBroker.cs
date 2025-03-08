@@ -93,7 +93,9 @@ namespace Sanlog.Brokers
                 while (_channel.Reader.TryRead(out var context))
                 {
                     if (_consumers.TryGetValue(context.ServiceType, out var handler))
+                    {
                         await HandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
+                    }
                     else if (_fallbackHandler is not null)
                     {
                         await HandleAsync(_fallbackHandler, context.Message, stoppingToken).ConfigureAwait(false);
