@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Sanlog.Models.Metadata.ValueConversion
+namespace Sanlog.Storage.ValueConversion
 {
     /// <summary>
     /// Defines conversions from <see cref="Version"/> object in a model to <see cref="string"/> type in the store.

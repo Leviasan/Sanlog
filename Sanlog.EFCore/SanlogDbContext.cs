@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Sanlog.Models;
 using Sanlog.Models.Metadata.Builders;
-using Sanlog.Models.Metadata.ChangeTracking;
-using Sanlog.Models.Metadata.ValueConversion;
+using Sanlog.Storage.ChangeTracking;
+using Sanlog.Storage.ValueConversion;
 
 namespace Sanlog
 {
@@ -96,7 +96,7 @@ namespace Sanlog
                 .HaveConversion<VersionValueConverter, VersionValueComparer>();
             _ = configurationBuilder
                 .Properties<IReadOnlyList<KeyValuePair<string, string?>>>()
-                .HaveConversion<CollectionKeyValuePairStringStringValueConverter, CollectionKeyValuePairStringStringValueComparer>();
+                .HaveConversion<ListKvp2StringValueConverter, ListKvp2StringValueComparer>();
             base.ConfigureConventions(configurationBuilder);
         }
         /// <inheritdoc/>
