@@ -7,7 +7,7 @@ using Sanlog.Formatters;
 namespace Sanlog
 {
     /// <summary>
-    /// Extension methods for registering message broker in an <see cref="IServiceCollection"/>.
+    /// Extension methods for registering logger infrastructure in an <see cref="IServiceCollection"/>.
     /// </summary>
     public static class IServiceCollectionExtensions
     {

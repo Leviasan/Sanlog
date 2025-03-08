@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Sanlog.Formatters
 {
     /// <summary>
-    /// Extension methods for registering message broker in an <see cref="IServiceCollection"/>.
+    /// Extension methods for registering <see cref="FormattedLogValuesFormatter"/> in an <see cref="IServiceCollection"/>.
     /// </summary>
     internal static class IServiceCollectionExtensions
     {
