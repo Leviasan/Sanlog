@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Sanlog.ChangeTracking;
+using Sanlog.Storage.ValueConversion;
 
 namespace Sanlog.EFCore
 {
@@ -99,8 +101,8 @@ namespace Sanlog.EFCore
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             Debug.Assert(configurationBuilder is not null);
-            _ = configurationBuilder.Properties<Version>().HaveConversion<StringVersionValueConverter, StringVersionValueComparer>();
-            _ = configurationBuilder.Properties<IReadOnlyDictionary<string, string?>>().HaveConversion<StringDictionaryValueConverter, StringDictionaryValueComparer>();
+            _ = configurationBuilder.Properties<Version>().HaveConversion<VersionValueConverter, VersionValueComparer>();
+            _ = configurationBuilder.Properties<IReadOnlyDictionary<string, string?>>().HaveConversion<CollectionKeyValuePairStringStringValueConverter, CollectionKeyValuePairStringStringValueComparer>();
             base.ConfigureConventions(configurationBuilder);
         }
         /// <inheritdoc/>
