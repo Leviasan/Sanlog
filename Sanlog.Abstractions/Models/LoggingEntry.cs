@@ -9,10 +9,6 @@ namespace Sanlog.Models
     public sealed record class LoggingEntry
     {
         /// <summary>
-        /// Gets the tenant identifier.
-        /// </summary>
-        public Guid TenantId { get; init; }
-        /// <summary>
         /// Gets the object identifier.
         /// </summary>
         public Guid Id { get; init; }
@@ -60,5 +56,9 @@ namespace Sanlog.Models
         /// Gets the exception list of the current logging entry.
         /// </summary>
         public IReadOnlyList<LoggingError>? Errors { get; init; }
+        /// <summary>
+        /// Gets the tenant identifier.
+        /// </summary>
+        public Guid TenantId { get; init; }
     }
 }

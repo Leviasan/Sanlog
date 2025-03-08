@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/Leviasan/Sanlog</RepositoryUrl>
     <IsTrimmable>true</IsTrimmable>
     <IsAotCompatible>true</IsAotCompatible>
-    <Description>Provides a logger that supports saving log entries from different applications in one storage, separated by an app and tenant identifiers.</Description>
+    <Description>Provides a base infrastructure of the logger that supports saving log entries from different applications in one storage, separated by an app and tenant identifiers.</Description>
     <PackageTags>logger, multitenancy</PackageTags>
     <Version>1.0.0</Version>
   </PropertyGroup>

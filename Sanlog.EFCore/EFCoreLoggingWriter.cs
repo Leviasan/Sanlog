@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Sanlog.EFCore
-{
+//namespace Sanlog.EFCore
+//{
     /*
     /// <summary>
     /// Represents a mechanism to write events to the database storage.
@@ -44,6 +44,7 @@ namespace Sanlog.EFCore
         }
     }
     */
+    /*
     /// <summary>
     /// 
     /// </summary>
@@ -69,4 +70,5 @@ namespace Sanlog.EFCore
             _ = await context.SaveChangesAsync(cancellationToken).ConfigureAwait(true);
         }
     }
-}
+    */
+//}

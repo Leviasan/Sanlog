@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 
-namespace Sanlog.EFCore
+namespace Sanlog.Models.Metadata.Builders
 {
     /// <summary>
-    /// The model configuration of the <see cref="LoggingLevel"/> model.
+    /// The configuration of the <see cref="LoggingLevel"/> model.
     /// </summary>
     internal sealed class LoggingLevelConfiguration : IEntityTypeConfiguration<LoggingLevel>
     {

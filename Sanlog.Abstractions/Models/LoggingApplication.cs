@@ -8,10 +8,6 @@ namespace Sanlog.Models
     public sealed record class LoggingApplication
     {
         /// <summary>
-        /// Gets the tenant identifier.
-        /// </summary>
-        public Guid TenantId { get; init; }
-        /// <summary>
         /// Gets the object identifier.
         /// </summary>
         public Guid Id { get; init; }
@@ -23,5 +19,9 @@ namespace Sanlog.Models
         /// Gets the environment name.
         /// </summary>
         public required string Environment { get; init; }
+        /// <summary>
+        /// Gets the tenant identifier.
+        /// </summary>
+        public Guid TenantId { get; init; }
     }
 }

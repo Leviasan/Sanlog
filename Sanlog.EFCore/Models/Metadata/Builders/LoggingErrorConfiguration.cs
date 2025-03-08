@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Sanlog.EFCore
+namespace Sanlog.Models.Metadata.Builders
 {
     /// <summary>
-    /// The model configuration of the <see cref="LoggingError"/> model.
+    /// The configuration of the <see cref="LoggingError"/> model.
     /// </summary>
     internal sealed class LoggingErrorConfiguration : IEntityTypeConfiguration<LoggingError>
     {

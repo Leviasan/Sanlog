@@ -9,10 +9,6 @@ namespace Sanlog.Models
     public sealed record class LoggingError
     {
         /// <summary>
-        /// Gets the tenant identifier.
-        /// </summary>
-        public Guid TenantId { get; init; }
-        /// <summary>
         /// Gets the object identifier.
         /// </summary>
         public Guid Id { get; init; }
@@ -61,5 +57,9 @@ namespace Sanlog.Models
         /// Gets the error instances that caused the current error.
         /// </summary>
         public IReadOnlyList<LoggingError>? InnerException { get; init; }
+        /// <summary>
+        /// Gets the tenant identifier.
+        /// </summary>
+        public Guid TenantId { get; init; }
     }
 }

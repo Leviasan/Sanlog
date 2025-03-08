@@ -1,10 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Sanlog.EFCore
+namespace Sanlog.Models.Metadata.Builders
 {
     /// <summary>
-    /// The model configuration of the <see cref="LoggingEntry"/> model.
+    /// The configuration of the <see cref="LoggingEntry"/> model.
     /// </summary>
     internal sealed class LoggingEntryConfiguration : IEntityTypeConfiguration<LoggingEntry>
     {
@@ -17,7 +17,7 @@ namespace Sanlog.EFCore
             _ = builder.Property(x => x.EventName).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
             _ = builder.Property(x => x.Properties).IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
-            _ = builder.HasIndex(x => x.DateTime);
+            _ = builder.HasIndex(x => x.Timestamp).IsDescending();
             _ = builder.HasMany(x => x.Scopes).WithOne().HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
             _ = builder.HasMany(x => x.Errors).WithOne().HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);
         }
