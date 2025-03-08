@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Sanlog.EFCore;
 
 namespace Sanlog.Storage.ValueConversion
 {

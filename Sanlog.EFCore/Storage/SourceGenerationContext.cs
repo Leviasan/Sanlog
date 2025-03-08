@@ -3,7 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Sanlog.EFCore
+namespace Sanlog.Storage
 {
     /// <summary>
     /// Provides metadata about a set of types that is relevant to JSON serialization.

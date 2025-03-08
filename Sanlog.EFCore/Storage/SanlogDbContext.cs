@@ -22,6 +22,7 @@ namespace Sanlog.Storage
     /// By default used overridden logger factory <see cref="NullLoggerFactory.Instance"/>.
     /// By default context use tracking strategy <see cref="QueryTrackingBehavior.NoTrackingWithIdentityResolution"/>.
     /// </remarks>
+    [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
     internal sealed class SanlogDbContext : DbContext
     {
         /// <summary>
