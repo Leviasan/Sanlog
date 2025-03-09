@@ -14,7 +14,9 @@ namespace Sanlog.Formatters
         /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
         /// <param name="configureOptions">A callback to configure the <see cref="FormattedLogValuesFormatter"/>.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-        public static IServiceCollection AddFormattedLogValuesFormatter(this IServiceCollection services, Action<FormattedLogValuesFormatterOptions>? configureOptions = null)
+        public static IServiceCollection AddFormattedLogValuesFormatter(
+            this IServiceCollection services,
+            Action<FormattedLogValuesFormatterOptions>? configureOptions = null)
         {
             var options = new FormattedLogValuesFormatterOptions(FormattedLogValuesFormatterOptions.Default);
             configureOptions?.Invoke(options);
