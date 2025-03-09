@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sanlog.Brokers;
 using Sanlog.Formatters;
 
 namespace Sanlog.EntityFrameworkCore

@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Sanlog.Brokers;
 using Sanlog.Models;
 
 namespace Sanlog.EntityFrameworkCore
