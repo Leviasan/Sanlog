@@ -20,7 +20,9 @@ namespace Sanlog.Brokers
             this IServiceCollection services,
             Action<IMessageBrokerBuilder> configure)
         {
-            services.TryAddSingleton(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true }));
+            services.TryAddSingleton(
+                Channel.CreateUnbounded<MessageContext>(
+                    new UnboundedChannelOptions { SingleReader = true }));
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
@@ -45,13 +47,14 @@ namespace Sanlog.Brokers
             BoundedChannelFullMode fullMode,
             Action<object?>? itemDropped)
         {
-            services.TryAddSingleton(Channel.CreateBounded<MessageContext>(
-                options: new BoundedChannelOptions(capacity)
-                {
-                    FullMode = fullMode,
-                    SingleReader = true
-                },
-                itemDropped: ctx => itemDropped?.Invoke(ctx.Message)));
+            services.TryAddSingleton(
+                Channel.CreateBounded<MessageContext>(
+                    options: new BoundedChannelOptions(capacity)
+                    {
+                        FullMode = fullMode,
+                        SingleReader = true
+                    },
+                    itemDropped: ctx => itemDropped?.Invoke(ctx.Message)));
             services
                 .AddOptions<MessageBrokerOptions>()
                 .Services
