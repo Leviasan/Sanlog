@@ -16,15 +16,17 @@ namespace Sanlog.Brokers
         /// <summary>
         /// Sets the handler to use for <typeparamref name="TMessage"/>.
         /// </summary>
-        /// <typeparam name="TMessage">The message type.</typeparam>
+        /// <typeparam name="TMessage">The service type.</typeparam>
         /// <typeparam name="THandler">The handler type.</typeparam>
         /// <returns>The current instance of the builder.</returns>
-        IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
+        IMessageBrokerBuilder SetHandler<TMessage, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>()
+            where THandler : class, IMessageHandler;
         /// <summary>
         /// Sets the handler to use when processing data for which no specific handler has been registered.
         /// </summary>
         /// <typeparam name="THandler">The handler type.</typeparam>
         /// <returns>The current instance of the builder.</returns>
-        IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>() where THandler : class, IMessageHandler;
+        IMessageBrokerBuilder SetFallbackHandler<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] THandler>()
+            where THandler : class, IMessageHandler;
     }
 }
