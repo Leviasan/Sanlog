@@ -20,25 +20,20 @@ Or directly in the C# project file:
 
 ## Usage Example
 
-### Implementing Redactors
+### Implementing `ILoggerProvider`
 
-Redactors can be implemented by inheriting from `Microsoft.Extensions.Compliance.Redaction.Redactor`. For example:
+Logger provider can be implemented by inheriting from `Sanlog.SanlogLoggerProvider`. For example:
 
 ```csharp
-using Microsoft.Extensions.Compliance.Redaction;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Sanlog.Brokers;
+using Sanlog.Formatters;
 
-public class StarRedactor : Redactor
-{
-    private const string Stars = "****";
 
-    public override int GetRedactedLength(ReadOnlySpan<char> input) => Stars.Length;
-
-    public override int Redact(ReadOnlySpan<char> source, Span<char> destination)
-    {
-        Stars.CopyTo(destination);
-        return Stars.Length;
-    }
-}
+[ProviderAlias(nameof(SanlogLoggerProvider))]
+internal sealed class EntityFrameworkCoreSanlogLoggerProvider(IMessageReceiver receiver, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
+    : SanlogLoggerProvider(receiver, formatter, options) { }
 ```
 
 ### Implementing Redactor Providers
