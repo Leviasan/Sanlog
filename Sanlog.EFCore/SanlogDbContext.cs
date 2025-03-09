@@ -144,7 +144,9 @@ namespace Sanlog.EntityFrameworkCore
                     var application = context.LogApps.Find(_options.AppId);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
-                return saving ? base.SavingChanges(eventData, result) : InterceptionResult<int>.SuppressWithResult(0);
+                return saving
+                    ? base.SavingChanges(eventData, result)
+                    : InterceptionResult<int>.SuppressWithResult(0);
             }
             /// <inheritdoc/>
             public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
@@ -157,7 +159,11 @@ namespace Sanlog.EntityFrameworkCore
                     var application = await context.LogApps.FindAsync([_options.AppId], cancellationToken).ConfigureAwait(true);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
-                return saving ? await base.SavingChangesAsync(eventData, result, cancellationToken).ConfigureAwait(true) : InterceptionResult<int>.SuppressWithResult(0);
+                return saving
+                    ? await base
+                        .SavingChangesAsync(eventData, result, cancellationToken)
+                        .ConfigureAwait(true)
+                    : InterceptionResult<int>.SuppressWithResult(0);
             }
         }
     }
