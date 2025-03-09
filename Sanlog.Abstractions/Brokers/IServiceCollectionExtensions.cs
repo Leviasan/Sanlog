@@ -16,7 +16,9 @@ namespace Sanlog.Brokers
         /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
         /// <param name="configure">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure)
+        public static IServiceCollection AddMessageBroker(
+            this IServiceCollection services,
+            Action<IMessageBrokerBuilder> configure)
         {
             services.TryAddSingleton(Channel.CreateUnbounded<MessageContext>(new UnboundedChannelOptions { SingleReader = true }));
             services
@@ -36,7 +38,12 @@ namespace Sanlog.Brokers
         /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure, int capacity, BoundedChannelFullMode fullMode, Action<object?>? itemDropped)
+        public static IServiceCollection AddMessageBroker(
+            this IServiceCollection services,
+            Action<IMessageBrokerBuilder> configure,
+            int capacity,
+            BoundedChannelFullMode fullMode,
+            Action<object?>? itemDropped)
         {
             services.TryAddSingleton(Channel.CreateBounded<MessageContext>(
                 options: new BoundedChannelOptions(capacity)
