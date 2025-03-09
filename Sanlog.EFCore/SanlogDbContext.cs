@@ -8,12 +8,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Sanlog.EntityFrameworkCore.Models.Metadata.Builders;
 using Sanlog.Models;
-using Sanlog.Models.Metadata.Builders;
 using Sanlog.Models.Metadata.ChangeTracking;
 using Sanlog.Models.Metadata.ValueConversion;
 
-namespace Sanlog
+namespace Sanlog.EntityFrameworkCore
 {
     /// <summary>
     /// Represents a database context of the logger.

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Sanlog.Brokers;
 using Sanlog.Models;
 
-namespace Sanlog
+namespace Sanlog.EntityFrameworkCore
 {
     /// <summary>
     /// Represents a handler for writing <see cref="LoggingEntry"/> to the storage.

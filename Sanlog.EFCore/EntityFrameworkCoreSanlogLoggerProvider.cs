@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 using Sanlog.Brokers;
 using Sanlog.Formatters;
 
-namespace Sanlog
+namespace Sanlog.EntityFrameworkCore
 {
     [ProviderAlias(nameof(SanlogLoggerProvider))]
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]

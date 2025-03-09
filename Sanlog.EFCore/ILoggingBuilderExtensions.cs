@@ -10,7 +10,7 @@ using Sanlog.Brokers;
 using Sanlog.Formatters;
 using Sanlog.Models;
 
-namespace Sanlog
+namespace Sanlog.EntityFrameworkCore
 {
     /// <summary>
     /// Extension methods for registering logger in an <see cref="ILoggingBuilder"/>.

@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Sanlog.Models;
 
-namespace Sanlog.Models.Metadata.Builders
+namespace Sanlog.EntityFrameworkCore.Models.Metadata.Builders
 {
     /// <summary>
     /// The configuration of the <see cref="LoggingScope"/> model.
