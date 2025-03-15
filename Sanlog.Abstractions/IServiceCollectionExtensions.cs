@@ -16,13 +16,9 @@ namespace Sanlog
         /// </summary>
         /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
         /// <param name="configureBroker">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
-        /// <param name="configureFormatter">A callback to configure formatter.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
-        public static IServiceCollection AddSanlogInfrastructure(
-            this IServiceCollection services,
-            Action<IMessageBrokerBuilder> configureBroker,
-            Action<LoggerFormatterOptions>? configureFormatter = null)
+        public static IServiceCollection AddSanlogInfrastructure(this IServiceCollection services, Action<IMessageBrokerBuilder> configureBroker)
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configureBroker);
@@ -34,11 +30,7 @@ namespace Sanlog
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .PostConfigure<SanlogLoggerOptions>(loggerOptions =>
-                {
-                    loggerOptions.FormattedOptions = new LoggerFormatterOptions(LoggerFormatterOptions.Default);
-                    configureFormatter?.Invoke(loggerOptions.FormattedOptions);
-                })
+                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;
@@ -51,7 +43,6 @@ namespace Sanlog
         /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
         /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
-        /// <param name="configureFormatter">A callback to configure formatter.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
@@ -60,8 +51,7 @@ namespace Sanlog
             Action<IMessageBrokerBuilder> configureBroker,
             int capacity,
             BoundedChannelFullMode fullMode,
-            Action<object?>? itemDropped = null,
-            Action<LoggerFormatterOptions>? configureFormatter = null)
+            Action<object?>? itemDropped = null)
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configureBroker);
@@ -81,11 +71,7 @@ namespace Sanlog
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .PostConfigure<SanlogLoggerOptions>(loggerOptions =>
-                {
-                    loggerOptions.FormattedOptions = new LoggerFormatterOptions(LoggerFormatterOptions.Default);
-                    configureFormatter?.Invoke(loggerOptions.FormattedOptions);
-                })
+                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;

@@ -18,23 +18,19 @@ namespace Sanlog.EntityFrameworkCore
         /// <param name="builder">The <see cref="ILoggingBuilder"/> to use.</param>
         /// <param name="loggingConfigure">A callback to configure the <see cref="Sanlog.SanlogLoggerProvider"/>.</param>
         /// <param name="contextConfigure">A callback to configure the <see cref="DbContextOptionsBuilder"/>.</param>
-        /// <param name="configureFormatter">A callback to configure the formatter.</param>
         /// <returns>The <see cref="ILoggingBuilder"/> to use.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="builder"/> or <paramref name="contextConfigure"/> is <see langword="null"/>.</exception>
         public static ILoggingBuilder AddSanlogLogging(
             this ILoggingBuilder builder,
             Action<DbContextOptionsBuilder> contextConfigure,
-            Action<SanlogLoggerOptions>? loggingConfigure = null,
-            Action<LoggerFormatterOptions>? configureFormatter = null)
+            Action<SanlogLoggerOptions>? loggingConfigure = null)
         {
             ArgumentNullException.ThrowIfNull(builder);
             ArgumentNullException.ThrowIfNull(contextConfigure);
 
             builder.AddConfiguration();
             builder.Services
-                .AddSanlogInfrastructure(
-                    configureBroker: builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>(),
-                    configureFormatter: configureFormatter)
+                .AddSanlogInfrastructure(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
                 .AddPooledDbContextFactory<SanlogDbContext>(contextConfigure)
                 .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>());
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services);
