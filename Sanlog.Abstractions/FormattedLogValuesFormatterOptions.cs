@@ -5,8 +5,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
+using Sanlog.Formatters;
 
-namespace Sanlog.Formatters
+namespace Sanlog
 {
     /// <summary>
     /// Represents the configuration of the <see cref="FormattedLogValuesFormatter"/>.
@@ -110,9 +111,7 @@ namespace Sanlog.Formatters
             CheckReadOnly(); // InvalidOperationException
             var type = typeof(T);
             if (_formatters.ContainsKey(type))
-            {
                 _formatters.Add(type, format);
-            }
             else
             {
                 _formatters[type] = format;

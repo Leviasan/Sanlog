@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using Sanlog.Formatters;
 
 namespace Sanlog
 {
