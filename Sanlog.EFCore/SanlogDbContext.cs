@@ -22,7 +22,7 @@ namespace Sanlog.EntityFrameworkCore
     /// By default context use tracking strategy <see cref="QueryTrackingBehavior.NoTrackingWithIdentityResolution"/>.
     /// </remarks>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class SanlogDbContext : DbContext
+    public sealed class SanlogDbContext : DbContext
     {
         /// <summary>
         /// The logger configuration.
