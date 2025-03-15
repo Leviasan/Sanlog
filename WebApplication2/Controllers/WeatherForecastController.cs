@@ -21,6 +21,9 @@ namespace WebApplication2.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
+            var exception = new ArgumentNullException();
+            throw new NotImplementedException("asbas", exception);
+
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
