@@ -31,7 +31,7 @@ namespace Sanlog.EntityFrameworkCore
             builder.AddConfiguration();
             builder.Services
                 .AddSanlogInfrastructure(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
-                .AddPooledDbContextFactory<SanlogDbContext>(contextConfigure)
+                .AddDbContextFactory<SanlogDbContext>(contextConfigure)
                 .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>());
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services);
             if (loggingConfigure is not null)
