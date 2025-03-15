@@ -65,7 +65,8 @@ namespace Sanlog.Formatters
             ArgumentNullException.ThrowIfNull(collection);
             _formatter = formatter;
             _collection = collection;
-            _format = Convert.ToString(_collection.SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal)).Value, null);
+            _format = _collection.SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal)).Value is KeyValuePair<string, object?> pair
+                ? Convert.ToString(pair.Value, null) : null;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified formatter and composite/named format string.
