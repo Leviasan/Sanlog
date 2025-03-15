@@ -3,7 +3,7 @@ using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Sanlog.EntityFrameworkCore.Storage
+namespace Sanlog.EntityFrameworkCore
 {
     [ProviderAlias(nameof(SanlogLoggerProvider))]
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]

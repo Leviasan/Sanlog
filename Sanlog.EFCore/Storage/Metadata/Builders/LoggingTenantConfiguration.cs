@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Sanlog.Models;
 
-namespace Sanlog.EntityFrameworkCore.Models.Metadata.Builders
+namespace Sanlog.EntityFrameworkCore.Storage.Metadata.Builders
 {
     /// <summary>
     /// The model configuration of the <see cref="LoggingTenant"/> model.
