@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.EntityFrameworkCore", "Sanlog.EFCore\Sanlog.EntityFrameworkCore.csproj", "{E8FC1727-FD53-45AA-ADB8-45B8B79D6330}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanlog.EntityFrameworkCore.Relational", "Sanlog.EFCore\Sanlog.EntityFrameworkCore.Relational.csproj", "{E8FC1727-FD53-45AA-ADB8-45B8B79D6330}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanlog.MSTest", "Sanlog.MSTest\Sanlog.MSTest.csproj", "{FD765AE3-B5A4-4C0E-A9EF-78E4648A71DD}"
 EndProject
