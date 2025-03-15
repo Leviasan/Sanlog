@@ -111,7 +111,9 @@ namespace Sanlog
             CheckReadOnly(); // InvalidOperationException
             var type = typeof(T);
             if (_formatters.ContainsKey(type))
+            {
                 _formatters.Add(type, format);
+            }
             else
             {
                 _formatters[type] = format;
