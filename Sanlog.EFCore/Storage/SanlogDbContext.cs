@@ -9,7 +9,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Sanlog.EntityFrameworkCore.Storage.Metadata.Builders;
-using Sanlog.Models;
 using Sanlog.Models.Metadata.ChangeTracking;
 using Sanlog.Models.Metadata.ValueConversion;
 

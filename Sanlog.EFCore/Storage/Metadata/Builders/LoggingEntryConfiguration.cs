@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Sanlog.Models;
 
 namespace Sanlog.EntityFrameworkCore.Storage.Metadata.Builders
 {

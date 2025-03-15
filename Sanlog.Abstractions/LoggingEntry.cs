@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Sanlog.Models
+namespace Sanlog
 {
     /// <summary>
     /// Holds the information for a single log entry.

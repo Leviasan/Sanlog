@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
-using Sanlog.Models;
 
 namespace Sanlog.EntityFrameworkCore.Storage.Metadata.Builders
 {

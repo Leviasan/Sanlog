@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Sanlog.Models
+namespace Sanlog
 {
     /// <summary>
     /// Represents the external scope data.

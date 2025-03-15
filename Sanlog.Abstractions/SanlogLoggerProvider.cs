@@ -5,7 +5,6 @@ using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Sanlog.Formatters;
-using Sanlog.Models;
 
 namespace Sanlog
 {

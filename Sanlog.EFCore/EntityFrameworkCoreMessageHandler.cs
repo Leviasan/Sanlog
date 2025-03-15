@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Sanlog.EntityFrameworkCore.Storage;
-using Sanlog.Models;
 
 namespace Sanlog.EntityFrameworkCore
 {

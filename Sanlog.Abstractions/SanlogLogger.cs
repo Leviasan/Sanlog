@@ -6,7 +6,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Extensions.Logging;
-using Sanlog.Models;
 using Sanlog.Formatters;
 
 namespace Sanlog

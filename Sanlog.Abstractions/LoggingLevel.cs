@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Sanlog.Models
+namespace Sanlog
 {
     /// <summary>
     /// Represents the logging level.
