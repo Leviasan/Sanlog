@@ -30,7 +30,7 @@ namespace Sanlog
         private bool _disposedValue;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker receiver, redactor provider, and logger options.
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker receiver, redactor provider and logger options.
         /// </summary>
         /// <param name="receiver">The message broker receiver.</param>
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
@@ -47,6 +47,14 @@ namespace Sanlog
             Options = options.Value;
             Formatter = new FormattedLogValuesFormatter(redactorProvider, options.Value.FormattedOptions ?? LoggerFormatterOptions.Default);
         }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SanlogLoggerProvider"/> class with the specified message broker receiver, <see cref="NullRedactorProvider.Instance"/> and logger options.
+        /// </summary>
+        /// <param name="receiver">The message broker receiver.</param>
+        /// <param name="options">The configuration of the <see cref="SanlogLoggerProvider"/>.</param>
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
+        protected SanlogLoggerProvider(IMessageReceiver receiver, IOptions<SanlogLoggerOptions> options)
+            : this(receiver, NullRedactorProvider.Instance, options) { }
 
         /// <summary>
         /// Gets the external storage of the common scope data.
