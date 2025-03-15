@@ -20,7 +20,7 @@ namespace Sanlog.EntityFrameworkCore
         /// <param name="contextConfigure">A callback to configure the <see cref="DbContextOptionsBuilder"/>.</param>
         /// <returns>The <see cref="ILoggingBuilder"/> to use.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="builder"/> or <paramref name="contextConfigure"/> is <see langword="null"/>.</exception>
-        public static ILoggingBuilder AddSanlogLogging(
+        public static ILoggingBuilder AddSanlog(
             this ILoggingBuilder builder,
             Action<DbContextOptionsBuilder> contextConfigure,
             Action<SanlogLoggerOptions>? loggingConfigure = null)

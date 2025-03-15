@@ -1,4 +1,4 @@
-﻿# Sanlog.EFCore
+﻿# Sanlog.EntityFrameworkCore
 Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.
 
 ## Get started
@@ -21,7 +21,7 @@ Logging configuration is set in code or via external sources, such as config fil
       "TenantId": "45732ee0-72a0-4c8e-8fbb-6b2df4cc3094",
       "IncludeScopes": true,
       "LogLevel": {
-        "Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware": "Information"
+        "Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware": "Information" // I
       }
     }
   }
