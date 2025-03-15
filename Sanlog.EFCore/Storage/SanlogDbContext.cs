@@ -13,7 +13,7 @@ using Sanlog.Models;
 using Sanlog.Models.Metadata.ChangeTracking;
 using Sanlog.Models.Metadata.ValueConversion;
 
-namespace Sanlog.EntityFrameworkCore
+namespace Sanlog.EntityFrameworkCore.Storage
 {
     /// <summary>
     /// Represents a database context of the logger.
@@ -51,7 +51,7 @@ namespace Sanlog.EntityFrameworkCore
             ArgumentNullException.ThrowIfNull(options);
             ArgumentNullException.ThrowIfNull(loggerOptions);
             _loggerOptions = loggerOptions.Value;
-            _interceptor = new TenantValidatorInterceptor(loggerOptions.Value);
+            _interceptor = new TenantValidatorInterceptor(loggerOptions.Value.AppId, loggerOptions.Value.TenantId);
         }
 
         /// <summary>
@@ -122,26 +122,20 @@ namespace Sanlog.EntityFrameworkCore
         /// Represents the <see cref="ISaveChangesInterceptor"/> for validating tenant and application identifiers.
         /// </summary>
         /// <remarks>
-        /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified logger configuration.
+        /// Initializes a new instance of the <see cref="TenantValidatorInterceptor"/> class with the specified application and tenant identifiers. 
         /// </remarks>
-        /// <param name="options">The logger configuration.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        private sealed class TenantValidatorInterceptor(SanlogLoggerOptions options) : SaveChangesInterceptor
+        /// <param name="appId">The application identifier.</param>
+        /// <param name="tenantId">The tenant identifier.</param>
+        private sealed class TenantValidatorInterceptor(Guid appId, Guid tenantId) : SaveChangesInterceptor
         {
-            /// <summary>
-            /// The logger configuration.
-            /// </summary>
-            [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-            private readonly SanlogLoggerOptions _options = options;
-
             /// <inheritdoc/>
             public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
             {
                 var saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var tenant = context.LogTenants.Find(_options.TenantId);
-                    var application = context.LogApps.Find(_options.AppId);
+                    var tenant = context.LogTenants.Find(tenantId);
+                    var application = context.LogApps.Find(appId);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving
@@ -149,14 +143,14 @@ namespace Sanlog.EntityFrameworkCore
                     : InterceptionResult<int>.SuppressWithResult(0);
             }
             /// <inheritdoc/>
-            public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
-                InterceptionResult<int> result, CancellationToken cancellationToken = default)
+            public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+                DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
             {
                 var saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var tenant = await context.LogTenants.FindAsync([_options.TenantId], cancellationToken).ConfigureAwait(true);
-                    var application = await context.LogApps.FindAsync([_options.AppId], cancellationToken).ConfigureAwait(true);
+                    var tenant = await context.LogTenants.FindAsync([tenantId], cancellationToken).ConfigureAwait(true);
+                    var application = await context.LogApps.FindAsync([appId], cancellationToken).ConfigureAwait(true);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving

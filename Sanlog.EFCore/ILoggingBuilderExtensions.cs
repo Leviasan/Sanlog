@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 using Sanlog.Brokers;
+using Sanlog.EntityFrameworkCore.Storage;
 using Sanlog.Formatters;
 using Sanlog.Models;
 
