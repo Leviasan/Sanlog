@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Sanlog.EntityFrameworkCore.Storage;
 
 namespace Sanlog.EntityFrameworkCore
 {
@@ -12,7 +11,7 @@ namespace Sanlog.EntityFrameworkCore
     /// </summary>
     /// <param name="contextFactory">The factory for creating <see cref="SanlogDbContext"/> instances.</param>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class EntityFrameworkCoreMessageHandler(IDbContextFactory<SanlogDbContext> contextFactory) : IMessageHandler
+    internal sealed class LoggingEntryMessageHandler(IDbContextFactory<SanlogDbContext> contextFactory) : IMessageHandler
     {
         /// <summary>
         /// The factory for creating <see cref="SanlogDbContext"/> instances.

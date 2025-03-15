@@ -35,7 +35,7 @@ namespace Sanlog
         /// <param name="receiver">The message broker receiver.</param>
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
         /// <param name="options">The configuration of the <see cref="SanlogLoggerProvider"/>.</param>
-        /// <exception cref="ArgumentNullException">The one of the parameters is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
         protected SanlogLoggerProvider(IMessageReceiver receiver, IRedactorProvider redactorProvider, IOptions<SanlogLoggerOptions> options)
         {
             ArgumentNullException.ThrowIfNull(receiver);

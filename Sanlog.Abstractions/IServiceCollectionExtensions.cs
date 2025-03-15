@@ -12,17 +12,20 @@ namespace Sanlog
     public static class IServiceCollectionExtensions
     {
         /// <summary>
-        /// Adds message broker service based on unbounded channel to the specified <see cref="IServiceCollection"/>.
+        /// Registers logger infrastructure with configure a message broker service based on unbounded channel to the specified <see cref="IServiceCollection"/>.
         /// </summary>
         /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-        /// <param name="configure">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
+        /// <param name="configureBroker">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
         /// <param name="configureFormatter">A callback to configure formatter.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure, Action<LoggerFormatterOptions>? configureFormatter = null)
+        /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
+        public static IServiceCollection AddSanlogInfrastructure(
+            this IServiceCollection services,
+            Action<IMessageBrokerBuilder> configureBroker,
+            Action<LoggerFormatterOptions>? configureFormatter = null)
         {
             ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(configure);
+            ArgumentNullException.ThrowIfNull(configureBroker);
 
             services.TryAddSingleton(
                 Channel.CreateUnbounded<MessageContext>(
@@ -37,31 +40,31 @@ namespace Sanlog
                     configureFormatter?.Invoke(loggerOptions.FormattedOptions);
                 })
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
-            configure.Invoke(new MessageBrokerBuilder(services));
+            configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;
         }
         /// <summary>
-        /// Adds message broker service based on bounded channel to the specified <see cref="IServiceCollection"/>.
+        /// Registers logger infrastructure with configure a message broker service based on bounded channel to the specified <see cref="IServiceCollection"/>.
         /// </summary>
         /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
-        /// <param name="configure">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
+        /// <param name="configureBroker">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
         /// <param name="capacity">The maximum number of items the bounded channel may store.</param>
         /// <param name="fullMode">The behavior incurred by write operations when the channel is full.</param>
         /// <param name="itemDropped">Delegate that will be called when item is being dropped from channel.</param>
         /// <param name="configureFormatter">A callback to configure formatter.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
-        public static IServiceCollection AddMessageBroker(
+        public static IServiceCollection AddSanlogInfrastructure(
             this IServiceCollection services,
-            Action<IMessageBrokerBuilder> configure,
+            Action<IMessageBrokerBuilder> configureBroker,
             int capacity,
             BoundedChannelFullMode fullMode,
             Action<object?>? itemDropped = null,
             Action<LoggerFormatterOptions>? configureFormatter = null)
         {
             ArgumentNullException.ThrowIfNull(services);
-            ArgumentNullException.ThrowIfNull(configure);
+            ArgumentNullException.ThrowIfNull(configureBroker);
             ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 1);
             ArgumentOutOfRangeException.ThrowIfLessThan((int)fullMode, 0);
             ArgumentOutOfRangeException.ThrowIfGreaterThan((int)fullMode, 3);
@@ -84,7 +87,7 @@ namespace Sanlog
                     configureFormatter?.Invoke(loggerOptions.FormattedOptions);
                 })
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
-            configure.Invoke(new MessageBrokerBuilder(services));
+            configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;
         }
     }
