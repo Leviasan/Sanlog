@@ -7,14 +7,13 @@ using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.Compliance.Classification;
 using Microsoft.Extensions.Compliance.Redaction;
-using Microsoft.Extensions.Options;
 
 namespace Sanlog.Formatters
 {
     /// <summary>
     /// Represents the formatter that supports custom formatting of Microsoft.Extensions.Logging.FormattedLogValues object.
     /// </summary>
-    public sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
+    internal sealed class FormattedLogValuesFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// The format string is used to redact sensitive data.
@@ -46,19 +45,13 @@ namespace Sanlog.Formatters
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
         /// <param name="options">The configuration of the formatter.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, IOptions<FormattedLogValuesFormatterOptions> options)
+        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, FormattedLogValuesFormatterOptions options)
         {
             ArgumentNullException.ThrowIfNull(redactorProvider);
             ArgumentNullException.ThrowIfNull(options);
             _redactorProvider = redactorProvider;
-            _configuration = options.Value;
+            _configuration = options;
         }
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatter"/> class with <see cref="NullRedactorProvider"/> and the configuration of the formatter.
-        /// </summary>
-        /// <param name="options">The configuration of the formatter.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IOptions<FormattedLogValuesFormatterOptions> options) : this(NullRedactorProvider.Instance, options) { }
 
         /// <inheritdoc/>
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _configuration.CultureInfo?.GetFormat(formatType);

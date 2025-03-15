@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using Sanlog.Formatters;
 
 namespace Sanlog
 {
@@ -24,5 +25,9 @@ namespace Sanlog
         /// Gets or sets the callback function to retrieve the application version. By default the assembly version of the executable process.
         /// </summary>
         public Func<Version?>? OnRetrieveVersion { get; set; } = () => Assembly.GetEntryAssembly()?.GetName().Version;
+        /// <summary>
+        /// Gets or sets the formatted options.
+        /// </summary>
+        public FormattedLogValuesFormatterOptions? FormattedOptions { get; set; }
     }
 }

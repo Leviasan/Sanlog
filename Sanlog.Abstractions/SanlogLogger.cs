@@ -73,7 +73,7 @@ namespace Sanlog
                             : aggregateException.Flatten().InnerExceptions.Select(innerException => GetErrorInformation(innerException, logEntryId, null, _provider)).ToList()
                         : []
                 };
-                _ = _provider.Receiver.SendMessage(_provider.GetType(), loggingEntry);
+                _ = _provider.SendMessage(loggingEntry);
             }
 
             [UnconditionalSuppressMessage("Trimming",
