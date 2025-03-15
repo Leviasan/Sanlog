@@ -12,12 +12,12 @@ namespace Sanlog
     /// <summary>
     /// Represents the configuration of the <see cref="FormattedLogValuesFormatter"/>.
     /// </summary>
-    public sealed class FormattedLogValuesFormatterOptions : IReadOnlyList<KeyValuePair<Type, string?>>
+    public sealed class SanlogFormatterOptions : IReadOnlyList<KeyValuePair<Type, string?>>
     {
         /// <summary>
-        /// Gets a read-only, singleton instance of <see cref="FormattedLogValuesFormatterOptions"/> that uses the default configuration.
+        /// Gets a read-only, singleton instance of <see cref="SanlogFormatterOptions"/> that uses the default configuration.
         /// </summary>
-        public static readonly FormattedLogValuesFormatterOptions Default = new FormattedLogValuesFormatterOptions(CultureInfo.InvariantCulture)
+        public static readonly SanlogFormatterOptions Default = new SanlogFormatterOptions(CultureInfo.InvariantCulture)
             .SetFormat<Enum>("D")
             .SetFormat<float>("G9")
             .SetFormat<double>("G17")
@@ -40,16 +40,16 @@ namespace Sanlog
         private readonly Dictionary<Type, string?> _formatters = [];
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> class.
+        /// Initializes a new instance of the <see cref="SanlogFormatterOptions"/> class.
         /// </summary>
         /// <param name="culture">The formatting culture.</param>
-        public FormattedLogValuesFormatterOptions(CultureInfo? culture = null) => _culture = culture;
+        public SanlogFormatterOptions(CultureInfo? culture = null) => _culture = culture;
         /// <summary>
-        /// Initializes a new instance of the <see cref="FormattedLogValuesFormatterOptions"/> based on the specified configuration.
+        /// Initializes a new instance of the <see cref="SanlogFormatterOptions"/> based on the specified configuration.
         /// </summary>
         /// <param name="options">The based configuration.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatterOptions(FormattedLogValuesFormatterOptions options)
+        public SanlogFormatterOptions(SanlogFormatterOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
             _culture = options._culture;
@@ -94,7 +94,7 @@ namespace Sanlog
         /// Marks the current instance as read-only to prevent any further user modification.
         /// </summary>
         /// <returns>Returns the current instance.</returns>
-        public FormattedLogValuesFormatterOptions MakeReadOnly()
+        public SanlogFormatterOptions MakeReadOnly()
         {
             IsReadOnly = true;
             return this;
@@ -106,7 +106,7 @@ namespace Sanlog
         /// <param name="format">The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</param>
         /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
         /// <returns>Returns the current instance.</returns>
-        public FormattedLogValuesFormatterOptions SetFormat<T>(string? format) where T : IFormattable
+        public SanlogFormatterOptions SetFormat<T>(string? format) where T : IFormattable
         {
             CheckReadOnly(); // InvalidOperationException
             var type = typeof(T);

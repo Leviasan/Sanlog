@@ -46,7 +46,7 @@ namespace Sanlog
             _receiver = receiver;
             _loggers = new ConcurrentDictionary<string, SanlogLogger>(StringComparer.OrdinalIgnoreCase);
             Options = options.Value;
-            Formatter = new FormattedLogValuesFormatter(redactorProvider, options.Value.FormattedOptions ?? FormattedLogValuesFormatterOptions.Default);
+            Formatter = new FormattedLogValuesFormatter(redactorProvider, options.Value.FormattedOptions ?? SanlogFormatterOptions.Default);
         }
 
         /// <summary>

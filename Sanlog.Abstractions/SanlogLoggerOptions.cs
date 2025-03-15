@@ -27,6 +27,6 @@ namespace Sanlog
         /// <summary>
         /// Gets or sets the formatted options.
         /// </summary>
-        public FormattedLogValuesFormatterOptions? FormattedOptions { get; set; }
+        public SanlogFormatterOptions? FormattedOptions { get; set; }
     }
 }
