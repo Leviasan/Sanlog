@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Microsoft.Extensions.Logging;
 
-namespace Sanlog.EntityFrameworkCore.Storage.Metadata.Builders
+namespace Sanlog.EntityFrameworkCore.Metadata.Builders
 {
     /// <summary>
     /// The configuration of the <see cref="LoggingLevel"/> model.

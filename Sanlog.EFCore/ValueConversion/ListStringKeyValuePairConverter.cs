@@ -2,21 +2,20 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Sanlog.Storage;
 
-namespace Sanlog.Models.Metadata.ValueConversion
+namespace Sanlog.EntityFrameworkCore.ValueConversion
 {
     /// <summary>
     /// Defines conversions from <see cref="IReadOnlyList{T}"/> object in a model
     /// where T is <see cref="KeyValuePair{TKey, TValue}"/> where TKey and TValue are <see cref="string"/> to <see cref="string"/> type in the store.
     /// </summary>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class ListKvp2StringValueConverter : ValueConverter<IReadOnlyList<KeyValuePair<string, string?>>?, string?>
+    internal sealed class ListStringKeyValuePairConverter : ValueConverter<IReadOnlyList<KeyValuePair<string, string?>>?, string?>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ListKvp2StringValueConverter"/> class.
+        /// Initializes a new instance of the <see cref="ListStringKeyValuePairConverter"/> class.
         /// </summary>
-        public ListKvp2StringValueConverter() : base(
+        public ListStringKeyValuePairConverter() : base(
             convertToProviderExpression: static dictionary => Serialize(dictionary),
             convertFromProviderExpression: static json => Deserialize(json))
         { }

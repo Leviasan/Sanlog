@@ -2,18 +2,18 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Sanlog.Models.Metadata.ValueConversion
+namespace Sanlog.EntityFrameworkCore.ValueConversion
 {
     /// <summary>
     /// Defines conversions from <see cref="Version"/> object in a model to <see cref="string"/> type in the store.
     /// </summary>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class VersionValueConverter : ValueConverter<Version?, string?>
+    internal sealed class VersionConverter : ValueConverter<Version?, string?>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="VersionValueConverter"/> class.
+        /// Initializes a new instance of the <see cref="VersionConverter"/> class.
         /// </summary>
-        public VersionValueConverter() : base(
+        public VersionConverter() : base(
             convertToProviderExpression: static x => x != null ? x.ToString() : null,
             convertFromProviderExpression: static x => x != null ? TryParse(x) : null)
         { }
