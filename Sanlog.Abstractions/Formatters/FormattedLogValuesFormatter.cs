@@ -32,7 +32,7 @@ namespace Sanlog.Formatters
         /// The configuration of the formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly SanlogFormatterOptions _configuration;
+        private readonly LoggerFormatterOptions _configuration;
         /// <summary>
         /// The redactors provider for different data classifications.
         /// </summary>
@@ -45,7 +45,7 @@ namespace Sanlog.Formatters
         /// <param name="redactorProvider">The redactors provider for different data classifications.</param>
         /// <param name="options">The configuration of the formatter.</param>
         /// <exception cref="ArgumentNullException">The <paramref name="redactorProvider"/> or <paramref name="options"/> is <see langword="null"/>.</exception>
-        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, SanlogFormatterOptions options)
+        public FormattedLogValuesFormatter(IRedactorProvider redactorProvider, LoggerFormatterOptions options)
         {
             ArgumentNullException.ThrowIfNull(redactorProvider);
             ArgumentNullException.ThrowIfNull(options);
@@ -89,7 +89,7 @@ namespace Sanlog.Formatters
                     _ => Convert.ToString(arg, formatProvider) ?? string.Empty
                 };
             };
-            static bool TryOverrideFormat([NotNullWhen(false)] object? arg, IFormatProvider? formatProvider, SanlogFormatterOptions configuration, [NotNullWhen(true)] out string? stringValue)
+            static bool TryOverrideFormat([NotNullWhen(false)] object? arg, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, [NotNullWhen(true)] out string? stringValue)
             {
                 stringValue = arg switch
                 {
@@ -112,7 +112,7 @@ namespace Sanlog.Formatters
                 }
                 return false;
             }
-            static string Serialize(object? obj, IFormatProvider? formatProvider, SanlogFormatterOptions configuration, IRedactorProvider redactorProvider)
+            static string Serialize(object? obj, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
             {
                 const string EmptyArray = "[]";
 
@@ -124,7 +124,7 @@ namespace Sanlog.Formatters
                     _ => SerializeObject(obj, formatProvider, configuration, redactorProvider)
                 };
 
-                static string SerializeDictionary(IDictionary dictionary, IFormatProvider? formatProvider, SanlogFormatterOptions configuration, IRedactorProvider redactorProvider)
+                static string SerializeDictionary(IDictionary dictionary, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
                     var first = true;
                     StringBuilder? stringBuilder = null;
@@ -136,7 +136,7 @@ namespace Sanlog.Formatters
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
-                static string SerializeEnumerable(IEnumerable enumerable, IFormatProvider? formatProvider, SanlogFormatterOptions configuration, IRedactorProvider redactorProvider)
+                static string SerializeEnumerable(IEnumerable enumerable, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
                     var first = true;
                     StringBuilder? stringBuilder = null;
@@ -148,7 +148,7 @@ namespace Sanlog.Formatters
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
                 }
-                static string SerializeObject(object obj, IFormatProvider? formatProvider, SanlogFormatterOptions configuration, IRedactorProvider redactorProvider)
+                static string SerializeObject(object obj, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
                     const string EmptyObject = "{}";
                     const BindingFlags InstancePublic = BindingFlags.Instance | BindingFlags.Public;

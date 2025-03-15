@@ -19,7 +19,7 @@ namespace Sanlog
         /// <param name="configureFormatter">A callback to configure formatter.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configure"/> is <see langword="null"/>.</exception>
-        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure, Action<SanlogFormatterOptions>? configureFormatter = null)
+        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configure, Action<LoggerFormatterOptions>? configureFormatter = null)
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configure);
@@ -33,7 +33,7 @@ namespace Sanlog
                 .AddHostedService<MessageBroker>()
                 .PostConfigure<SanlogLoggerOptions>(loggerOptions =>
                 {
-                    loggerOptions.FormattedOptions = new SanlogFormatterOptions(SanlogFormatterOptions.Default);
+                    loggerOptions.FormattedOptions = new LoggerFormatterOptions(LoggerFormatterOptions.Default);
                     configureFormatter?.Invoke(loggerOptions.FormattedOptions);
                 })
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
@@ -58,7 +58,7 @@ namespace Sanlog
             int capacity,
             BoundedChannelFullMode fullMode,
             Action<object?>? itemDropped = null,
-            Action<SanlogFormatterOptions>? configureFormatter = null)
+            Action<LoggerFormatterOptions>? configureFormatter = null)
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configure);
@@ -80,7 +80,7 @@ namespace Sanlog
                 .AddHostedService<MessageBroker>()
                 .PostConfigure<SanlogLoggerOptions>(loggerOptions =>
                 {
-                    loggerOptions.FormattedOptions = new SanlogFormatterOptions(SanlogFormatterOptions.Default);
+                    loggerOptions.FormattedOptions = new LoggerFormatterOptions(LoggerFormatterOptions.Default);
                     configureFormatter?.Invoke(loggerOptions.FormattedOptions);
                 })
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
