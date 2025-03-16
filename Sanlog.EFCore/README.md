@@ -1,6 +1,22 @@
 ﻿# Sanlog.EntityFrameworkCore
 Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers. Only for apps that use a host.
 
+## Install the package
+
+From the command-line:
+
+```console
+dotnet add package Sanlog.EntityFrameworkCore
+```
+
+Or directly in the C# project file:
+
+```xml
+<ItemGroup>
+  <PackageReference Include="Sanlog.EntityFrameworkCore" Version="[CURRENTVERSION]" />
+</ItemGroup>
+```
+
 ## Get started
 
 ### Step 1: Configure logging

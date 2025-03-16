@@ -20,38 +20,73 @@ Or directly in the C# project file:
 
 ## Usage Example
 
-### Implementing `ILoggerProvider`
-
-Logger provider can be implemented by inheriting from `Sanlog.SanlogLoggerProvider`. For example:
+### Implementing `Sanlog.SanlogLoggerProvider`
 
 ```csharp
+using System;
+using System.Diagnostics.CodeAnalysis;
+using Microsoft.Extensions.Compliance.Redaction;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Sanlog.Brokers;
-using Sanlog.Formatters;
-
 
 [ProviderAlias(nameof(SanlogLoggerProvider))]
-internal sealed class EntityFrameworkCoreSanlogLoggerProvider(IMessageReceiver receiver, FormattedLogValuesFormatter formatter, IOptions<SanlogLoggerOptions> options)
-    : SanlogLoggerProvider(receiver, formatter, options) { }
+internal sealed class MyCustomSanlogLoggerProvider : SanlogLoggerProvider
+{
+    public MyCustomSanlogLoggerProvider(IMessageReceiver receiver, IRedactorProvider redactorProvider, IOptions<SanlogLoggerOptions> options)
+        : base(receiver, redactorProvider, options) { }
+    public MyCustomSanlogLoggerProvider(IMessageReceiver receiver, IOptions<SanlogLoggerOptions> options)
+        : base(receiver, options) { }
+}
 ```
 
-### Implementing Redactor Providers
-
-Redactor Providers implement `Microsoft.Extensions.Compliance.Redaction.IRedactorProvider`.
-For example:
+### Implementing `IMessageHandler`
 
 ```csharp
-using Microsoft.Extensions.Compliance.Classification;
-using Microsoft.Extensions.Compliance.Redaction;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
-public sealed class StarRedactorProvider : IRedactorProvider
+internal sealed class LoggingEntryMessageHandler : IMessageHandler
 {
-    private static readonly StarRedactor _starRedactor = new();
+    public async ValueTask HandleAsync(object? message, CancellationToken cancellationToken)
+    {
+        if (message is LoggingEntry loggingEntry)
+        {
+            // TODO: Save to the storage
+        }
+    }
+}
+```
 
-    public static StarRedactorProvider Instance { get; } = new();
+### Implementing extension method `ILoggingBuilderExtensions`
 
-    public Redactor GetRedactor(DataClassificationSet classifications) => _starRedactor;
+```csharp
+using System;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Configuration;
+using Microsoft.Extensions.Logging;
+
+public static class ILoggingBuilderExtensions
+{
+    public static ILoggingBuilder AddSanlog(
+        this ILoggingBuilder builder,
+        Action<SanlogLoggerOptions>? loggingConfigure = null)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        // TODO: Register new services which your new 'SanlogLoggerProvider' or/and 'IMessageHandler' depends on
+
+        builder.AddConfiguration();
+        builder.Services
+            .AddSanlogInfrastructure(builder => builder.SetHandler<MyCustomSanlogLoggerProvider, LoggingEntryMessageHandler>())
+            .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, MyCustomSanlogLoggerProvider>());
+        LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, MyCustomSanlogLoggerProvider>(builder.Services);
+        if (loggingConfigure is not null)
+            _ = builder.Services.Configure(loggingConfigure);
+        return builder;
+    }
 }
 ```
 
