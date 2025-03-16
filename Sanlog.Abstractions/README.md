@@ -1,6 +1,7 @@
 ﻿# Sanlog.Abstractions
 
 Provides a base infrastructure of the logger that supports saving log entries from different applications in one storage, separated by an app and tenant identifiers.
+ATTENTION! Only for apps that use a host.
 
 ## Install the package
 
@@ -20,7 +21,7 @@ Or directly in the C# project file:
 
 ## Usage Example
 
-### Implementing `Sanlog.SanlogLoggerProvider`
+### Implementing `SanlogLoggerProvider`
 
 ```csharp
 using System;
@@ -60,7 +61,7 @@ internal sealed class LoggingEntryMessageHandler : IMessageHandler
 }
 ```
 
-### Implementing extension method `ILoggingBuilderExtensions`
+### Implementing extension method `ILoggingBuilder`
 
 ```csharp
 using System;

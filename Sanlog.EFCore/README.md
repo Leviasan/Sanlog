@@ -1,5 +1,6 @@
 ﻿# Sanlog.EntityFrameworkCore
-Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers. Only for apps that use a host.
+Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.
+ATTENTION! Only for apps that use a host.
 
 ## Install the package
 
