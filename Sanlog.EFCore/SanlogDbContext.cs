@@ -79,15 +79,6 @@ namespace Sanlog.EntityFrameworkCore
         public DbSet<LoggingTenant> LogTenants => Set<LoggingTenant>();
 
         /// <inheritdoc/>
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            Debug.Assert(optionsBuilder is not null);
-            _ = optionsBuilder.UseLoggerFactory(NullLoggerFactory.Instance);
-            _ = optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution);
-            _ = optionsBuilder.AddInterceptors(_interceptor);
-            base.OnConfiguring(optionsBuilder);
-        }
-        /// <inheritdoc/>
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {
             Debug.Assert(configurationBuilder is not null);
@@ -125,7 +116,7 @@ namespace Sanlog.EntityFrameworkCore
         /// </remarks>
         /// <param name="appId">The application identifier.</param>
         /// <param name="tenantId">The tenant identifier.</param>
-        private sealed class TenantValidatorInterceptor(Guid appId, Guid tenantId) : SaveChangesInterceptor
+        internal sealed class TenantValidatorInterceptor(Guid appId, Guid tenantId) : SaveChangesInterceptor
         {
             /// <inheritdoc/>
             public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)

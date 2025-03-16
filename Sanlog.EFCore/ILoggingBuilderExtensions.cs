@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Sanlog.EntityFrameworkCore
 {
@@ -31,7 +33,14 @@ namespace Sanlog.EntityFrameworkCore
             builder.AddConfiguration();
             builder.Services
                 .AddSanlogInfrastructure(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
-                .AddDbContextFactory<SanlogDbContext>(contextConfigure)
+                .AddPooledDbContextFactory<SanlogDbContext>((sp, x) =>
+                {
+                    var opts = sp.GetRequiredService<IOptions<SanlogLoggerOptions>>().Value;
+                    _ = x.UseLoggerFactory(NullLoggerFactory.Instance);
+                    _ = x.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution);
+                    _ = x.AddInterceptors(new SanlogDbContext.TenantValidatorInterceptor(opts.AppId, opts.TenantId));
+                    contextConfigure.Invoke(x);
+                })
                 .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, SanlogLoggerProvider>());
             LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, SanlogLoggerProvider>(builder.Services);
             if (loggingConfigure is not null)
