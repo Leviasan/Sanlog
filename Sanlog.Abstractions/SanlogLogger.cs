@@ -45,11 +45,8 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var logValues = new FormattedLogValues(
-                    formatter: _provider.Formatter,
-                    collection: state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
-
                 var logEntryId = Guid.NewGuid();
+                var logValues = new FormattedLogValues(_provider.Formatter, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
                 var loggingEntry = new LoggingEntry
                 {
                     TenantId = _provider.Options.TenantId,
@@ -64,7 +61,7 @@ namespace Sanlog
                     Message = logValues.HasOriginalFormat
                         ? logValues.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
-                    Properties = logValues.SelectToFormat(),
+                    Properties = logValues.SelectToList(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _provider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -116,7 +113,7 @@ namespace Sanlog
                             collection.Add(KeyValuePair.Create(newKey, entry.Value));
                     }
                     var logValues = new FormattedLogValues(formatter, collection);
-                    return logValues.SelectToFormat();
+                    return logValues.SelectToList();
                 }
             }
             static List<LoggingScope>? GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerProvider loggerProvider)
@@ -136,9 +133,9 @@ namespace Sanlog
                                 Type = scope.GetType().FullName,
                                 Message = logValues.HasOriginalFormat
                                     ? logValues.ToString() // format message template
-                                    : Convert.ToString(scope, formatProvider),  // use default formatter
+                                    : Convert.ToString(scope, formatProvider), // use default formatter
                                 LogEntryId = logEntryId,
-                                Properties = logValues.SelectToFormat()
+                                Properties = logValues.SelectToList()
                             };
                             scopes.Add(loggingScope);
                         }

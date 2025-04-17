@@ -100,7 +100,7 @@ namespace Sanlog.Formatters
         {
             var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-            var newValue = FormatSensitiveObject(kvp.Key, kvp.Value, redacted);
+            var newValue = ProcessValue(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
         /// <summary>
@@ -114,18 +114,19 @@ namespace Sanlog.Formatters
         public KeyValuePair<string, object?> GetObject(string key, bool redacted)
         {
             ArgumentNullException.ThrowIfNull(key);
-            var kvp = _collection.Single(x => EqualsSensitiveKey(x.Key, key)); // InvalidOperationException
+            var kvp = _collection.Single(x => EqualsKey(x.Key, key)); // InvalidOperationException
             var newKey = kvp.Key[(kvp.Key.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..];
-            var newValue = FormatSensitiveObject(kvp.Key, kvp.Value, redacted);
+            var newValue = ProcessValue(kvp.Key, kvp.Value, redacted);
             return KeyValuePair.Create(newKey, newValue);
         }
         /// <summary>
         /// Projects each element processes through the formatter into a string key-value pair collection.
         /// </summary>
         /// <returns>An enumerable whose elements were processed through formatter.</returns>
-        public IReadOnlyList<KeyValuePair<string, string?>> SelectToFormat()
+        public IReadOnlyList<KeyValuePair<string, string?>> SelectToList()
         {
             const string SimpleFormat = "{0}";
+            // TODO: MessageTemplate.Segments if found
             return this
                 .Select((x, index) => GetObject(index, true))
                 .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
@@ -136,7 +137,12 @@ namespace Sanlog.Formatters
         {
             if (TryGetOrAdd(_format, out var messageTemplate))
             {
-                var args = TakeBySegmentOrder(messageTemplate, _collection, (index) => GetObject(index, true).Value);
+                var args = TakeBySegmentOrder(messageTemplate, _collection, (index, segment) =>
+                {
+                    var kvp = _collection.ElementAt(index);
+                    var newValue = ProcessValue(segment, kvp.Value, true);
+                    return newValue;
+                });
                 return messageTemplate.Format(_formatter, args);
             }
             else
@@ -144,7 +150,7 @@ namespace Sanlog.Formatters
                 return NullFormat;
             }
 
-            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, object?> callback)
+            static object?[] TakeBySegmentOrder(MessageTemplate messageTemplate, IReadOnlyCollection<KeyValuePair<string, object?>> collection, Func<int, string, object?> callback)
             {
                 const int NotFound = -1;
 
@@ -159,13 +165,13 @@ namespace Sanlog.Formatters
                     var index = NotFound;
                     for (var i = 0; i < collection.Count; ++i)
                     {
-                        if (EqualsSensitiveKey(collection.ElementAt(i).Key, segment))
+                        if (EqualsKey(collection.ElementAt(i).Key, segment))
                         {
                             index = i;
                             break;
                         }
                     }
-                    dictionary[segment] = index != NotFound ? callback.Invoke(index) : null; // The element maybe not found
+                    dictionary[segment] = index != NotFound ? callback.Invoke(index, segment) : null; // The element maybe not found
                 }
                 return [.. dictionary.Values];
             }
@@ -177,15 +183,19 @@ namespace Sanlog.Formatters
         /// <param name="value">The value to process.</param>
         /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
         /// <returns>A new value considering the concealment of confidential data.</returns>
-        private object? FormatSensitiveObject(string key, object? value, bool redacted)
+        private object? ProcessValue(string key, object? value, bool redacted)
         {
-            if (redacted && value is not null)
+            if (value is null)
+            {
+                return _formatter.Format(null, value, _formatter);
+            }
+            if (redacted)
             {
                 var member = value.GetType();
                 if (member.IsDefined(typeof(DataClassificationAttribute)))
                     return _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter);
             }
-            return key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null
+            return key.StartsWith(OperatorSerialize, StringComparison.Ordinal)
                 ? _formatter.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatter)
                 : value;
         }
@@ -251,7 +261,9 @@ namespace Sanlog.Formatters
         /// <param name="left">The first key.</param>
         /// <param name="rigth">The second key.</param>
         /// <returns><see langword="true"/> if the keys are considered equal; otherwise, <see langword="false"/>.</returns>
-        private static bool EqualsSensitiveKey(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
-            => left.Equals(rigth, StringComparison.Ordinal) || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal));
+        private static bool EqualsKey(ReadOnlySpan<char> left, ReadOnlySpan<char> rigth)
+            => left.Equals(rigth, StringComparison.Ordinal) // Usual ordinal equals
+            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(rigth, StringComparison.Ordinal)) // @Parameter == Parameter
+            || (rigth.Length > 1 && rigth.StartsWith(OperatorSerialize, StringComparison.OrdinalIgnoreCase) && rigth[1..].Equals(left, StringComparison.OrdinalIgnoreCase)); // [LoggerMessageAttribute] @Parameter -> parameter
     }
 }

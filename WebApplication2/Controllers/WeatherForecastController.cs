@@ -5,7 +5,7 @@ namespace WebApplication2.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class WeatherForecastController : ControllerBase
+    public partial class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries = new[]
         {
@@ -22,11 +22,18 @@ namespace WebApplication2.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
-            _logger.LogInformation("CommandType: {CommandType:D}. Parameters: {@Parameters}", CommandType.Text, new Dictionary<string, object?>
+            _logger.LogInformation("CommandType: {CommandType:D}. Parameters: {@Parameters}", null, new Dictionary<string, object?>
             {
                 { "Key1", null },
                 { "Key2", 15 }
             });
+
+            InvokeStoredProcedure(_logger, LogLevel.Information, null, null, new Dictionary<string, object?>
+            {
+                { "Key1", null },
+                { "Key2", 15 }
+            });
+
             var exception = new ArgumentNullException();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
@@ -36,5 +43,8 @@ namespace WebApplication2.Controllers
             })
             .ToArray();
         }
+
+        [LoggerMessage(Message = "CommandType: {CommandType:D}. Parameters: {@Parameters}")]
+        public static partial void InvokeStoredProcedure(ILogger logger, LogLevel logLevel, Exception? exception, CommandType? commandType, IDictionary<string, object?> parameters);
     }
 }
