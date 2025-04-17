@@ -182,15 +182,12 @@ namespace Sanlog.Formatters
             if (redacted && value is not null)
             {
                 var member = value.GetType();
-                return member.IsDefined(typeof(DataClassificationAttribute))
-                    ? _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter)
-                    : value;
+                if (member.IsDefined(typeof(DataClassificationAttribute)))
+                    return _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter);
             }
-            else if (key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null)
-            {
-                return _formatter.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatter);
-            }
-            return value;
+            return key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null
+                ? _formatter.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatter)
+                : value;
         }
 
         /// <summary>

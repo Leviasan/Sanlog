@@ -93,9 +93,7 @@ namespace Sanlog.Formatters
             {
                 stringValue = arg switch
                 {
-                    IFormattable formattable => configuration.GetFormat(formattable.GetType()) is string format
-                        ? formattable.ToString(format, formatProvider)
-                        : null,
+                    IFormattable formattable => formattable.ToString(configuration.GetFormat(formattable.GetType()), formatProvider),
                     null => NullValue,
                     _ => null
                 };
@@ -131,7 +129,8 @@ namespace Sanlog.Formatters
                     foreach (DictionaryEntry entry in dictionary)
                     {
                         stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
-                        stringBuilder = stringBuilder.Append(formatProvider, $"[{Serialize(entry.Key, formatProvider, configuration, redactorProvider)}, {Serialize(entry.Value, formatProvider, configuration, redactorProvider)}]");
+                        stringBuilder = stringBuilder.Append(formatProvider, $"[{Serialize(entry.Key, formatProvider, configuration, redactorProvider)}," +
+                            $" {Serialize(entry.Value, formatProvider, configuration, redactorProvider)}]");
                         first = false;
                     }
                     return stringBuilder?.Append(']').ToString() ?? EmptyArray;
