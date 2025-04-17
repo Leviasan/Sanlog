@@ -127,7 +127,7 @@ namespace Sanlog.Formatters
         {
             const string SimpleFormat = "{0}";
             return this
-                .Select(x => GetObject(x.Key, true))
+                .Select((x, index) => GetObject(index, true))
                 .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
                 .ToList();
         }
