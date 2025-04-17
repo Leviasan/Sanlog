@@ -27,12 +27,12 @@ namespace WebApplication2.Controllers
                 { "Key1", null },
                 { "Key2", 15 }
             });
-
             InvokeStoredProcedure(_logger, LogLevel.Information, null, null, new Dictionary<string, object?>
             {
                 { "Key1", null },
                 { "Key2", 15 }
             });
+            // "CommandType: (null). Parameters: [[Key1, (null)], [Key2, 15]]"
 
             var exception = new ArgumentNullException();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
