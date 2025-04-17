@@ -105,7 +105,9 @@ namespace Sanlog.Formatters
             // Parameter == Parameter
             => left.Equals(right, StringComparison.OrdinalIgnoreCase)
             // @Parameter == Parameter
-            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right));
+            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right))
+            // Parameter == @Parameter
+            || (right.Length > 1 && right.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(right[1..], left));
 
         /// <summary>
         /// The values formatter.
