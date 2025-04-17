@@ -65,8 +65,7 @@ namespace Sanlog.Formatters
             ArgumentNullException.ThrowIfNull(collection);
             _formatter = formatter;
             _collection = collection;
-            _format = _collection.SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal)).Value is KeyValuePair<string, object?> pair
-                ? Convert.ToString(pair.Value, null) : null;
+            _format = _collection.SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal)).Value is string format ? format : null;
         }
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified formatter and composite/named format string.
@@ -161,6 +160,7 @@ namespace Sanlog.Formatters
                         if (EqualsSensitiveKey(collection.ElementAt(i).Key, segment))
                         {
                             index = i;
+                            break;
                         }
                     }
                     dictionary[segment] = index != NotFound ? callback.Invoke(index) : null; // The element maybe not found
