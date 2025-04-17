@@ -22,7 +22,7 @@ namespace WebApplication2.Controllers
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()
         {
-            _logger.LogInformation("CommandType: {CommandType:G}", CommandType.Text);
+            _logger.LogInformation("CommandType: {CommandType:D}", CommandType.Text);
             var exception = new ArgumentNullException();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {

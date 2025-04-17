@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Microsoft.Extensions.Compliance.Classification;
+using System.Reflection;
 
 namespace Sanlog.Formatters
 {
@@ -134,7 +136,7 @@ namespace Sanlog.Formatters
         {
             if (TryGetOrAdd(_format, out var messageTemplate))
             {
-                var args = TakeBySegmentOrder(messageTemplate, _collection, (index) => GetObject(index, true));
+                var args = TakeBySegmentOrder(messageTemplate, _collection, (index) => GetObject(index, true).Value);
                 return messageTemplate.Format(_formatter, args);
             }
             else
@@ -177,9 +179,12 @@ namespace Sanlog.Formatters
         /// <returns>A new value considering the concealment of confidential data.</returns>
         private object? FormatSensitiveObject(string key, object? value, bool redacted)
         {
-            if (redacted)
+            if (redacted && value is not null)
             {
-                return _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter);
+                var member = value.GetType();
+                return member.IsDefined(typeof(DataClassificationAttribute))
+                    ? _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter)
+                    : value;
             }
             else if (key.StartsWith(OperatorSerialize, StringComparison.Ordinal) && value is not null)
             {
