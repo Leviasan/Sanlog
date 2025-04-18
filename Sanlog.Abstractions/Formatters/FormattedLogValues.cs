@@ -100,15 +100,17 @@ namespace Sanlog.Formatters
         /// </summary>
         /// <param name="left">The first key.</param>
         /// <param name="right">The second key.</param>
-        /// <param name="comparison">The string comparison.</param>
         /// <returns><see langword="true"/> if the keys are considered equivalent; otherwise, <see langword="false"/>.</returns>
-        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right, StringComparison comparison = StringComparison.Ordinal)
+        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right) // segment, key
+        {
             // Parameter == Parameter
-            => left.Equals(right, comparison)
-            // @Parameter == Parameter
-            || (left.Length > 1 && left.StartsWith(OperatorSerialize, comparison) && IsKeyEquivalent(left[1..], right, comparison))
-            // [LoggerMessageAttribute] @Parameter -> parameter == Parameter
-            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right, StringComparison.OrdinalIgnoreCase));
+            return left.Equals(right, StringComparison.Ordinal)
+                // @Parameter == Parameter && [LoggerMessageAttribute] @Parameter == @Parameter -> parameter
+                || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(right, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // [LoggerMessageAttribute] @Parameter -> parameter == Parameter
+        // || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right));
 
         /// <summary>
         /// The values formatter.
