@@ -100,14 +100,15 @@ namespace Sanlog.Formatters
         /// </summary>
         /// <param name="left">The first key.</param>
         /// <param name="right">The second key.</param>
+        /// <param name="comparison">The string comparison.</param>
         /// <returns><see langword="true"/> if the keys are considered equivalent; otherwise, <see langword="false"/>.</returns>
-        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right)
+        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right, StringComparison comparison = StringComparison.Ordinal)
             // Parameter == Parameter
-            => left.Equals(right, StringComparison.OrdinalIgnoreCase)
+            => left.Equals(right, comparison)
             // @Parameter == Parameter
-            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right))
-            // Parameter == @Parameter
-            || (right.Length > 1 && right.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(right[1..], left));
+            || (left.Length > 1 && left.StartsWith(OperatorSerialize, comparison) && IsKeyEquivalent(left[1..], right, comparison))
+            // [LoggerMessageAttribute] @Parameter -> parameter == Parameter
+            || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right, StringComparison.OrdinalIgnoreCase));
 
         /// <summary>
         /// The values formatter.
@@ -187,7 +188,6 @@ namespace Sanlog.Formatters
             var newValue = ProcessValue(newKey, kvp.Value, redacted);
             return KeyValuePair.Create(newKey[(newKey.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..], newValue);
         }
-
         /// <summary>
         /// Projects each element processes through the formatter into a string key-value pair collection.
         /// </summary>
