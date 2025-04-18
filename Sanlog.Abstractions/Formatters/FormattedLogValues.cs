@@ -101,12 +101,17 @@ namespace Sanlog.Formatters
         /// <param name="left">The first key.</param>
         /// <param name="right">The second key.</param>
         /// <returns><see langword="true"/> if the keys are considered equivalent; otherwise, <see langword="false"/>.</returns>
-        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right)
+        private static bool IsEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right)
         {
-            // Parameter == Parameter
-            return left.Equals(right, StringComparison.Ordinal)
-                // @Parameter == Parameter && [LoggerMessageAttribute] @Parameter == @Parameter -> parameter
-                || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(right, StringComparison.OrdinalIgnoreCase));
+            return Equivalent(left, right) || Equivalent(right, left);
+
+            static bool Equivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right)
+            {
+                // Parameter == Parameter
+                return left.Equals(right, StringComparison.Ordinal)
+                    // @Parameter == Parameter && [LoggerMessageAttribute] @Parameter == @Parameter -> parameter
+                    || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(right, StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         /// <summary>
@@ -181,7 +186,7 @@ namespace Sanlog.Formatters
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
             var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
-            var newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsKeyEquivalent(segment, kvp.Key)) is string segment
+            var newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsEquivalent(kvp.Key, segment)) is string segment
                 ? segment
                 : kvp.Key;
             var newValue = ProcessValue(newKey, kvp.Value, redacted);
@@ -231,7 +236,7 @@ namespace Sanlog.Formatters
                     var index = NotFound;
                     for (var i = 0; i < collection.Count; ++i)
                     {
-                        if (IsKeyEquivalent(segment, collection.ElementAt(i).Key))
+                        if (IsEquivalent(collection.ElementAt(i).Key, segment))
                         {
                             index = i;
                             break;
