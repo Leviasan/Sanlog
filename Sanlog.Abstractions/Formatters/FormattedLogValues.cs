@@ -101,7 +101,7 @@ namespace Sanlog.Formatters
         /// <param name="left">The first key.</param>
         /// <param name="right">The second key.</param>
         /// <returns><see langword="true"/> if the keys are considered equivalent; otherwise, <see langword="false"/>.</returns>
-        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right) // segment, key
+        private static bool IsKeyEquivalent(ReadOnlySpan<char> left, ReadOnlySpan<char> right)
         {
             // Parameter == Parameter
             return left.Equals(right, StringComparison.Ordinal)
@@ -109,14 +109,11 @@ namespace Sanlog.Formatters
                 || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && left[1..].Equals(right, StringComparison.OrdinalIgnoreCase));
         }
 
-        // [LoggerMessageAttribute] @Parameter -> parameter == Parameter
-        // || (left.Length > 1 && left.StartsWith(OperatorSerialize, StringComparison.Ordinal) && IsKeyEquivalent(left[1..], right));
-
         /// <summary>
         /// The values formatter.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly FormattedLogValuesFormatter _formatProvider;
+        private readonly FormattedLogValuesFormatter _formatter;
         /// <summary>
         /// The key-value pair collection to format.
         /// </summary>
@@ -131,13 +128,13 @@ namespace Sanlog.Formatters
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified formatter and key-value pair collection to format.
         /// </summary>
-        /// <param name="formatProvider">The values formatter.</param>
+        /// <param name="formatter">The values formatter.</param>
         /// <param name="collection">The key-value pair collection to format.</param>
         /// <exception cref="ArgumentNullException">One of the parameters is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format string is invalid.</exception>
-        public FormattedLogValues(FormattedLogValuesFormatter formatProvider, IReadOnlyCollection<KeyValuePair<string, object?>> collection)
+        public FormattedLogValues(FormattedLogValuesFormatter formatter, IReadOnlyCollection<KeyValuePair<string, object?>> collection)
         {
-            _formatProvider = formatProvider ?? throw new ArgumentNullException(nameof(formatProvider));
+            _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
             var format = _collection
                 .SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal))
@@ -147,14 +144,14 @@ namespace Sanlog.Formatters
         /// <summary>
         /// Initializes a new instance of the <see cref="FormattedLogValues"/> class with the specified formatter and composite/named format string.
         /// </summary>
-        /// <param name="formatProvider">The values formatter.</param>
+        /// <param name="formatter">The values formatter.</param>
         /// <param name="format">The composite/named format string.</param>
         /// <param name="args">An object array that contains zero or more objects to format.</param>
         /// <exception cref="ArgumentException">Passed less than the minimum number of arguments that must be passed to a formatting operation.</exception>
-        /// <exception cref="ArgumentNullException">The <paramref name="formatProvider"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentNullException">The <paramref name="formatter"/> or <paramref name="args"/> is <see langword="null"/>.</exception>
         /// <exception cref="FormatException">A format string is invalid.</exception>
-        public FormattedLogValues(FormattedLogValuesFormatter formatProvider, string? format, params object?[] args)
-            : this(formatProvider, ParseCompositeArgs(format, args)) { } // ArgumentException + ArgumentNullException + FormatException
+        public FormattedLogValues(FormattedLogValuesFormatter formatter, string? format, params object?[] args)
+            : this(formatter, ParseCompositeArgs(format, args)) { } // ArgumentException + ArgumentNullException + FormatException
 
         /// <inheritdoc/>
         public KeyValuePair<string, object?> this[int index] => GetObject(index, true);
@@ -198,7 +195,7 @@ namespace Sanlog.Formatters
         {
             const string SimpleFormat = "{0}";
             return this
-                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatProvider, SimpleFormat, x.Value)))
+                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
                 .ToList();
         }
         /// <inheritdoc/>
@@ -212,7 +209,7 @@ namespace Sanlog.Formatters
                     var newValue = ProcessValue(segment, kvp.Value, true);
                     return newValue;
                 });
-                return _template.Format(_formatProvider, args);
+                return _template.Format(_formatter, args);
             }
             else
             {
@@ -256,16 +253,16 @@ namespace Sanlog.Formatters
         {
             if (value is null)
             {
-                return _formatProvider.Format(null, value, _formatProvider);
+                return _formatter.Format(null, value, _formatter);
             }
             if (redacted)
             {
                 var member = value.GetType();
                 if (member.IsDefined(typeof(DataClassificationAttribute)))
-                    return _formatProvider.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatProvider);
+                    return _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter);
             }
             return key.StartsWith(OperatorSerialize, StringComparison.Ordinal)
-                ? _formatProvider.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatProvider)
+                ? _formatter.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatter)
                 : value;
         }
     }
