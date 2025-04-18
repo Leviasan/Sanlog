@@ -93,7 +93,7 @@ namespace Sanlog.Formatters
             {
                 stringValue = arg switch
                 {
-                    IFormattable formattable => formattable.ToString(configuration.GetFormat(formattable.GetType()), formatProvider),
+                    IFormattable formattable => configuration.GetFormat(formattable.GetType()) is string overrideFormat ? formattable.ToString(overrideFormat, formatProvider) : null,
                     null => NullValue,
                     _ => null
                 };
@@ -170,7 +170,7 @@ namespace Sanlog.Formatters
                             _ = stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(obj), formatProvider, configuration, redactorProvider));
                         _ = stringBuilder.Append(index < properties.Length - 1 ? ',' : ' ');
                     }
-                    return stringBuilder?.Append('}').ToString() ?? EmptyObject;
+                    return stringBuilder?.Append('}').ToString() ?? (type.IsPrimitive && obj.ToString() is string primitive ? primitive : EmptyObject);
                 }
             }
         }
