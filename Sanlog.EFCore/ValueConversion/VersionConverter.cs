@@ -23,6 +23,6 @@ namespace Sanlog.EntityFrameworkCore.ValueConversion
         /// </summary>
         /// <param name="x">A string that contains version number to convert.</param>
         /// <returns>A <see cref="Version"/> object equivalent of the version number, if the conversion succeeded; otherwise returns <see langword="null"/>.</returns>
-        private static Version? TryParse(string x) => Version.TryParse(x, out var result) ? result : null;
+        private static Version? TryParse(string x) => Version.TryParse(x, out Version? result) ? result : null;
     }
 }

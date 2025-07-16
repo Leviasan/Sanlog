@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Microsoft.Extensions.Compliance.Classification;
 using System.Reflection;
+using Microsoft.Extensions.Compliance.Classification;
 
 namespace Sanlog.Formatters
 {
@@ -72,15 +72,15 @@ namespace Sanlog.Formatters
         private static Dictionary<string, object?> ParseCompositeArgs(string? format, params object?[] args)
         {
             ArgumentNullException.ThrowIfNull(args);
-            var index = 0;
-            var dictionary = new Dictionary<string, object?>();
-            if (TryGetOrAdd(format, out var messageTemplate)) // FormatException
+            int index = 0;
+            Dictionary<string, object?> dictionary = [];
+            if (TryGetOrAdd(format, out MessageTemplate? messageTemplate)) // FormatException
             {
                 if (args.Length < messageTemplate.CompositeFormat.MinimumArgumentCount)
                 {
                     throw new ArgumentException("Passed less than the minimum number of arguments that must be passed to a formatting operation.", nameof(args));
                 }
-                foreach (var segment in messageTemplate.Segments)
+                foreach (string segment in messageTemplate.Segments)
                 {
                     if (dictionary.ContainsKey(segment))
                     {
@@ -141,7 +141,7 @@ namespace Sanlog.Formatters
         {
             _formatter = formatter ?? throw new ArgumentNullException(nameof(formatter));
             _collection = collection ?? throw new ArgumentNullException(nameof(collection));
-            var format = _collection
+            string? format = _collection
                 .SingleOrDefault(x => x.Key.Equals(OriginalFormat, StringComparison.Ordinal))
                 .Value as string;
             _ = TryGetOrAdd(format, out _template);
@@ -171,7 +171,7 @@ namespace Sanlog.Formatters
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
         {
-            for (var index = 0; index < Count; ++index)
+            for (int index = 0; index < Count; ++index)
                 yield return GetObject(index, true);
         }
         /// <inheritdoc/>
@@ -185,11 +185,11 @@ namespace Sanlog.Formatters
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="index"/> is less than 0 or greater than or equal to the number of elements in the source.</exception>
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
-            var kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
-            var newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsEquivalent(kvp.Key, segment)) is string segment
+            KeyValuePair<string, object?> kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
+            string newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsEquivalent(kvp.Key, segment)) is string segment
                 ? segment
                 : kvp.Key;
-            var newValue = ProcessValue(newKey, kvp.Value, redacted);
+            object? newValue = ProcessValue(newKey, kvp.Value, redacted);
             return KeyValuePair.Create(newKey[(newKey.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..], newValue);
         }
         /// <summary>
@@ -198,9 +198,13 @@ namespace Sanlog.Formatters
         /// <returns>An enumerable whose elements were processed through formatter.</returns>
         public IReadOnlyList<KeyValuePair<string, string?>> SelectToList()
         {
-            const string SimpleFormat = "{0}";
             return this
-                .Select(x => KeyValuePair.Create<string, string?>(x.Key, string.Format(_formatter, SimpleFormat, x.Value)))
+                .Select(x => KeyValuePair.Create<string, string?>(
+                    key: x.Key,
+                    value: string.Format(
+                        provider: _formatter,
+                        format: "{0}",
+                        arg0: x.Value)))
                 .ToList();
         }
         /// <inheritdoc/>
@@ -208,10 +212,10 @@ namespace Sanlog.Formatters
         {
             if (HasOriginalFormat)
             {
-                var args = TakeBySegmentOrder(_template, _collection, (index, segment) =>
+                object?[] args = TakeBySegmentOrder(_template, _collection, (index, segment) =>
                 {
-                    var kvp = _collection.ElementAt(index);
-                    var newValue = ProcessValue(segment, kvp.Value, true);
+                    KeyValuePair<string, object?> kvp = _collection.ElementAt(index);
+                    object? newValue = ProcessValue(segment, kvp.Value, true);
                     return newValue;
                 });
                 return _template.Format(_formatter, args);
@@ -225,16 +229,16 @@ namespace Sanlog.Formatters
             {
                 const int NotFound = -1;
 
-                var dictionary = new Dictionary<string, object?>();
-                foreach (var segment in messageTemplate.Segments)
+                Dictionary<string, object?> dictionary = [];
+                foreach (string segment in messageTemplate.Segments)
                 {
                     if (dictionary.ContainsKey(segment))
                     {
                         continue;
                     }
                     // Defines the first occurrence of the key instead of directly using GetObject(string, bool) to prevent InvalidOperationException
-                    var index = NotFound;
-                    for (var i = 0; i < collection.Count; ++i)
+                    int index = NotFound;
+                    for (int i = 0; i < collection.Count; ++i)
                     {
                         if (IsEquivalent(collection.ElementAt(i).Key, segment))
                         {
@@ -258,16 +262,16 @@ namespace Sanlog.Formatters
         {
             if (value is null)
             {
-                return _formatter.Format(null, value, _formatter);
+                return string.Format(_formatter, "{0}", value);
             }
             if (redacted)
             {
-                var member = value.GetType();
+                Type member = value.GetType();
                 if (member.IsDefined(typeof(DataClassificationAttribute)))
-                    return _formatter.Format(FormattedLogValuesFormatter.FormatRedacted, value, _formatter);
+                    return string.Format(_formatter, "{0:R}", value);
             }
             return key.StartsWith(OperatorSerialize, StringComparison.Ordinal)
-                ? _formatter.Format(FormattedLogValuesFormatter.FormatSerialize, value, _formatter)
+                ? string.Format(_formatter, "{0:S}", value)
                 : value;
         }
     }

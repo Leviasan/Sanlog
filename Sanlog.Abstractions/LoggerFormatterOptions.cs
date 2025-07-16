@@ -18,14 +18,14 @@ namespace Sanlog
         /// Gets a read-only, singleton instance of <see cref="LoggerFormatterOptions"/> that uses the default configuration.
         /// </summary>
         public static readonly LoggerFormatterOptions Default = new LoggerFormatterOptions(CultureInfo.InvariantCulture)
-            .SetFormat<Enum>("D")
-            .SetFormat<float>("G9")
-            .SetFormat<double>("G17")
-            .SetFormat<BigInteger>("R")
-            .SetFormat<DateOnly>("O")
-            .SetFormat<TimeOnly>("O")
-            .SetFormat<DateTime>("O")
-            .SetFormat<DateTimeOffset>("O")
+            .OverrideFormat<Enum>("D")
+            .OverrideFormat<float>("G9")
+            .OverrideFormat<double>("G17")
+            .OverrideFormat<BigInteger>("R")
+            .OverrideFormat<DateOnly>("O")
+            .OverrideFormat<TimeOnly>("O")
+            .OverrideFormat<DateTime>("O")
+            .OverrideFormat<DateTimeOffset>("O")
             .MakeReadOnly();
 
         /// <summary>
@@ -37,7 +37,12 @@ namespace Sanlog
         /// The overridden format for specified types.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, string?> _formatters = [];
+        private readonly Dictionary<Type, string?> _formats = [];
+        /// <summary>
+        /// The formatters for specified types.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private readonly Dictionary<Type, (IValueFormatter Formatter, string? Format)> _formatters = [];
 
         /// <summary>
         /// Initializes a new instance of the <see cref="LoggerFormatterOptions"/> class.
@@ -53,14 +58,15 @@ namespace Sanlog
         {
             ArgumentNullException.ThrowIfNull(options);
             _culture = options._culture;
+            _formats = options._formats;
             _formatters = options._formatters;
         }
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
-        public KeyValuePair<Type, string?> this[int index] => _formatters.ElementAt(index);
+        public KeyValuePair<Type, string?> this[int index] => _formats.ElementAt(index);
         /// <inheritdoc/>
-        public int Count => _formatters.Count;
+        public int Count => _formats.Count;
         /// <summary>
         /// Gets or sets the formatting culture.
         /// </summary>
@@ -80,15 +86,37 @@ namespace Sanlog
         public bool IsReadOnly { get; private set; }
 
         /// <summary>
+        /// Throws an exception if the current instance is read-only to prevent any further user modification.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
+        private void CheckReadOnly()
+        {
+            if (IsReadOnly)
+                throw new InvalidOperationException("The current instance is read-only to prevent any further user modification.");
+        }
+        /// <summary>
         /// Gets the format associated with the specified <paramref name="type"/>.
         /// </summary>
         /// <param name="type">The type of the instance to format.</param>
-        /// <returns>The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
+        /// <returns>The format to use. -or- A <see langword="null"/> reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
         public string? GetFormat(Type type)
         {
             ArgumentNullException.ThrowIfNull(type);
-            return _formatters.TryGetValue(type, out var format) ? format : null;
+            return _formats.TryGetValue(type, out string? format) ? format : null;
+        }
+        /// <summary>
+        /// Gets the formatter associated with the specified <paramref name="type"/>.
+        /// </summary>
+        /// <param name="type">The type of the instance to format.</param>
+        /// <returns>The formatter to use; otherwise <see langword="null"/>.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
+        public Func<object?, string?>? GetFormatter(Type type)
+        {
+            ArgumentNullException.ThrowIfNull(type);
+            return _formatters.TryGetValue(type, out (IValueFormatter Formatter, string? Format) tuple)
+                ? ((obj) => tuple.Formatter.Format(tuple.Format, obj, tuple.Formatter))
+                : ((obj) => null);
         }
         /// <summary>
         /// Marks the current instance as read-only to prevent any further user modification.
@@ -106,32 +134,38 @@ namespace Sanlog
         /// <param name="format">The format to use. -or- A null reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</param>
         /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
         /// <returns>Returns the current instance.</returns>
-        public LoggerFormatterOptions SetFormat<T>(string? format) where T : IFormattable
+        public LoggerFormatterOptions OverrideFormat<T>(string? format) where T : IFormattable
         {
             CheckReadOnly(); // InvalidOperationException
-            var type = typeof(T);
-            if (_formatters.ContainsKey(type))
-            {
-                _formatters.Add(type, format);
-            }
-            else
-            {
-                _formatters[type] = format;
-            }
+            if (!_formats.TryAdd(typeof(T), format))
+                _formats[typeof(T)] = format;
             return this;
         }
         /// <summary>
-        /// Throws an exception if the current instance is read-only to prevent any further user modification.
+        /// Registers a formatter to use for the specified <typeparamref name="T"/>.
         /// </summary>
+        /// <typeparam name="T">The type of the instance to format.</typeparam>
+        /// <param name="formatter">The used formatter.</param>
+        /// <param name="format">The default format if one is not specified.</param>
         /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
-        private void CheckReadOnly()
+        /// <returns>Returns the current instance.</returns>
+        public LoggerFormatterOptions RegisterFormatter<T>(IValueFormatter formatter, string? format)
         {
-            if (IsReadOnly)
-                throw new InvalidOperationException("The current instance is read-only to prevent any further user modification.");
+            ArgumentNullException.ThrowIfNull(formatter);
+            CheckReadOnly(); // InvalidOperationException
+            (IValueFormatter, string?) tuple = new(formatter, format);
+            if (!_formatters.TryAdd(typeof(T), tuple))
+                _formatters[typeof(T)] = tuple;
+            return this;
         }
+
         /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<Type, string?>> GetEnumerator() => _formatters.GetEnumerator();
+        public IEnumerator<KeyValuePair<Type, string?>> GetEnumerator() => _formats.GetEnumerator();
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
+    /// <summary>
+    /// Defines a method that supports custom formatting of the value of an object.
+    /// </summary>
+    public interface IValueFormatter : ICustomFormatter, IFormatProvider { }
 }

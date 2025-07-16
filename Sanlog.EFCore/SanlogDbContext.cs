@@ -121,11 +121,11 @@ namespace Sanlog.EntityFrameworkCore
             /// <inheritdoc/>
             public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
             {
-                var saving = true;
+                bool saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var tenant = context.LogTenants.Find(tenantId);
-                    var application = context.LogApps.Find(appId);
+                    LoggingTenant? tenant = context.LogTenants.Find(tenantId);
+                    LoggingApplication? application = context.LogApps.Find(appId);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving
@@ -136,11 +136,11 @@ namespace Sanlog.EntityFrameworkCore
             public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
                 DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
             {
-                var saving = true;
+                bool saving = true;
                 if (eventData.Context is SanlogDbContext context)
                 {
-                    var tenant = await context.LogTenants.FindAsync([tenantId], cancellationToken).ConfigureAwait(true);
-                    var application = await context.LogApps.FindAsync([appId], cancellationToken).ConfigureAwait(true);
+                    LoggingTenant? tenant = await context.LogTenants.FindAsync([tenantId], cancellationToken).ConfigureAwait(true);
+                    LoggingApplication? application = await context.LogApps.FindAsync([appId], cancellationToken).ConfigureAwait(true);
                     saving = application is not null && tenant is not null && application.TenantId == tenant.Id;
                 }
                 return saving

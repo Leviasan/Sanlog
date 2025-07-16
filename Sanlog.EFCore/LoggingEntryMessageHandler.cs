@@ -24,14 +24,14 @@ namespace Sanlog.EntityFrameworkCore
         {
             if (message is LoggingEntry loggingEntry)
             {
-                using var context = await _contextFactory
+                using SanlogDbContext context = await _contextFactory
                     .CreateDbContextAsync(cancellationToken)
                     .ConfigureAwait(true); // Captured context is required
-                var addedItem = await context
+                Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry<LoggingEntry> addedItem = await context
                     .LogEntries
                     .AddAsync(loggingEntry, cancellationToken)
                     .ConfigureAwait(true); // Captured context is required
-                var added = await context
+                int added = await context
                     .SaveChangesAsync(cancellationToken)
                     .ConfigureAwait(true); // Captured context is required
             }

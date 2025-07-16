@@ -24,7 +24,7 @@ namespace Sanlog.EntityFrameworkCore.ValueConversion
         /// <returns>An overriden <see cref="JsonSerializerOptions"/> for the specified context.</returns>
         private static JsonSerializerOptions CreateJsonSerializerOptions(SourceGenerationContext context)
         {
-            var options = new JsonSerializerOptions(context.GeneratedSerializerOptions!)
+            JsonSerializerOptions options = new(context.GeneratedSerializerOptions!)
             {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };

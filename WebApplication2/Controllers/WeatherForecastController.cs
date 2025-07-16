@@ -25,12 +25,11 @@ namespace WebApplication2.Controllers
         {
             _logger.LogInformation("CommandType: {CommandType:D}. Parameters: {@Parameters}", CommandType.Text, new Dictionary<string, object?>
             {
-                //{ "Key1", null },
-                //{ "Key2", 15 },
-                { "Key4", new byte[3] { 66, 99, 123 } },
-                //{ "Key3", new Dictionary<string, object> { { "array", new byte[3] { 66, 99, 123 } } } } // hmm loging [66, 99, 123] - bad story
+                { "Key1", null },
+                { "Key2", 15 },
+                { "Key4", new byte[3] { 66, 99, 123 } }, // bad story
+                { "Key3", new Dictionary<string, object> { { "array", new byte[3] { 66, 99, 123 } } } }
             });
-            /*
             InvokeStoredProcedure(_logger, LogLevel.Information, null, CommandType.Text, new Dictionary<string, object?>
             {
                 { "Key1", null },
@@ -44,7 +43,6 @@ namespace WebApplication2.Controllers
                 { "Key3", new Dictionary<string, object> { { "array", new byte[3] { 66, 99, 123 } } } }
             }, null);
             var exception = new ArgumentNullException();
-            */
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),

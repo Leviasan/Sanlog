@@ -45,9 +45,9 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(formatter);
             if (IsEnabled(logLevel))
             {
-                var logEntryId = Guid.NewGuid();
-                var logValues = new FormattedLogValues(_provider.Formatter, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
-                var loggingEntry = new LoggingEntry
+                Guid logEntryId = Guid.NewGuid();
+                FormattedLogValues logValues = new(_provider.Formatter, state is IReadOnlyCollection<KeyValuePair<string, object?>> list ? list : []);
+                LoggingEntry loggingEntry = new()
                 {
                     TenantId = _provider.Options.TenantId,
                     Id = logEntryId,
@@ -77,7 +77,7 @@ namespace Sanlog
                 Justification = "TargetSite metadata might be incomplete or removed")]
             static LoggingError GetErrorInformation(Exception exception, Guid logEntryId, Guid? parentErrorId, SanlogLoggerProvider loggerProvider)
             {
-                var id = Guid.NewGuid();
+                Guid id = Guid.NewGuid();
                 return new LoggingError
                 {
                     TenantId = loggerProvider.Options.TenantId,
@@ -105,14 +105,14 @@ namespace Sanlog
                     {
                         return null;
                     }
-                    var collection = new List<KeyValuePair<string, object?>>(dictionary.Count);
+                    List<KeyValuePair<string, object?>> collection = new(dictionary.Count);
                     foreach (DictionaryEntry entry in dictionary)
                     {
-                        var newKey = entry.Key.ToString();
+                        string? newKey = entry.Key.ToString();
                         if (!string.IsNullOrEmpty(newKey))
                             collection.Add(KeyValuePair.Create(newKey, entry.Value));
                     }
-                    var logValues = new FormattedLogValues(formatter, collection);
+                    FormattedLogValues logValues = new(formatter, collection);
                     return logValues.SelectToList();
                 }
             }
@@ -120,13 +120,13 @@ namespace Sanlog
             {
                 if (loggerProvider.Options.IncludeScopes && loggerProvider.ExternalScopeProvider is not null)
                 {
-                    var scopes = new List<LoggingScope>();
+                    List<LoggingScope> scopes = [];
                     loggerProvider.ExternalScopeProvider.ForEachScope((scope, scopes) =>
                     {
                         if (scope is not null)
                         {
-                            var logValues = new FormattedLogValues(loggerProvider.Formatter, scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : []);
-                            var loggingScope = new LoggingScope
+                            FormattedLogValues logValues = new(loggerProvider.Formatter, scope is IReadOnlyList<KeyValuePair<string, object?>> list ? list.ToDictionary() : []);
+                            LoggingScope loggingScope = new()
                             {
                                 TenantId = loggerProvider.Options.TenantId,
                                 Id = Guid.NewGuid(),

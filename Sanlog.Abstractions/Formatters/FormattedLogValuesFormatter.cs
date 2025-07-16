@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -56,21 +57,20 @@ namespace Sanlog.Formatters
         /// <inheritdoc/>
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _configuration.CultureInfo?.GetFormat(formatType);
         /// <inheritdoc/>
-        [SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "<Pending>")]
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             if (Equals(formatProvider))
             {
                 if (string.IsNullOrEmpty(format))
                 {
-                    if (TryOverrideFormat(arg, formatProvider, _configuration, out var stringValue))
+                    if (TryOverrideFormat(arg, formatProvider, _configuration, out string? stringValue))
                     {
                         return stringValue;
                     }
                 }
                 else if (arg is not null)
                 {
-                    if (format.Equals(FormatRedacted, StringComparison.Ordinal) && TryGetRedactor(arg.GetType(), _redactorProvider, out var redactor))
+                    if (format.Equals(FormatRedacted, StringComparison.Ordinal) && TryGetRedactor(arg.GetType(), _redactorProvider, out Redactor? redactor))
                     {
                         return redactor.Redact(arg, null, formatProvider);
                     }
@@ -94,9 +94,12 @@ namespace Sanlog.Formatters
             {
                 stringValue = arg switch
                 {
+                    // supports LoggerFormatterOptions.OverrideFormat
                     IFormattable formattable => configuration.GetFormat(formattable.GetType()) is string overrideFormat ? formattable.ToString(overrideFormat, formatProvider) : null,
-                    null => NullValue,
-                    _ => null
+                    // supports LoggerFormatterOptions.RegisterFormatter
+                    object obj => configuration.GetFormatter(obj.GetType()) is Func<object?, string?> callback ? callback.Invoke(obj) : null,
+                    // format of the null value
+                    null => NullValue
                 };
                 return !string.IsNullOrEmpty(stringValue);
             }
@@ -105,7 +108,7 @@ namespace Sanlog.Formatters
                 redactor = null;
                 if (member.IsDefined(typeof(DataClassificationAttribute)))
                 {
-                    var attributes = member.GetCustomAttributes<DataClassificationAttribute>();
+                    IEnumerable<DataClassificationAttribute> attributes = member.GetCustomAttributes<DataClassificationAttribute>();
                     redactor = redactorProvider.GetRedactor(new DataClassificationSet(attributes.Select(x => x.Classification)));
                     return true;
                 }
@@ -115,7 +118,7 @@ namespace Sanlog.Formatters
             {
                 const string EmptyArray = "[]";
 
-                return TryOverrideFormat(obj, formatProvider, configuration, out var stringValue) ? stringValue : obj switch
+                return TryOverrideFormat(obj, formatProvider, configuration, out string? stringValue) ? stringValue : obj switch
                 {
                     string str => str, // string implements IEnumerable so must be process before
                     IDictionary dictionary => SerializeDictionary(dictionary, formatProvider, configuration, redactorProvider), // IDictionary implements IEnumerable so must be process before
@@ -125,7 +128,7 @@ namespace Sanlog.Formatters
 
                 static string SerializeDictionary(IDictionary dictionary, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
-                    var first = true;
+                    bool first = true;
                     StringBuilder? stringBuilder = null;
                     foreach (DictionaryEntry entry in dictionary)
                     {
@@ -138,9 +141,9 @@ namespace Sanlog.Formatters
                 }
                 static string SerializeEnumerable(IEnumerable enumerable, IFormatProvider? formatProvider, LoggerFormatterOptions configuration, IRedactorProvider redactorProvider)
                 {
-                    var first = true;
+                    bool first = true;
                     StringBuilder? stringBuilder = null;
-                    foreach (var value in enumerable)
+                    foreach (object? value in enumerable)
                     {
                         stringBuilder = first ? new StringBuilder(256).Append('[') : stringBuilder!.Append(", ");
                         stringBuilder = stringBuilder.Append(Serialize(value, formatProvider, configuration, redactorProvider));
@@ -153,15 +156,15 @@ namespace Sanlog.Formatters
                     const string EmptyObject = "{}";
                     const BindingFlags InstancePublic = BindingFlags.Instance | BindingFlags.Public;
 
-                    var type = obj.GetType();
-                    if (TryGetRedactor(type, redactorProvider, out var redactor))
+                    Type type = obj.GetType();
+                    if (TryGetRedactor(type, redactorProvider, out Redactor? redactor))
                         return redactor.Redact(obj, null, formatProvider);
 
                     StringBuilder? stringBuilder = null;
-                    var properties = type.GetProperties(InstancePublic);
-                    for (var index = 0; index < properties.Length; ++index)
+                    PropertyInfo[] properties = type.GetProperties(InstancePublic);
+                    for (int index = 0; index < properties.Length; ++index)
                     {
-                        var property = properties[index];
+                        PropertyInfo property = properties[index];
                         stringBuilder = stringBuilder is null ? new StringBuilder(256).Append('{') : stringBuilder;
                         _ = stringBuilder
                             .Append(' ')

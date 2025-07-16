@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Threading;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Sanlog.Brokers
 {

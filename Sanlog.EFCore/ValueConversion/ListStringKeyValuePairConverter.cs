@@ -27,7 +27,7 @@ namespace Sanlog.EntityFrameworkCore.ValueConversion
         /// <returns>The string representation of the list.</returns>
         private static string? Serialize(IReadOnlyList<KeyValuePair<string, string?>>? collection)
         {
-            var json = JsonSerializer.Serialize(collection, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default);
+            string json = JsonSerializer.Serialize(collection, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default);
             return json == "[]" ? null : json;
         }
         /// <summary>
@@ -39,7 +39,7 @@ namespace Sanlog.EntityFrameworkCore.ValueConversion
         {
             if (json is not null)
             {
-                var obj = JsonSerializer.Deserialize(json, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default);
+                object? obj = JsonSerializer.Deserialize(json, typeof(IReadOnlyList<KeyValuePair<string, string?>>), SourceGenerationContext.Default);
                 return obj as IReadOnlyList<KeyValuePair<string, string?>>;
             }
             return null;

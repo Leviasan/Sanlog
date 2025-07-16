@@ -34,10 +34,10 @@ namespace Sanlog.EntityFrameworkCore
             builder.AddConfiguration();
             builder.Services
                 .AddMessageBroker(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
-                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
+                .Configure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .AddPooledDbContextFactory<SanlogDbContext>((sp, x) =>
                 {
-                    var opts = sp.GetRequiredService<IOptions<SanlogLoggerOptions>>().Value;
+                    SanlogLoggerOptions opts = sp.GetRequiredService<IOptions<SanlogLoggerOptions>>().Value;
                     _ = x.UseLoggerFactory(NullLoggerFactory.Instance);
                     _ = x.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTrackingWithIdentityResolution);
                     _ = x.AddInterceptors(new SanlogDbContext.TenantValidatorInterceptor(opts.AppId, opts.TenantId));

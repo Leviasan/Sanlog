@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using System.Threading;
-using Microsoft.Extensions.Options;
-using System.Collections.Frozen;
 using Microsoft.Extensions.Hosting;
-using System.Linq;
+using Microsoft.Extensions.Options;
 
 namespace Sanlog.Brokers
 {
@@ -59,10 +59,10 @@ namespace Sanlog.Brokers
 
             static FrozenDictionary<Type, IMessageHandler> GetClassHandlerMap(IEnumerable<IMessageHandler> handlers, Dictionary<Type, Type> map)
             {
-                var dictionary = new Dictionary<Type, IMessageHandler>(map.Count);
-                foreach (var kvp in map)
+                Dictionary<Type, IMessageHandler> dictionary = new(map.Count);
+                foreach (KeyValuePair<Type, Type> kvp in map)
                 {
-                    foreach (var handler in handlers)
+                    foreach (IMessageHandler handler in handlers)
                     {
                         if (handler.GetType() == kvp.Value)
                         {
@@ -90,10 +90,10 @@ namespace Sanlog.Brokers
         {
             while (await _channel.Reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
-                while (_channel.Reader.TryRead(out var context))
+                while (_channel.Reader.TryRead(out MessageContext? context))
                 {
                     stoppingToken.ThrowIfCancellationRequested();
-                    if (_consumers.TryGetValue(context.ServiceType, out var handler))
+                    if (_consumers.TryGetValue(context.ServiceType, out IMessageHandler? handler))
                     {
                         await TryHandleAsync(handler, context.Message, stoppingToken).ConfigureAwait(false);
                     }
