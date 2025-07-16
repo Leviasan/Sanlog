@@ -23,7 +23,7 @@ namespace Sanlog.EntityFrameworkCore
         /// <param name="contextConfigure">A callback to configure the <see cref="DbContextOptionsBuilder"/>.</param>
         /// <returns>The <see cref="ILoggingBuilder"/> to use.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="builder"/> or <paramref name="contextConfigure"/> is <see langword="null"/>.</exception>
-        public static ILoggingBuilder AddSanlog(
+        public static ILoggingBuilder AddSanlogEntityFrameworkCore(
             this ILoggingBuilder builder,
             Action<DbContextOptionsBuilder> contextConfigure,
             Action<SanlogLoggerOptions>? loggingConfigure = null)
@@ -33,7 +33,8 @@ namespace Sanlog.EntityFrameworkCore
 
             builder.AddConfiguration();
             builder.Services
-                .AddSanlogInfrastructure(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
+                .AddMessageBroker(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
+                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .AddPooledDbContextFactory<SanlogDbContext>((sp, x) =>
                 {
                     var opts = sp.GetRequiredService<IOptions<SanlogLoggerOptions>>().Value;

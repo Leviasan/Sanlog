@@ -18,7 +18,7 @@ namespace Sanlog
         /// <param name="configureBroker">A callback to configure the <see cref="IMessageBrokerBuilder"/>.</param>
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
-        public static IServiceCollection AddSanlogInfrastructure(this IServiceCollection services, Action<IMessageBrokerBuilder> configureBroker)
+        public static IServiceCollection AddMessageBroker(this IServiceCollection services, Action<IMessageBrokerBuilder> configureBroker)
         {
             ArgumentNullException.ThrowIfNull(services);
             ArgumentNullException.ThrowIfNull(configureBroker);
@@ -30,7 +30,6 @@ namespace Sanlog
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;
@@ -46,7 +45,7 @@ namespace Sanlog
         /// <returns>The <see cref="IServiceCollection"/> so that additional calls can be chained.</returns>
         /// <exception cref="ArgumentNullException">The <paramref name="services"/> or <paramref name="configureBroker"/> is <see langword="null"/>.</exception>
         /// <exception cref="ArgumentOutOfRangeException">The <paramref name="capacity"/> is less then 1. -or- Passed an invalid <paramref name="fullMode"/>.</exception>
-        public static IServiceCollection AddSanlogInfrastructure(
+        public static IServiceCollection AddMessageBroker(
             this IServiceCollection services,
             Action<IMessageBrokerBuilder> configureBroker,
             int capacity,
@@ -71,7 +70,6 @@ namespace Sanlog
                 .AddOptions<MessageBrokerOptions>()
                 .Services
                 .AddHostedService<MessageBroker>()
-                .PostConfigure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .TryAddSingleton<IMessageReceiver, MessageReceiver>();
             configureBroker.Invoke(new MessageBrokerBuilder(services));
             return services;

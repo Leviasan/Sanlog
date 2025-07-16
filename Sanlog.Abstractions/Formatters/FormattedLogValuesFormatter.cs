@@ -56,6 +56,7 @@ namespace Sanlog.Formatters
         /// <inheritdoc/>
         public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : _configuration.CultureInfo?.GetFormat(formatType);
         /// <inheritdoc/>
+        [SuppressMessage("Style", "IDE0007:Use implicit type", Justification = "<Pending>")]
         public string Format(string? format, object? arg, IFormatProvider? formatProvider)
         {
             if (Equals(formatProvider))
@@ -166,8 +167,9 @@ namespace Sanlog.Formatters
                             .Append(' ')
                             .Append(property.Name)
                             .Append(" = ");
-                        if (TryGetRedactor(property, redactorProvider, out redactor))
-                            _ = stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(obj), formatProvider, configuration, redactorProvider));
+                        _ = TryGetRedactor(property, redactorProvider, out redactor)
+                            ? stringBuilder.AppendRedacted(redactor, Serialize(property.GetValue(obj), formatProvider, configuration, redactorProvider))
+                            : stringBuilder.Append(Serialize(property.GetValue(obj), formatProvider, configuration, redactorProvider));
                         _ = stringBuilder.Append(index < properties.Length - 1 ? ',' : ' ');
                     }
                     return stringBuilder?.Append('}').ToString() ?? (type.IsPrimitive && obj.ToString() is string primitive ? primitive : EmptyObject);

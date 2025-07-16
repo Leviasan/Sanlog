@@ -91,8 +91,11 @@ public static class ILoggingBuilderExtensions
 }
 ```
 
-## Feedback & Contributing
+## Known issues
+- record class | record struct + without @ParamName = ignored DataClassificationAttribute + invoked FormattedLogValuesFormatter.DefaultFallback->Convert.ToString
+- `public sealed record class SensitiveRequest(string Username, [property: UnknownDataClassification] string Password)` - example to use Redactor while using a record class
 
+## Feedback & Contributing
 Welcome feedback and contributions in [our GitHub repo](https://github.com/Leviasan/Sanlog).
 
 ## Miscellaneous
