@@ -15,7 +15,7 @@ namespace Sanlog.EntityFrameworkCore.Metadata.Builders
             _ = builder.Property(x => x.Version).IsRequired(false).IsUnicode(false).HasMaxLength(43);
             _ = builder.Property(x => x.Category).IsRequired(true).IsUnicode(true);
             _ = builder.Property(x => x.EventName).IsRequired(false).IsUnicode(true);
-            _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
+            _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
             _ = builder.Property(x => x.Properties).IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
             _ = builder.HasIndex(x => x.Timestamp).IsDescending();
             _ = builder.HasMany(x => x.Scopes).WithOne().HasForeignKey(x => x.LogEntryId).OnDelete(DeleteBehavior.Cascade).IsRequired(true);

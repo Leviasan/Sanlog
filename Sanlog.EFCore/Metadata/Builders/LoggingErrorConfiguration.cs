@@ -14,6 +14,7 @@ namespace Sanlog.EntityFrameworkCore.Metadata.Builders
             _ = builder.Property(x => x.Id).ValueGeneratedNever();
             _ = builder.Property(x => x.Type).IsRequired(true).IsUnicode(false);
             _ = builder.Property(x => x.Message).IsRequired(false).IsUnicode(true);
+            _ = builder.Property(x => x.Data).IsRequired(false).IsUnicode(true).HasMaxLength(int.MaxValue);
             _ = builder.Property(x => x.StackTrace).IsRequired(false).IsUnicode(false).HasMaxLength(int.MaxValue);
             _ = builder.Property(x => x.Source).IsRequired(false).IsUnicode(false);
             _ = builder.Property(x => x.HelpLink).IsRequired(false).IsUnicode(true);

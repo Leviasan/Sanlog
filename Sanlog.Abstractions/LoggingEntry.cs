@@ -47,7 +47,7 @@ namespace Sanlog
         /// <summary>
         /// Gets a collection that provides logging entry properties.
         /// </summary>
-        public IReadOnlyList<KeyValuePair<string, string?>>? Properties { get; init; }
+        public Dictionary<string, string?>? Properties { get; init; }
         /// <summary>
         /// Gets a collection that provides external scope data.
         /// </summary>

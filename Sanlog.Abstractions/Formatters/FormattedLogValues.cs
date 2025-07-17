@@ -186,26 +186,38 @@ namespace Sanlog.Formatters
         public KeyValuePair<string, object?> GetObject(int index, bool redacted)
         {
             KeyValuePair<string, object?> kvp = _collection.ElementAt(index); // ArgumentOutOfRangeException
-            string newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsEquivalent(kvp.Key, segment)) is string segment
-                ? segment
-                : kvp.Key;
+            string newKey = HasOriginalFormat && _template.Segments.SingleOrDefault(segment => IsEquivalent(kvp.Key, segment)) is string segment ? segment : kvp.Key;
             object? newValue = ProcessValue(newKey, kvp.Value, redacted);
             return KeyValuePair.Create(newKey[(newKey.StartsWith(OperatorSerialize, StringComparison.Ordinal) ? 1 : 0)..], newValue);
+
+            object? ProcessValue(string key, object? value, bool redacted)
+            {
+                if (value is null)
+                {
+                    return string.Format(_formatter, "{0}", value);
+                }
+                if (redacted)
+                {
+                    Type member = value.GetType();
+                    if (member.IsDefined(typeof(DataClassificationAttribute)))
+                        return string.Format(_formatter, "{0:R}", value);
+                }
+                return key.StartsWith(OperatorSerialize, StringComparison.Ordinal)
+                    ? string.Format(_formatter, "{0:S}", value)
+                    : value;
+            }
         }
         /// <summary>
-        /// Projects each element processes through the formatter into a string key-value pair collection.
+        /// Projects each element processes through the formatter into a string dictionary.
         /// </summary>
         /// <returns>An enumerable whose elements were processed through formatter.</returns>
-        public IReadOnlyList<KeyValuePair<string, string?>> SelectToList()
+        public Dictionary<string, string?> GroupByToDictionary()
         {
             return this
-                .Select(x => KeyValuePair.Create<string, string?>(
-                    key: x.Key,
-                    value: string.Format(
-                        provider: _formatter,
-                        format: "{0}",
-                        arg0: x.Value)))
-                .ToList();
+                .GroupBy(x => x.Key)
+                .ToDictionary<IGrouping<string, KeyValuePair<string, object?>>, string, string?>(
+                    keySelector: g => g.Key,
+                    elementSelector: g => string.Join(", ", g.Select(x => string.Format(_formatter, "{0}", x.Value)))); // CS8619
         }
         /// <inheritdoc/>
         public override string? ToString()
@@ -214,9 +226,8 @@ namespace Sanlog.Formatters
             {
                 object?[] args = TakeBySegmentOrder(_template, _collection, (index, segment) =>
                 {
-                    KeyValuePair<string, object?> kvp = _collection.ElementAt(index);
-                    object? newValue = ProcessValue(segment, kvp.Value, true);
-                    return newValue;
+                    KeyValuePair<string, object?> kvp = GetObject(index, true);
+                    return kvp.Value;
                 });
                 return _template.Format(_formatter, args);
             }
@@ -250,29 +261,6 @@ namespace Sanlog.Formatters
                 }
                 return [.. dictionary.Values];
             }
-        }
-        /// <summary>
-        /// Processes a value through formatter.
-        /// </summary>
-        /// <param name="key">The key.</param>
-        /// <param name="value">The value to process.</param>
-        /// <param name="redacted">Indicates whether need to redact sensitive data.</param>
-        /// <returns>A new value considering the concealment of confidential data.</returns>
-        private object? ProcessValue(string key, object? value, bool redacted)
-        {
-            if (value is null)
-            {
-                return string.Format(_formatter, "{0}", value);
-            }
-            if (redacted)
-            {
-                Type member = value.GetType();
-                if (member.IsDefined(typeof(DataClassificationAttribute)))
-                    return string.Format(_formatter, "{0:R}", value);
-            }
-            return key.StartsWith(OperatorSerialize, StringComparison.Ordinal)
-                ? string.Format(_formatter, "{0:S}", value)
-                : value;
         }
     }
 }

@@ -61,7 +61,7 @@ namespace Sanlog
                     Message = logValues.HasOriginalFormat
                         ? logValues.ToString() // format message template
                         : formatter.Invoke(state, exception), // use default formatter
-                    Properties = logValues.SelectToList(),
+                    Properties = logValues.GroupByToDictionary(),
                     Scopes = GetScopeInformation(CultureInfo.InvariantCulture, state, logEntryId, _provider),
                     Errors = exception is not null
                         ? exception is not AggregateException aggregateException
@@ -99,7 +99,7 @@ namespace Sanlog
                         : []
                 };
 
-                static IReadOnlyList<KeyValuePair<string, string?>>? GetExceptionDictionary(IDictionary dictionary, FormattedLogValuesFormatter formatter)
+                static Dictionary<string, string?>? GetExceptionDictionary(IDictionary dictionary, FormattedLogValuesFormatter formatter)
                 {
                     if (dictionary.Count == 0)
                     {
@@ -113,7 +113,7 @@ namespace Sanlog
                             collection.Add(KeyValuePair.Create(newKey, entry.Value));
                     }
                     FormattedLogValues logValues = new(formatter, collection);
-                    return logValues.SelectToList();
+                    return logValues.GroupByToDictionary();
                 }
             }
             static List<LoggingScope>? GetScopeInformation(IFormatProvider? formatProvider, TState state, Guid logEntryId, SanlogLoggerProvider loggerProvider)
@@ -135,7 +135,7 @@ namespace Sanlog
                                     ? logValues.ToString() // format message template
                                     : Convert.ToString(scope, formatProvider), // use default formatter
                                 LogEntryId = logEntryId,
-                                Properties = logValues.SelectToList()
+                                Properties = logValues.GroupByToDictionary()
                             };
                             scopes.Add(loggingScope);
                         }

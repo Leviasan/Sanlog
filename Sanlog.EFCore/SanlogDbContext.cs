@@ -86,8 +86,8 @@ namespace Sanlog.EntityFrameworkCore
                 .Properties<Version>()
                 .HaveConversion<VersionConverter, VersionComparer>();
             _ = configurationBuilder
-                .Properties<IReadOnlyList<KeyValuePair<string, string?>>>()
-                .HaveConversion<ListStringKeyValuePairConverter, ListStringKeyValuePairComparer>();
+                .Properties<Dictionary<string, string?>>()
+                .HaveConversion<DictionaryValueConverter, DictionaryValueComparer>();
             base.ConfigureConventions(configurationBuilder);
         }
         /// <inheritdoc/>

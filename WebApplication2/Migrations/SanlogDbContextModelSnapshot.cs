@@ -17,7 +17,7 @@ namespace WebApplication2.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.3")
+                .HasAnnotation("ProductVersion", "9.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -76,6 +76,7 @@ namespace WebApplication2.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Message")
+                        .HasMaxLength(2147483647)
                         .IsUnicode(true)
                         .HasColumnType("nvarchar(max)");
 
@@ -113,6 +114,8 @@ namespace WebApplication2.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Data")
+                        .HasMaxLength(2147483647)
+                        .IsUnicode(true)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("HResult")
@@ -222,6 +225,7 @@ namespace WebApplication2.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Message")
+                        .HasMaxLength(2147483647)
                         .IsUnicode(true)
                         .HasColumnType("nvarchar(max)");
 

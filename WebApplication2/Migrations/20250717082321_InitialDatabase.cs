@@ -70,7 +70,7 @@ namespace WebApplication2.Migrations
                     Category = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     EventId = table.Column<int>(type: "int", nullable: false),
                     EventName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", maxLength: 2147483647, nullable: true),
                     Properties = table.Column<string>(type: "nvarchar(max)", maxLength: 2147483647, nullable: true),
                     TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
@@ -99,7 +99,7 @@ namespace WebApplication2.Migrations
                     Type = table.Column<string>(type: "varchar(max)", unicode: false, nullable: false),
                     Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     HResult = table.Column<int>(type: "int", nullable: false),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", maxLength: 2147483647, nullable: true),
                     StackTrace = table.Column<string>(type: "varchar(max)", unicode: false, maxLength: 2147483647, nullable: true),
                     Source = table.Column<string>(type: "varchar(max)", unicode: false, nullable: true),
                     HelpLink = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -130,7 +130,7 @@ namespace WebApplication2.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Type = table.Column<string>(type: "varchar(max)", unicode: false, nullable: false),
-                    Message = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Message = table.Column<string>(type: "nvarchar(max)", maxLength: 2147483647, nullable: true),
                     Properties = table.Column<string>(type: "nvarchar(max)", maxLength: 2147483647, nullable: true),
                     LogEntryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)

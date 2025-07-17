@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Compliance.Redaction;
 using Sanlog.EntityFrameworkCore;
@@ -21,7 +22,12 @@ namespace WebApplication2
                 contextConfigure: x => x.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=sanlogdb;Trusted_Connection=True"),
                 loggingConfigure: x => x.FormattedOptions.RegisterFormatter<byte[]>(new ByteArrayFormatter(), "R"));
             builder.Services.AddRedaction(c => c.SetFallbackRedactor<ErasingRedactor>());
-            builder.Services.AddHttpLogging(c => c.CombineLogs = true);
+            builder.Services.AddHttpLogging(c =>
+            {
+                c.CombineLogs = true;
+                c.LoggingFields = HttpLoggingFields.RequestQuery | HttpLoggingFields.RequestPropertiesAndHeaders
+                    | HttpLoggingFields.ResponsePropertiesAndHeaders | HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody;
+            });
 
             var app = builder.Build();
             app.UseHttpLogging();
@@ -31,14 +37,9 @@ namespace WebApplication2
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
             app.UseHttpsRedirection();
-
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }

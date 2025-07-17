@@ -27,7 +27,7 @@ namespace Sanlog
         /// <summary>
         /// Gets a collection that provides additional user-defined information about the exception.
         /// </summary>
-        public IReadOnlyList<KeyValuePair<string, string?>>? Data { get; init; }
+        public Dictionary<string, string?>? Data { get; init; }
         /// <summary>
         /// Gets a string representation of the immediate frames on the call stack.
         /// </summary>
