@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sanlog.EFCore\Sanlog.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\Sanlog.EntityFrameworkCore\Sanlog.EntityFrameworkCore.csproj" />
   </ItemGroup>
 
 </Project>

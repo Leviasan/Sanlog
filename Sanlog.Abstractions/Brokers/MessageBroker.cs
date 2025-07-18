@@ -16,7 +16,7 @@ namespace Sanlog.Brokers
     /// Represents a service to handle messages.
     /// </summary>
     [SuppressMessage("Performance", "CA1812: Avoid uninstantiated internal classes", Justification = "Instantiated via reflection")]
-    internal sealed class MessageBroker : BackgroundService // TODO: Supports apps that don't use host
+    internal sealed class MessageBroker : BackgroundService
     {
         /// <summary>
         /// The underlying channel.

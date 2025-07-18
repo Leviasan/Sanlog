@@ -1,7 +1,7 @@
 ﻿# Sanlog.Abstractions
 
 Provides a base infrastructure of the logger that supports saving log entries from different applications in one storage, separated by an app and tenant identifiers.
-ATTENTION! Only for apps that use a generic host.
+ATTENTION! Only for apps that use [.NET Generic Host](https://learn.microsoft.com/en-us/dotnet/core/extensions/generic-host?tabs=appbuilder).
 
 ## Install the package
 
@@ -85,7 +85,6 @@ public static class ILoggingBuilderExtensions
         builder.AddConfiguration();
         builder.Services
             .AddMessageBroker(builder => builder.SetHandler<MyCustomSanlogLoggerProvider, MyCustomLoggingEntryMessageHandler>()) // register here your IMessageHandler
-            .Configure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
             .TryAddEnumerable(ServiceDescriptor.Singleton<ILoggerProvider, MyCustomSanlogLoggerProvider>());
         LoggerProviderOptions.RegisterProviderOptions<SanlogLoggerOptions, MyCustomSanlogLoggerProvider>(builder.Services);
         if (loggingConfigure is not null)
@@ -104,6 +103,7 @@ public static class ILoggingBuilderExtensions
 Welcome feedback and contributions in [our GitHub repo](https://github.com/Leviasan/Sanlog).
 
 ## Miscellaneous
-- Channels (https://learn.microsoft.com/en-us/dotnet/core/extensions/channels).
-- Multi-tenancy (https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy).
-- Define and Use Custom Format Providers (https://learn.microsoft.com/en-us/dotnet/standard/base-types/how-to-define-and-use-custom-numeric-format-providers).
+- [Logging](https://learn.microsoft.com/en-us/dotnet/core/extensions/logging?tabs=command-line).
+- [Channels](https://learn.microsoft.com/en-us/dotnet/core/extensions/channels).
+- [Multi-tenancy](https://learn.microsoft.com/en-us/ef/core/miscellaneous/multitenancy).
+- [Define and Use Custom Format Providers](https://learn.microsoft.com/en-us/dotnet/standard/base-types/how-to-define-and-use-custom-numeric-format-providers).

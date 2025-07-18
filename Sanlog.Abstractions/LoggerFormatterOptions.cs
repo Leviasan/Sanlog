@@ -139,15 +139,13 @@ namespace Sanlog
         /// <param name="formatter">The used formatter.</param>
         /// <param name="format">The default format if one is not specified.</param>
         /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
-        /// <returns>Returns the current instance.</returns>
-        public LoggerFormatterOptions RegisterFormatter<T>(IValueFormatter formatter, string? format)
+        public void RegisterFormatter<T>(IValueFormatter formatter, string? format)
         {
             ArgumentNullException.ThrowIfNull(formatter);
             CheckReadOnly(); // InvalidOperationException
             (IValueFormatter, string?) tuple = new(formatter, format);
             if (!_formatters.TryAdd(typeof(T), tuple))
                 _formatters[typeof(T)] = tuple;
-            return this;
         }
 
         /// <inheritdoc/>

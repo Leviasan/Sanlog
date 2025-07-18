@@ -34,7 +34,6 @@ namespace Sanlog.EntityFrameworkCore
             builder.AddConfiguration();
             builder.Services
                 .AddMessageBroker(builder => builder.SetHandler<SanlogLoggerProvider, LoggingEntryMessageHandler>())
-                .Configure<SanlogLoggerOptions>(x => x.FormattedOptions ??= new LoggerFormatterOptions(LoggerFormatterOptions.Default))
                 .AddPooledDbContextFactory<SanlogDbContext>((sp, x) =>
                 {
                     SanlogLoggerOptions opts = sp.GetRequiredService<IOptions<SanlogLoggerOptions>>().Value;
