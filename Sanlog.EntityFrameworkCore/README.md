@@ -1,6 +1,7 @@
 ﻿# Sanlog.EntityFrameworkCore
-Provides a logger that supports saving log entries from different applications in one database scheme, separated by an app and tenant identifiers.
-ATTENTION! Only for apps that use a host.
+
+Provides a base infrastructure of the logger that supports saving log entries from different applications in database scheme, separated by an app and tenant identifiers.
+ATTENTION! Only for apps that use [.NET Generic Host](https://learn.microsoft.com/en-us/dotnet/core/extensions/generic-host?tabs=appbuilder).
 
 ## Install the package
 
@@ -21,10 +22,11 @@ Or directly in the C# project file:
 ## Get started
 
 ### Step 1: Configure logging
-Logging configuration is set in code or via external sources, such as config files and environment variables. Using external configuration is beneficial when possible because it can be changed without rebuilding the application. However, some tasks, such as setting logging providers, can only be configured from code. For apps that use a host, logging configuration is commonly provided by the "Logging" section of `appsettings.{Environment}.json` files. For apps that don't use a host, external configuration sources are set up explicitly or configured in code instead.
+
+Logging configuration is set in code or via external sources, such as config files and environment variables. Using external configuration is beneficial when possible because it can be changed without rebuilding the application.
+However, some tasks, such as setting logging providers, can only be configured from code. For apps that use a host, logging configuration is commonly provided by the "Logging" section of `appsettings.{Environment}.json` files.
 ```json
 {
-  "AllowedHosts": "*",
   "ConnectionStrings": {
     "LoggerConnection": "Server=(localdb)\\mssqllocaldb;Database=sanlogdb;Trusted_Connection=True"
   },
@@ -48,7 +50,7 @@ Logging configuration is set in code or via external sources, such as config fil
 ### Step 2: Migration
 
 - Install NuGet package `Microsoft.EntityFrameworkCore.Tools`.
-- Add design-time service `SanlogDesignTimeDbContextFactory` class to your project.
+- Add design-time service `SanlogDesignTimeDbContextFactory` class to your project such as:
 ```csharp
 internal sealed class SanlogDesignTimeDbContextFactory : IDesignTimeDbContextFactory<SanlogDbContext>
 {
@@ -83,8 +85,11 @@ Connect to your database provider and invoke the next `insert` commands. Example
 - `insert into dbo.LogApps values ('e6bcc7df-e201-4d0b-02a3-08dbd09ffc89', 'MyProjectName', 'MyProjectEnvironment', '45732ee0-72a0-4c8e-8fbb-6b2df4cc3094')`.
 
 ## Attention!
-- `ODP.NET` does support `Guid`s. `Guid`s can be inserted into a `RAW(16)` column which is big enough to hold any `Guid` value. But caution needs to be taken in order to handle `Guid`s appropriately. This is due to the fact that as the .NET `Guid` structure flips the byte values in reverse order for the integer-based parts of the `Guid` values when `Guid(byte[])` constructor is used and when the `ToByteArray()` method on the `Guid` struct is invoked. More information: https://docs.oracle.com/en/database/oracle/oracle-database/23/odpnt/featGUID.html.
-- If using `EFCore.NamingConventions` you must configure `DbContextOptionsBuilder` using invoke `Use*CaseNamingConvention` in both places with the same method. It is the design time service that implements `IDesignTimeDbContextFactory<SanlogDbContext>` and the second place is while configuring the Sanlog logger.
+- `ODP.NET` does support `Guid`s. `Guid`s can be inserted into a `RAW(16)` column which is big enough to hold any `Guid` value. But caution needs to be taken in order to handle `Guid`s appropriately.
+This is due to the fact that as the .NET `Guid` structure flips the byte values in reverse order for the integer-based parts of the `Guid` values when `Guid(byte[])` constructor is used and when the `ToByteArray()` method on the `Guid` struct is invoked.
+More information: https://docs.oracle.com/en/database/oracle/oracle-database/23/odpnt/featGUID.html.
+- If using `EFCore.NamingConventions` you must configure `DbContextOptionsBuilder` using invoke `Use*CaseNamingConvention` in both places with the same method.
+It is the design time service that implements `IDesignTimeDbContextFactory<SanlogDbContext>` and the second place is while configuring the Sanlog logger.
 
 ## Miscellaneous
 - Global Query Filters (https://learn.microsoft.com/en-us/ef/core/querying/filters).
