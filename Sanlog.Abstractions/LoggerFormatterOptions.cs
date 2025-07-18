@@ -95,17 +95,6 @@ namespace Sanlog
                 throw new InvalidOperationException("The current instance is read-only to prevent any further user modification.");
         }
         /// <summary>
-        /// Gets the format associated with the specified <paramref name="type"/>.
-        /// </summary>
-        /// <param name="type">The type of the instance to format.</param>
-        /// <returns>The format to use. -or- A <see langword="null"/> reference to use the default format defined for the type of the <see cref="IFormattable"/> implementation.</returns>
-        /// <exception cref="ArgumentNullException">The <paramref name="type"/> is <see langword="null"/>.</exception>
-        public string? GetFormat(Type type)
-        {
-            ArgumentNullException.ThrowIfNull(type);
-            return _formats.TryGetValue(type, out string? format) ? format : null;
-        }
-        /// <summary>
         /// Gets the formatter associated with the specified <paramref name="type"/>.
         /// </summary>
         /// <param name="type">The type of the instance to format.</param>
@@ -114,7 +103,9 @@ namespace Sanlog
         public Func<object?, string?>? GetFormatter(Type type)
         {
             ArgumentNullException.ThrowIfNull(type);
-            return _formatters.TryGetValue(type, out (IValueFormatter Formatter, string? Format) tuple)
+            return _formats.TryGetValue(type, out string? format)
+                ? ((obj) => obj is IFormattable formattable ? formattable.ToString(format, _culture) : null)
+                : _formatters.TryGetValue(type, out (IValueFormatter Formatter, string? Format) tuple)
                 ? ((obj) => tuple.Formatter.Format(tuple.Format, obj, tuple.Formatter))
                 : ((obj) => null);
         }

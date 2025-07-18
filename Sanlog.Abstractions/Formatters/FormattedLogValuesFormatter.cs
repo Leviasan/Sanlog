@@ -94,9 +94,7 @@ namespace Sanlog.Formatters
             {
                 stringValue = arg switch
                 {
-                    // supports LoggerFormatterOptions.OverrideFormat
-                    IFormattable formattable => configuration.GetFormat(formattable.GetType()) is string overrideFormat ? formattable.ToString(overrideFormat, formatProvider) : null,
-                    // supports LoggerFormatterOptions.RegisterFormatter
+                    // supports LoggerFormatterOptions.OverrideFormat + LoggerFormatterOptions.RegisterFormatter
                     object obj => configuration.GetFormatter(obj.GetType()) is Func<object?, string?> callback ? callback.Invoke(obj) : null,
                     // format of the null value
                     null => NullValue
