@@ -9,4 +9,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("aff7b8ef-e482-4aa1-84bc-01b815fb8c64")]
 
 // For unit-test project
-[assembly: InternalsVisibleTo("Sanlog.Abstractions.MSTest")]
+[assembly: InternalsVisibleTo("Sanlog.Abstractions.MSTestProject")]

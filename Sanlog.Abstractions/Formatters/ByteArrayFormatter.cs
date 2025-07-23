@@ -35,7 +35,7 @@ namespace Sanlog.Formatters
                 }
                 else if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                 {
-                    return $"[*{bytes.Length} {typeof(byte).Name}*]";
+                    return $"[{typeof(byte).FullName}[{bytes.Length}]]";
                 }
                 throw new FormatException(string.Format(CultureInfo.InvariantCulture, "'{0}' cannot be used to format {1}.", format, arg.GetType()));
             }

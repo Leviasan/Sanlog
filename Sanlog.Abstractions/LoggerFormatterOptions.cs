@@ -26,7 +26,7 @@ namespace Sanlog
             .OverrideFormat<TimeOnly>("O")
             .OverrideFormat<DateTime>("O")
             .OverrideFormat<DateTimeOffset>("O")
-            .RegisterFormatter<ByteArrayFormatter>(new ByteArrayFormatter(), ByteArrayFormatter.FormatRedacted)
+            .RegisterFormatter<byte[]>(new ByteArrayFormatter(), ByteArrayFormatter.FormatRedacted)
             .MakeReadOnly();
 
         /// <summary>
