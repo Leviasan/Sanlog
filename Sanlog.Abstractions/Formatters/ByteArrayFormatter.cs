@@ -9,11 +9,16 @@ namespace Sanlog.Formatters
     public sealed class ByteArrayFormatter : IValueFormatter
     {
         /// <summary>
+        /// The static read-only instance of the class.
+        /// </summary>
+        internal static readonly ByteArrayFormatter Instance = new();
+
+        /// <summary>
         /// A string of hexadecimal pairs separated by hyphens, where each pair represents the corresponding element in value; for example, "7F-2C-4A-00".
         /// </summary>
         public const string FormatHex = "H";
         /// <summary>
-        /// The format "[System.Byte[{Count}]]", where {Count} is the length of the byte array.
+        /// The format "[*System.Byte[{Count}]*]", where {Count} is the length of the byte array.
         /// </summary>
         public const string FormatRedacted = "R";
 
@@ -35,7 +40,7 @@ namespace Sanlog.Formatters
                 }
                 else if (format.Equals(FormatRedacted, StringComparison.Ordinal))
                 {
-                    return $"[{typeof(byte).FullName}[{bytes.Length}]]";
+                    return $"[*{typeof(byte).FullName}[{bytes.Length}]*]";
                 }
                 throw new FormatException(string.Format(CultureInfo.InvariantCulture, "'{0}' cannot be used to format {1}.", format, arg.GetType()));
             }

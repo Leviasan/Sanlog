@@ -45,7 +45,7 @@ namespace Sanlog.Abstractions.MSTestProject
         }
 
         [TestMethod]
-        public void TestMethod1()
+        public void ByteArrayFormatter()
         {
             Dictionary<string, object?> parameters = new()
             {
@@ -54,7 +54,7 @@ namespace Sanlog.Abstractions.MSTestProject
             FormattedLogValuesFormatter formatter = new(NullRedactorProvider.Instance, LoggerFormatterOptions.Default);
             FormattedLogValues logValues = new(formatter, "Parameters: {@Parameters}", parameters);
             string? actual = logValues.ToString();
-            Assert.AreEqual("Parameters: [[filedata, [System.Byte[3]]]]", actual);
+            Assert.AreEqual("Parameters: [[filedata, [*System.Byte[3]*]]]", actual);
         }
     }
 }

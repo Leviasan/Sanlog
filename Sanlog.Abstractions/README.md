@@ -93,10 +93,62 @@ public static class ILoggingBuilderExtensions
 }
 ```
 
-## Formatting
+## Formatters
 
-### `record class` or `record struct`
-- During serialization parameter with @ParamName => ignored `DataClassificationAttribute` and invoke `Convert.ToString`. To prevent this case need to use `[property: DataClassificationAttribute]` while defining a property.
+There are 2 approaches to override format string:
+
+1. Invoke the `OverrideFormat` method in the `SanlogLoggerOptions.FormattedOptions` to define a custom format for your object.
+```csharp
+using Sanlog;
+
+SanlogLoggerOptions options = new();
+options.FormattedOptions.OverrideFormat<float>("G9"); // override for float use G9 format
+```
+
+2. Invoke the `RegisterFormatter` method in the `SanlogLoggerOptions.FormattedOptions` to define a custom `IValueFormatter` format for your object.
+```csharp
+using Sanlog.Formatters;
+
+public sealed class ByteArrayFormatter : IValueFormatter
+{
+    public const string FormatRedacted = "R";
+
+    public object? GetFormat(Type? formatType) => formatType == typeof(ICustomFormatter) ? this : null;
+
+    public string Format(string? format, object? arg, IFormatProvider? formatProvider)
+    {
+        if (Equals(formatProvider) && arg is byte[] bytes)
+        {
+            if (string.IsNullOrEmpty(format))
+            {
+                return bytes.ToString()!;
+            }
+            else if (format.Equals(FormatRedacted, StringComparison.Ordinal))
+            {
+                return $"[{typeof(byte).FullName}[{bytes.Length}]]";
+            }
+            throw new FormatException(string.Format(CultureInfo.InvariantCulture, "'{0}' cannot be used to format {1}.", format, arg.GetType()));
+        }
+        return DefaultFallback(format, arg, Equals(formatProvider) ? null : formatProvider);
+
+        static string DefaultFallback(string? format, object? arg, IFormatProvider? formatProvider)
+        {
+            return arg switch
+            {
+                IFormattable formattable => formattable.ToString(format, formatProvider),
+                _ => Convert.ToString(arg, formatProvider) ?? string.Empty
+            };
+        };
+    }
+}
+
+SanlogLoggerOptions options = new();
+options.FormattedOptions.RegisterFormatter<byte[]>(new ByteArrayFormatter(), ByteArrayFormatter.FormatRedacted)); // override for byte[] use custom R format
+```
+
+## Attention!
+- During object serialization, which is represented as `record class` or `record struct` with declared properties in the constructor and specified as @ParamName 
+=> ignored `DataClassificationAttribute`, and invoke `Convert.ToString`. To prevent this case, use `[property: DataClassificationAttribute]` while defining a property.
 
 ## Feedback & Contributing
 Welcome feedback and contributions in [our GitHub repo](https://github.com/Leviasan/Sanlog).

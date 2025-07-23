@@ -26,7 +26,7 @@ namespace Sanlog
             .OverrideFormat<TimeOnly>("O")
             .OverrideFormat<DateTime>("O")
             .OverrideFormat<DateTimeOffset>("O")
-            .RegisterFormatter<byte[]>(new ByteArrayFormatter(), ByteArrayFormatter.FormatRedacted)
+            .RegisterFormatter<byte[]>(ByteArrayFormatter.Instance, ByteArrayFormatter.FormatRedacted)
             .MakeReadOnly();
 
         /// <summary>
@@ -156,8 +156,4 @@ namespace Sanlog
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
-    /// <summary>
-    /// Defines a method that supports custom formatting of the value of an object.
-    /// </summary>
-    public interface IValueFormatter : ICustomFormatter, IFormatProvider { }
 }
