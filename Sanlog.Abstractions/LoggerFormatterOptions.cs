@@ -12,7 +12,11 @@ namespace Sanlog
     /// <summary>
     /// Represents the configuration of the <see cref="FormattedLogValuesFormatter"/>.
     /// </summary>
-    public sealed class LoggerFormatterOptions : IReadOnlyList<KeyValuePair<Type, string?>>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="LoggerFormatterOptions"/> class.
+    /// </remarks>
+    /// <param name="culture">The formatting culture.</param>
+    public sealed class LoggerFormatterOptions(CultureInfo? culture = null) : IReadOnlyList<KeyValuePair<Type, string?>>, ICloneable
     {
         /// <summary>
         /// Gets a read-only, singleton instance of <see cref="LoggerFormatterOptions"/> that uses the default configuration.
@@ -33,7 +37,7 @@ namespace Sanlog
         /// The formatting culture.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private CultureInfo? _culture;
+        private CultureInfo? _culture = culture;
         /// <summary>
         /// The overridden format for specified types.
         /// </summary>
@@ -44,24 +48,6 @@ namespace Sanlog
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private readonly Dictionary<Type, (IValueFormatter Formatter, string? Format)> _formatters = [];
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LoggerFormatterOptions"/> class.
-        /// </summary>
-        /// <param name="culture">The formatting culture.</param>
-        public LoggerFormatterOptions(CultureInfo? culture = null) => _culture = culture;
-        /// <summary>
-        /// Initializes a new instance of the <see cref="LoggerFormatterOptions"/> based on the specified configuration.
-        /// </summary>
-        /// <param name="options">The based configuration.</param>
-        /// <exception cref="ArgumentNullException">The <paramref name="options"/> is <see langword="null"/>.</exception>
-        public LoggerFormatterOptions(LoggerFormatterOptions options)
-        {
-            ArgumentNullException.ThrowIfNull(options);
-            _culture = options._culture;
-            _formats = options._formats;
-            _formatters = options._formatters;
-        }
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
@@ -155,5 +141,17 @@ namespace Sanlog
         public IEnumerator<KeyValuePair<Type, string?>> GetEnumerator() => _formats.GetEnumerator();
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <inheritdoc/>
+        public object Clone()
+        {
+            LoggerFormatterOptions clone = new(_culture);
+            // Copy formats
+            foreach (KeyValuePair<Type, string?> kvp in _formats)
+                clone._formats.Add(kvp.Key, kvp.Value);
+            // Copy formatters
+            foreach (KeyValuePair<Type, (IValueFormatter Formatter, string? Format)> kvp in _formatters)
+                clone._formatters.Add(kvp.Key, kvp.Value);
+            return clone;
+        }
     }
 }
