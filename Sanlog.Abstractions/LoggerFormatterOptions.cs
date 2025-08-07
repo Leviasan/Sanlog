@@ -92,8 +92,8 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(type);
             return _formats.TryGetValue(type, out string? format)
                 ? ((obj) => obj is IFormattable formattable ? formattable.ToString(format, _culture) : null)
-                : _formatters.TryGetValue(type, out (IValueFormatter Formatter, string? Format) tuple)
-                ? ((obj) => tuple.Formatter.Format(tuple.Format, obj, tuple.Formatter))
+                : _formatters.TryGetValue(type, out (IValueFormatter Provider, string? Format) tuple)
+                ? ((obj) => string.Format(tuple.Provider, $"{{0:{tuple.Format}}}", obj))
                 : ((obj) => null);
         }
         /// <summary>
