@@ -30,7 +30,7 @@ namespace Sanlog
             .OverrideFormat<TimeOnly>("O")
             .OverrideFormat<DateTime>("O")
             .OverrideFormat<DateTimeOffset>("O")
-            .RegisterFormatter<byte[]>(ByteArrayFormatter.Instance, ByteArrayFormatter.FormatRedacted)
+            .RegisterFormatter<ByteArrayFormatter, byte[]>(ByteArrayFormatter.FormatRedacted)
             .MakeReadOnly();
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace Sanlog
         /// The formatters for specified types.
         /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private readonly Dictionary<Type, (IValueFormatter Formatter, string? Format)> _formatters = [];
+        private readonly Dictionary<Type, (IFormatProvider, string?)> _formatters = [];
 
         /// <inheritdoc/>
         /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is less than 0 or greater than or equal to the number of elements in source.</exception>
@@ -92,8 +92,8 @@ namespace Sanlog
             ArgumentNullException.ThrowIfNull(type);
             return _formats.TryGetValue(type, out string? format)
                 ? ((obj) => obj is IFormattable formattable ? formattable.ToString(format, _culture) : null)
-                : _formatters.TryGetValue(type, out (IValueFormatter Provider, string? Format) tuple)
-                ? ((obj) => string.Format(tuple.Provider, $"{{0:{tuple.Format}}}", obj))
+                : _formatters.TryGetValue(type, out (IFormatProvider FormatProvider, string? Format) tuple)
+                ? ((obj) => string.Format(tuple.FormatProvider, $"{{0:{tuple.Format}}}", obj))
                 : ((obj) => null);
         }
         /// <summary>
@@ -120,20 +120,19 @@ namespace Sanlog
             return this;
         }
         /// <summary>
-        /// Registers a formatter to use for the specified <typeparamref name="T"/>.
+        /// Registers a formatter to use for the specified <typeparamref name="TValue"/>.
         /// </summary>
-        /// <typeparam name="T">The type of the instance to format.</typeparam>
-        /// <param name="formatter">The used formatter.</param>
+        /// <typeparam name="TFormatter">The type of the used formatter.</typeparam>
+        /// <typeparam name="TValue">The type of the instance to format.</typeparam>
         /// <param name="format">The default format if one is not specified.</param>
         /// <exception cref="InvalidOperationException">The current instance is read-only to prevent any further user modification.</exception>
         /// <returns>Returns the current instance.</returns>
-        public LoggerFormatterOptions RegisterFormatter<T>(IValueFormatter formatter, string? format)
+        public LoggerFormatterOptions RegisterFormatter<TFormatter, TValue>(string? format) where TFormatter : IFormatProvider, ICustomFormatter, new()
         {
-            ArgumentNullException.ThrowIfNull(formatter);
             CheckReadOnly(); // InvalidOperationException
-            (IValueFormatter, string?) tuple = new(formatter, format);
-            if (!_formatters.TryAdd(typeof(T), tuple))
-                _formatters[typeof(T)] = tuple;
+            (TFormatter, string?) tuple = new(Activator.CreateInstance<TFormatter>(), format);
+            if (!_formatters.TryAdd(typeof(TValue), tuple))
+                _formatters[typeof(TValue)] = tuple;
             return this;
         }
 
@@ -149,7 +148,7 @@ namespace Sanlog
             foreach (KeyValuePair<Type, string?> kvp in _formats)
                 clone._formats.Add(kvp.Key, kvp.Value);
             // Copy formatters
-            foreach (KeyValuePair<Type, (IValueFormatter Formatter, string? Format)> kvp in _formatters)
+            foreach (KeyValuePair<Type, (IFormatProvider, string?)> kvp in _formatters)
                 clone._formatters.Add(kvp.Key, kvp.Value);
             return clone;
         }

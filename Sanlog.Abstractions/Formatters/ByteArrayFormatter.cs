@@ -6,7 +6,7 @@ namespace Sanlog.Formatters
     /// <summary>
     /// Represents the formatter that supports custom formatting of <see cref="byte"/> array object.
     /// </summary>
-    public sealed class ByteArrayFormatter : IValueFormatter
+    public sealed class ByteArrayFormatter : IFormatProvider, ICustomFormatter
     {
         /// <summary>
         /// The static read-only instance of the class.
